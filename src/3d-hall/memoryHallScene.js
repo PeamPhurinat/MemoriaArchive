@@ -5,7 +5,7 @@ import { TransformControls } from "three/examples/jsm/controls/TransformControls
 import { VRButton } from "three/examples/jsm/webxr/VRButton.js";
 import { isSupabaseConfigured, loadLayoutFromCloud, saveLayoutToCloud } from "./supabaseClient";
 
-export function initMemoryHall(container) {
+export function initMemoryHall(container, memoriesData) {
   const launchButton = container.querySelector(".mh-launch");
   const modeToggleButton = container.querySelector(".mh-mode-toggle");
   const customPanel = container.querySelector(".mh-custom-panel");
@@ -284,7 +284,7 @@ export function initMemoryHall(container) {
   createBrokenColumns();
   createStandingPillars();
   createTimelineTrail();
-  createMemoryMonoliths();
+  createMemoryMonoliths(memoriesData);
   createFloatingRuinFragments();
   createDreamParticles();
   createGlitterStars();
@@ -476,8 +476,16 @@ export function initMemoryHall(container) {
     return group;
   }
 
-  function createMemoryMonoliths() {
-    const entries = [
+  function createMemoryMonoliths(memoriesData) {
+    const SLOT_POSITIONS = [
+      { x: -11, z: 18,  side: -1 },
+      { x: 10,  z: 4,   side: 1  },
+      { x: -9,  z: -11, side: -1 },
+      { x: 11,  z: -28, side: 1  },
+    ];
+    const SLOT_COLORS = ["#ffd8ef", "#ffe5f5", "#ffd0ea", "#ffeaf5"];
+
+    const demoEntries = [
       {
         year: "2012",
         title: "Lantern Festival",
@@ -534,6 +542,21 @@ export function initMemoryHall(container) {
         side: -1,
       },
     ];
+
+    if (!Array.isArray(memoriesData) || memoriesData.length === 0) return;
+
+    const entries = memoriesData.slice(0, 4).map((mem, i) => ({
+      year: `#${i + 1}`,
+      title: mem.title || `Memory ${i + 1}`,
+      note: "Interview Memory",
+      description: mem.text || mem.description || "",
+      voice: mem.sourceQuote || mem.description || "",
+      photo: mem.photo || mem.url || null,
+      color: SLOT_COLORS[i],
+      x: SLOT_POSITIONS[i].x,
+      z: SLOT_POSITIONS[i].z,
+      side: SLOT_POSITIONS[i].side,
+    }));
 
     entries.forEach((entry, index) => {
       const station = new THREE.Group();
@@ -959,6 +982,10 @@ export function initMemoryHall(container) {
   }
 
   function createPhotoTexture(entry) {
+    if (entry.photo) {
+      return new THREE.TextureLoader().load(entry.photo);
+    }
+
     const canvas = document.createElement("canvas");
     canvas.width = 1024;
     canvas.height = 768;

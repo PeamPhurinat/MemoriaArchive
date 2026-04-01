@@ -1,0 +1,124 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const CARD_ICONS = ['🧠', '💫', '🌙', '✨', '🎞', '🌸', '🗝', '🪐'];
+
+const formatDate = (iso) => {
+  try {
+    return new Date(iso).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+};
+
+const memoryCount = (p) =>
+  p.memories?.length || p.textSlots?.length || 0;
+
+const ProjectsPage = ({ projects, onCreateNew, onSelectProject }) => {
+  const navigate = useNavigate();
+
+  const openProject = (id) => {
+    onSelectProject(id);
+    navigate('/project-detail');
+  };
+
+  const goInterview = (id, e) => {
+    e.stopPropagation();
+    onSelectProject(id);
+    navigate('/interview');
+  };
+
+  const go3D = (id, e) => {
+    e.stopPropagation();
+    onSelectProject(id);
+    navigate('/memory-hall');
+  };
+
+  const handleCreateNew = () => {
+    onCreateNew();
+    navigate('/project-detail');
+  };
+
+  return (
+    <div className="ma-page">
+      {/* Header */}
+      <header className="ma-header">
+        <button className="ma-header-brand" onClick={() => navigate('/')}>
+          <div className="ma-header-logo">✦</div>
+          Memoria
+        </button>
+      </header>
+
+      <div className="ma-projects-body">
+        <div className="ma-section-header">
+          <h1 className="ma-section-title">My Projects</h1>
+          <button className="ma-btn ma-btn-primary ma-btn-sm" onClick={handleCreateNew}>
+            + New Project
+          </button>
+        </div>
+
+        <div className="ma-projects-grid">
+          {projects.map((p, i) => (
+            <div
+              key={p.id}
+              className="ma-project-card"
+              onClick={() => openProject(p.id)}
+            >
+              <div className="ma-project-card-glow" />
+              <div className="ma-project-card-icon">
+                {CARD_ICONS[i % CARD_ICONS.length]}
+              </div>
+              <div className="ma-project-card-title">
+                {p.title || 'Untitled Project'}
+                {p.id === 'demo-project' && (
+                  <span className="ma-badge">Demo</span>
+                )}
+              </div>
+              <div className="ma-project-card-meta">{formatDate(p.createdAt)}</div>
+              <div className="ma-project-card-stats">
+                <span className="ma-stat-pill">
+                  💬 {memoryCount(p)} memories
+                </span>
+                {p.interview && (
+                  <span className="ma-stat-pill">🎤 interviewed</span>
+                )}
+              </div>
+              <div className="ma-project-card-actions">
+                <button
+                  className="ma-btn ma-btn-ghost ma-btn-sm"
+                  onClick={(e) => { e.stopPropagation(); openProject(p.id); }}
+                >
+                  Open
+                </button>
+                <button
+                  className="ma-btn ma-btn-ghost ma-btn-sm"
+                  onClick={(e) => goInterview(p.id, e)}
+                >
+                  🎤 Interview
+                </button>
+                <button
+                  className="ma-btn ma-btn-ghost ma-btn-sm"
+                  onClick={(e) => go3D(p.id, e)}
+                >
+                  🧊 3D Room
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* New project slot */}
+          <div className="ma-project-card-new" onClick={handleCreateNew}>
+            <div className="ma-project-card-new-icon">+</div>
+            <span>New Project</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProjectsPage;

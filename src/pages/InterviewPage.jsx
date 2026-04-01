@@ -72,7 +72,7 @@ const InterviewPage = ({ project, setProject }) => {
         vadFrameRef.current = null;
       }
       streamRef.current?.getTracks().forEach((t) => t.stop());
-      audioCtxRef.current?.close();
+      if (audioCtxRef.current?.state !== 'closed') audioCtxRef.current?.close();
     };
   }, []);
 
@@ -174,6 +174,7 @@ const InterviewPage = ({ project, setProject }) => {
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
         audioCtx.close();
+        audioCtxRef.current = null;
 
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         audioChunksRef.current = [];
@@ -256,7 +257,8 @@ const InterviewPage = ({ project, setProject }) => {
       // override onstop to just cleanup, not transcribe
       mediaRecorderRef.current.onstop = () => {
         streamRef.current?.getTracks().forEach((t) => t.stop());
-        audioCtxRef.current?.close();
+        if (audioCtxRef.current?.state !== 'closed') audioCtxRef.current?.close();
+        audioCtxRef.current = null;
         audioChunksRef.current = [];
       };
       mediaRecorderRef.current.stop();
@@ -282,7 +284,7 @@ const InterviewPage = ({ project, setProject }) => {
         transcript: result.transcript,
       },
     }));
-    navigate('/upload');
+    navigate('/memory-hall');
   };
 
   const orbClass = [
@@ -321,7 +323,7 @@ const InterviewPage = ({ project, setProject }) => {
         <button className="voice-setup-start" onClick={handleStart} disabled={isStarting}>
           {isStarting ? 'กำลังเริ่ม...' : 'เริ่มเลย'}
         </button>
-        <button className="voice-setup-back" onClick={() => navigate('/upload')}>
+        <button className="voice-setup-back" onClick={() => navigate('/project-detail')}>
           ← กลับ
         </button>
       </div>

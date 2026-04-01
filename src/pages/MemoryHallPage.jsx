@@ -3,18 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { initMemoryHall } from '../3d-hall/memoryHallScene';
 import '../3d-hall/style.css';
 
-const MemoryHallPage = () => {
+const MemoryHallPage = ({ project }) => {
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const cleanup = initMemoryHall(container);
+    const memories =
+      project?.textSlots?.length > 0 ? project.textSlots :
+      project?.memories?.length > 0  ? project.memories  :
+      null;
+    const cleanup = initMemoryHall(container, memories);
     return () => {
       if (cleanup) cleanup();
     };
-  }, []);
+  }, [project]);
 
   return (
     <div ref={containerRef} className="memory-hall-root">
@@ -29,8 +33,8 @@ const MemoryHallPage = () => {
           </p>
         </section>
         <button className="mh-launch" type="button">Enter the realm</button>
-        <button className="mh-back-btn" type="button" onClick={() => navigate('/')}>
-          ← Back
+        <button className="mh-back-btn" type="button" onClick={() => navigate('/projects')}>
+          ← My Projects
         </button>
         <button className="mh-mode-toggle" type="button" aria-pressed="false">
           Switch to Custom Mode
