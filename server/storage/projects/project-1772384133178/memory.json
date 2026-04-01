@@ -1,0 +1,20 @@
+{
+  "id": "project-1772384133178",
+  "title": "",
+  "coupleNames": "",
+  "createdAt": "2026-03-01T16:55:40.142Z",
+  "updatedAt": "2026-03-01T16:55:40.144Z",
+  "photoSlots": [],
+  "textSlots": [],
+  "audioSlots": [
+    {
+      "id": "audio-1772384140142",
+      "title": "ttsmaker-file-2025-9-6-22-45-42.mp3",
+      "transcript": "Welcome to our real estate zoning web application. This tool helps you explore which districts of Bangkok are most suitable for different types of property investment. When you open the site, you'll see an interactive map. On the left side, you can choose from four categories: commercial, residential, agricultural, or industrial. If you click on any district, you'll see a pop-up with key details, including the name, main characteristics, and reasons why it's suitable for that investment type. You can zoom in or out, move around the map, and always see the zones clearly. That's it—simple, fast, and visual.",
+      "audioUrl": "/uploads/project-1772384133178/audio/1772384140140-b6488b0e.mp3",
+      "createdAt": "2026-03-01T16:55:40.144Z",
+      "visible": true,
+      "order": 1
+    }
+  ]
+}
