@@ -361,7 +361,6 @@ export class WorldBuilder {
       this.scene.add(station);
 
       const orientation = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 18 : -18);
-      const stationTextures = this.createMemoryStationTextures(themedEntry);
 
       const photoFrame = new THREE.Mesh(
         new THREE.BoxGeometry(4.4, 3.4, 0.24),
@@ -377,9 +376,36 @@ export class WorldBuilder {
       photoFrame.rotation.y = orientation;
       photoFrame.castShadow = true;
       photoFrame.receiveShadow = true;
-      const photoPanel = createReadablePanel(3.88, 2.88, stationTextures.photoTexture, { offset: 0.13 });
+
+      // ✅ Create photoPanel FIRST before registering the callback
+      const photoPanel = createReadablePanel(3.88, 2.88, new THREE.Texture(), { offset: 0.13 });
       photoFrame.add(photoPanel);
       station.add(photoFrame);
+
+      const photoAspectState = {
+        requestId: 0,
+        currentAspect: 3.88 / 2.88,
+      };
+      photoAspectState.requestId += 1;
+      const initialRequestId = photoAspectState.requestId;
+
+      const stationTextures = this.createMemoryStationTextures(themedEntry, (aspect) => {
+        if (initialRequestId !== photoAspectState.requestId) {
+          return;
+        }
+        photoAspectState.currentAspect = aspect;
+        this.applyPhotoFrameAspect(photoFrame, photoPanel, aspect);
+      });
+
+      this.updatePanelTexture(photoPanel, stationTextures.photoTexture);
+      const initialAspect =
+        stationTextures.photoTexture.userData?.photoAspect ?? photoAspectState.currentAspect;
+      photoAspectState.currentAspect = initialAspect;
+      this.applyPhotoFrameAspect(
+        photoFrame,
+        photoPanel,
+        initialAspect,
+      );
 
       const archiveCard = new THREE.Mesh(
         new THREE.BoxGeometry(2.4, 3.6, 0.2),
@@ -482,10 +508,12 @@ export class WorldBuilder {
           photo: themedEntry.photo || null,
         },
         photoPanel,
+        photoFrame,
         archivePanel,
         descriptionPanel,
         voiceCloud,
         textures: stationTextures,
+        photoAspectState,
       });
 
       this.registerCustomizableComponent(componentId, station, {
@@ -496,8 +524,8 @@ export class WorldBuilder {
     });
   }
 
-  createMemoryStationTextures(entry) {
-    const photoTexture = createPhotoTexture(entry, this.activeThemeKey);
+  createMemoryStationTextures(entry, onPhotoAspectChange = null) {
+    const photoTexture = createPhotoTexture(entry, this.activeThemeKey, onPhotoAspectChange);
     photoTexture.colorSpace = THREE.SRGBColorSpace;
 
     const photoFrameTexture = createMemoryTexture(
@@ -532,6 +560,51 @@ export class WorldBuilder {
       child.material.needsUpdate = true;
     });
   }
+
+  resizeReadablePanel(panelGroup, width, height) {
+    if (!panelGroup) {
+      return;
+    }
+
+    panelGroup.children.forEach((child) => {
+      if (!child?.isMesh || !child.geometry) {
+        return;
+      }
+
+      child.geometry.dispose?.();
+      child.geometry = new THREE.PlaneGeometry(width, height);
+    });
+  }
+
+  applyPhotoFrameAspect(photoFrame, photoPanel, aspect) {
+  if (!photoFrame || !Number.isFinite(aspect) || aspect <= 0) return;
+
+  const baseInnerWidth = 3.88;
+  const baseInnerHeight = 2.88;
+  const frameBorder = 0.06;
+  const baseInnerAspect = baseInnerWidth / baseInnerHeight;
+
+  const boundedAspect = THREE.MathUtils.clamp(aspect, 0.9, 2.2);
+
+  let innerWidth, innerHeight;
+  if (boundedAspect >= 1.0) {
+    innerWidth = baseInnerWidth * Math.min(boundedAspect / baseInnerAspect, 1.3);
+    innerHeight = innerWidth / boundedAspect;
+  } else {
+    innerHeight = baseInnerHeight;
+    innerWidth = innerHeight * boundedAspect;
+  }
+
+  const outerWidth = innerWidth + frameBorder * 2;
+  const outerHeight = innerHeight + frameBorder * 2;
+
+  // Always dispose and rebuild — don't rely on the diff guard
+  photoFrame.geometry.dispose?.();
+  photoFrame.geometry = new THREE.BoxGeometry(outerWidth, outerHeight, 0.24);
+
+  this.resizeReadablePanel(photoPanel, innerWidth, innerHeight);
+  photoFrame.scale.set(1, 1, 1);
+}
 
   updatePanelTint(panelGroup, tintColor) {
     panelGroup.children.forEach((child) => {
@@ -625,7 +698,27 @@ export class WorldBuilder {
         color: palette[stationData.index % palette.length],
       };
 
-      const nextTextures = this.createMemoryStationTextures(themedEntry);
+      const photoAspectState = stationData.photoAspectState ?? {
+        requestId: 0,
+        currentAspect: 3.88 / 2.88,
+      };
+      stationData.photoAspectState = photoAspectState;
+      photoAspectState.requestId += 1;
+      const requestId = photoAspectState.requestId;
+
+      const nextTextures = this.createMemoryStationTextures(themedEntry, (aspect) => {
+        if (requestId !== photoAspectState.requestId) {
+          return;
+        }
+        photoAspectState.currentAspect = aspect;
+        this.applyPhotoFrameAspect(stationData.photoFrame, stationData.photoPanel, aspect);
+      });
+
+      const nextAspect =
+        nextTextures.photoTexture.userData?.photoAspect ?? photoAspectState.currentAspect;
+      photoAspectState.currentAspect = nextAspect;
+      this.applyPhotoFrameAspect(stationData.photoFrame, stationData.photoPanel, nextAspect);
+
       this.updatePanelTexture(stationData.photoPanel, nextTextures.photoTexture);
       this.updatePanelTexture(stationData.archivePanel, nextTextures.photoFrameTexture);
       this.updatePanelTexture(stationData.descriptionPanel, nextTextures.descriptionTexture);

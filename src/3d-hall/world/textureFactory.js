@@ -15,7 +15,7 @@ function getTextureThemePalette(themeKey = "dream") {
       photoEnd: "#1b2548",
       photoOrb: "rgba(150, 178, 255, 0.38)",
       hillColors: ["rgba(165, 188, 255,0.48)", "rgba(121,151,238,0.56)", "rgba(89,119,200,0.62)"],
-      photoTitleInk: "#f3f7ff",
+      photoTitleInk: "#f0f5fd",
       descriptionStops: ["rgba(19, 25, 54, 0.94)", "rgba(35, 47, 88, 0.94)"],
       descriptionYear: "#d5e4ff",
       descriptionBody: "#e8f1ff",
@@ -72,7 +72,7 @@ function getTextureThemePalette(themeKey = "dream") {
     photoEnd: "#f7dce9",
     photoOrb: "rgba(255, 216, 239, 0.44)",
     hillColors: ["rgba(255,255,255,0.7)", "rgba(255,228,242,0.78)", "rgba(247,220,233,0.88)"],
-    photoTitleInk: "#cf87ae",
+    photoTitleInk: "#fff7f7",
     descriptionStops: ["rgba(127, 72, 112, 0.9)", "rgba(88, 48, 85, 0.92)"],
     descriptionYear: "#ffd8ef",
     descriptionBody: "#fff5fb",
@@ -205,11 +205,6 @@ export function createMemoryTexture(title, subtitle, accentColor, themeKey = "dr
   context.arc(116, 646, 38, 0, Math.PI * 2);
   context.fill();
 
-  context.fillStyle = accentColor;
-  context.beginPath();
-  context.arc(116, 646, 18, 0, Math.PI * 2);
-  context.fill();
-
   context.fillStyle = "#ffffff";
   context.fillRect(176, 622, 210, 10);
   context.fillRect(176, 648, 166, 10);
@@ -218,16 +213,38 @@ export function createMemoryTexture(title, subtitle, accentColor, themeKey = "dr
   return new THREE.CanvasTexture(canvas);
 }
 
-export function createPhotoTexture(entry, themeKey = "dream") {
+export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChange = null) {
   const canvas = document.createElement("canvas");
   canvas.width = 1024;
   canvas.height = 768;
   const context = canvas.getContext("2d");
   const palette = getTextureThemePalette(themeKey);
-
   const texture = new THREE.CanvasTexture(canvas);
 
+  const notifyPhotoAspect = (aspect) => {
+    if (!Number.isFinite(aspect) || aspect <= 0) return;
+    texture.userData.photoAspect = aspect;
+    if (typeof onPhotoAspectChange === "function") {
+      onPhotoAspectChange(aspect);
+    }
+  };
+
+  const drawTitleBadge = ({ text, boxX, boxY, textX, textY, boxHeight, maxBoxWidth }) => {
+    const label = (typeof text === "string" ? text.trim() : "") || "Untitled";
+    const fontSize = 44;
+    context.font = `700 ${fontSize}px Segoe UI`;
+    const horizontalPadding = 24;
+    const measuredWidth = context.measureText(label).width;
+    const badgeWidth = Math.max(180, Math.min(maxBoxWidth, measuredWidth + horizontalPadding * 2));
+    context.fillStyle = "rgba(255, 255, 255, 0.29)";
+    context.fillRect(boxX, boxY, badgeWidth, boxHeight);
+    context.fillStyle = palette.photoTitleInk;
+    context.fillText(label, textX, textY, badgeWidth - horizontalPadding * 2);
+  };
+
   const drawBase = () => {
+    const widthRatio = canvas.width / 1024;
+    const heightRatio = canvas.height / 768;
     context.clearRect(0, 0, canvas.width, canvas.height);
     const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
     gradient.addColorStop(0, palette.photoStart);
@@ -235,140 +252,182 @@ export function createPhotoTexture(entry, themeKey = "dream") {
     gradient.addColorStop(1, palette.photoEnd);
     context.fillStyle = gradient;
     context.fillRect(0, 0, canvas.width, canvas.height);
-
     context.globalAlpha = 0.45;
     context.fillStyle = "rgba(255,255,255,0.55)";
     context.beginPath();
     context.arc(160, 132, 120, 0, Math.PI * 2);
     context.fill();
-
     context.fillStyle = palette.photoOrb;
     context.beginPath();
     context.arc(780, 210, 180, 0, Math.PI * 2);
     context.fill();
     context.globalAlpha = 1;
-
-    const hillColors = palette.hillColors;
-    hillColors.forEach((fill, index) => {
+    palette.hillColors.forEach((fill, index) => {
       context.fillStyle = fill;
       context.beginPath();
-      context.moveTo(0, 530 + index * 34);
-      context.bezierCurveTo(150, 430 - index * 12, 320, 650, 510, 560 - index * 8);
-      context.bezierCurveTo(650, 500 - index * 10, 780, 720, 1024, 540 - index * 4);
-      context.lineTo(1024, 768);
-      context.lineTo(0, 768);
+      context.moveTo(0, (530 + index * 34) * heightRatio);
+      context.bezierCurveTo(
+        150 * widthRatio, (430 - index * 12) * heightRatio,
+        320 * widthRatio, 650 * heightRatio,
+        510 * widthRatio, (560 - index * 8) * heightRatio,
+      );
+      context.bezierCurveTo(
+        650 * widthRatio, (500 - index * 10) * heightRatio,
+        780 * widthRatio, 720 * heightRatio,
+        canvas.width, (540 - index * 4) * heightRatio,
+      );
+      context.lineTo(canvas.width, canvas.height);
+      context.lineTo(0, canvas.height);
       context.closePath();
       context.fill();
     });
-
     context.strokeStyle = "rgba(255,255,255,0.3)";
     context.lineWidth = 4;
-    for (let index = 0; index < 5; index += 1) {
+    for (let i = 0; i < 5; i++) {
       context.beginPath();
-      context.moveTo(64, 90 + index * 110);
-      context.bezierCurveTo(250, 20 + index * 95, 520, 210 + index * 84, 940, 76 + index * 104);
+      context.moveTo(64 * widthRatio, (90 + i * 110) * heightRatio);
+      context.bezierCurveTo(
+        250 * widthRatio, (20 + i * 95) * heightRatio,
+        520 * widthRatio, (210 + i * 84) * heightRatio,
+        940 * widthRatio, (76 + i * 104) * heightRatio,
+      );
       context.stroke();
     }
-
-    context.fillStyle = "rgba(255,255,255,0.88)";
-    context.fillRect(58, 56, 300, 94);
-    context.fillStyle = palette.photoTitleInk;
-    context.font = "700 44px Segoe UI";
-    context.fillText(entry.title, 82, 114);
+    drawTitleBadge({ text: entry.title, boxX: 58, boxY: 56, textX: 82, textY: 114, boxHeight: 94, maxBoxWidth: 540 });
   };
 
   const drawPhoto = (image) => {
-    const frameX = 0;
-    const frameY = 0;
+    const imageAspect = image.width / image.height;
+    const displayAspect = THREE.MathUtils.clamp(imageAspect, 0.741, 2.2);
+    const targetWidth = 1024;
+    const targetHeight = Math.max(420, Math.round(targetWidth / displayAspect));
+
+    // Resize canvas to match image aspect
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    // ✅ Always draw base layer first so background is never blank
+    drawBase();
+
+    // ✅ Notify aspect AFTER canvas is resized
+    notifyPhotoAspect(displayAspect);
+
     const frameWidth = canvas.width;
     const frameHeight = canvas.height;
 
     context.save();
     context.beginPath();
-    context.rect(frameX, frameY, frameWidth, frameHeight);
+    context.rect(0, 0, frameWidth, frameHeight);
     context.clip();
 
-    const imageAspect = image.width / image.height;
-    const frameAspect = frameWidth / frameHeight;
-    let sourceX = 0;
-    let sourceY = 0;
-    let sourceWidth = image.width;
-    let sourceHeight = image.height;
-
-    if (imageAspect > frameAspect) {
-      sourceWidth = image.height * frameAspect;
-      sourceX = (image.width - sourceWidth) / 2;
+    // Cover fit: fill frame, crop overflow
+    let drawWidth, drawHeight;
+    if (imageAspect > frameWidth / frameHeight) {
+      drawHeight = frameHeight;
+      drawWidth = drawHeight * imageAspect;
     } else {
-      sourceHeight = image.width / frameAspect;
-      sourceY = (image.height - sourceHeight) / 2;
+      drawWidth = frameWidth;
+      drawHeight = drawWidth / imageAspect;
     }
 
-    context.drawImage(
-      image,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
-      frameX,
-      frameY,
-      frameWidth,
-      frameHeight,
-    );
+    const drawX = (frameWidth - drawWidth) / 2;
+    const drawY = (frameHeight - drawHeight) / 2;
+    context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
 
     const overlay = context.createLinearGradient(0, 0, 0, frameHeight);
     overlay.addColorStop(0, "rgba(0,0,0,0.22)");
     overlay.addColorStop(0.25, "rgba(0,0,0,0)");
     overlay.addColorStop(1, "rgba(0,0,0,0.18)");
     context.fillStyle = overlay;
-    context.fillRect(frameX, frameY, frameWidth, frameHeight);
+    context.fillRect(0, 0, frameWidth, frameHeight);
     context.restore();
 
-    context.fillStyle = "rgba(255,255,255,0.88)";
-    context.fillRect(30, 30, 320, 80);
-    context.fillStyle = palette.photoTitleInk;
-    context.font = "700 44px Segoe UI";
-    context.fillText(entry.title, 54, 86);
+    drawTitleBadge({ text: entry.title, boxX: 30, boxY: 30, textX: 54, textY: 86, boxHeight: 80, maxBoxWidth: 560 });
   };
 
+  const drawPhotoUnavailable = (message = "Image unavailable") => {
+    canvas.width = 1024;
+    canvas.height = 768;
+    drawBase();
+    // ✅ Only notify aspect here, NOT at the top of the function
+    notifyPhotoAspect(canvas.width / canvas.height);
+    context.fillStyle = "rgba(40, 24, 42, 0.62)";
+    context.fillRect(170, 210, 684, 300);
+    context.strokeStyle = "rgba(255, 255, 255, 0.86)";
+    context.lineWidth = 3;
+    context.strokeRect(170, 210, 684, 300);
+    context.fillStyle = "#ffffff";
+    context.font = "700 42px Segoe UI";
+    context.fillText("No Photo", 410, 342);
+    context.font = "500 30px Segoe UI";
+    context.fillText(message, 240, 396);
+    context.font = "500 20px Segoe UI";
+    context.fillStyle = "rgba(255, 255, 255, 0.9)";
+    context.fillText("Check image URL / permissions", 322, 440);
+  };
+
+  // ✅ Draw placeholder base only — do NOT call notifyPhotoAspect yet
   drawBase();
   texture.needsUpdate = true;
 
   const photoSource =
     typeof entry?.photo === "string" && entry.photo.trim().length > 0
-      ? entry.photo.trim()
-      : null;
+      ? entry.photo.trim() : null;
 
   if (photoSource) {
-    const image = new Image();
-    if (/^https?:\/\//i.test(photoSource)) {
-      image.crossOrigin = "anonymous";
-    }
-    image.onload = () => {
-      drawBase();
-      drawPhoto(image);
+    let settled = false;
+    const settle = () => { settled = true; };
+
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return;
+      drawPhotoUnavailable("Image request timed out");
       texture.needsUpdate = true;
+      settle();
+    }, 8000);
+
+    const image = new Image();
+    if (/^https?:\/\//i.test(photoSource)) image.crossOrigin = "anonymous";
+
+    image.onload = () => {
+      if (settled) return;
+      window.clearTimeout(timeoutId);
+      drawPhoto(image); // drawBase is called inside drawPhoto now
+      texture.needsUpdate = true;
+      settle();
     };
+
     image.onerror = () => {
-      // Fallback: use TextureLoader flow (same approach used in legacy ThreeRoom).
+      if (settled) return;
+      window.clearTimeout(timeoutId);
       const loader = new THREE.TextureLoader();
       loader.load(
         photoSource,
         (loadedTexture) => {
+          if (settled) { loadedTexture.dispose?.(); return; }
           const loadedImage = loadedTexture.image;
           if (loadedImage?.width && loadedImage?.height) {
-            drawBase();
             drawPhoto(loadedImage);
+            texture.needsUpdate = true;
+          } else {
+            drawPhotoUnavailable("Could not decode image");
             texture.needsUpdate = true;
           }
           loadedTexture.dispose?.();
+          settle();
         },
         undefined,
         () => {
+          if (settled) return;
+          drawPhotoUnavailable("Could not load image");
           texture.needsUpdate = true;
+          settle();
         },
       );
     };
     image.src = photoSource;
+  } else {
+    drawPhotoUnavailable("Missing image URL");
+    texture.needsUpdate = true;
   }
 
   return texture;
