@@ -24,14 +24,19 @@ const createEmptyProject = () => ({
   textSlots: [],
   roomPayload: null,
   interview: null,
+  reviewApprovedAt: null,
 });
 
 const loadProjects = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [{ ...demoProject }];
+    const parsed = stored ? JSON.parse(stored) : [{ ...demoProject }];
+    return parsed.map((project) => ({
+      ...project,
+      reviewApprovedAt: project.reviewApprovedAt || null,
+    }));
   } catch {
-    return [{ ...demoProject }];
+    return [{ ...demoProject, reviewApprovedAt: null }];
   }
 };
 
@@ -63,15 +68,30 @@ const App = () => {
 
   // Update only the active project
   const setProject = (updater) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === activeProject.id
-          ? typeof updater === 'function'
-            ? updater(p)
-            : updater
-          : p
-      )
-    );
+    setProjects((prev) => {
+      return prev.map((project) => {
+        if (project.id !== activeProject.id) return project;
+
+        const nextProject =
+          typeof updater === 'function' ? updater(project) : updater;
+
+        if (!nextProject || typeof nextProject !== 'object') return project;
+
+        const changed =
+          JSON.stringify(nextProject) !== JSON.stringify(project);
+
+        // Any data edit after approval should force a re-review.
+        if (
+          changed &&
+          project.reviewApprovedAt &&
+          nextProject.reviewApprovedAt === project.reviewApprovedAt
+        ) {
+          return { ...nextProject, reviewApprovedAt: null };
+        }
+
+        return nextProject;
+      });
+    });
   };
 
   const handleCreateNew = () => {
@@ -124,7 +144,11 @@ const App = () => {
         {/* 3D Memory Hall */}
         <Route
           path="/memory-hall"
-          element={<MemoryHallPage project={activeProject} />}
+          element={
+            activeProject?.reviewApprovedAt
+              ? <MemoryHallPage project={activeProject} />
+              : <Navigate to="/review" replace />
+          }
         />
 
         {/* Legacy / secondary routes */}
@@ -132,8 +156,18 @@ const App = () => {
           path="/upload"
           element={<UploadPage project={activeProject} setProject={setProject} />}
         />
-        <Route path="/review"  element={<ReviewPage project={activeProject} />} />
-        <Route path="/viewer"  element={<ViewerPage project={activeProject} />} />
+        <Route
+          path="/review"
+          element={<ReviewPage project={activeProject} setProject={setProject} />}
+        />
+        <Route
+          path="/viewer"
+          element={
+            activeProject?.reviewApprovedAt
+              ? <ViewerPage project={activeProject} />
+              : <Navigate to="/review" replace />
+          }
+        />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

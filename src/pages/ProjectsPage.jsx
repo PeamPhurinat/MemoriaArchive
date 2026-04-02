@@ -35,7 +35,8 @@ const ProjectsPage = ({ projects, onCreateNew, onSelectProject }) => {
   const go3D = (id, e) => {
     e.stopPropagation();
     onSelectProject(id);
-    navigate('/memory-hall');
+    const selected = projects.find((project) => project.id === id);
+    navigate(selected?.reviewApprovedAt ? '/memory-hall' : '/review');
   };
 
   const handleCreateNew = () => {
@@ -104,7 +105,7 @@ const ProjectsPage = ({ projects, onCreateNew, onSelectProject }) => {
                   className="ma-btn ma-btn-ghost ma-btn-sm"
                   onClick={(e) => go3D(p.id, e)}
                 >
-                  🧊 3D Room
+                  {p.reviewApprovedAt ? '🧊 Open 3D Room' : '🧊 Review → 3D'}
                 </button>
               </div>
             </div>

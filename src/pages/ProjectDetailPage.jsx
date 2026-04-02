@@ -120,9 +120,9 @@ const ProjectDetailPage = ({ project, setProject }) => {
             </button>
             <button
               className="ma-btn ma-btn-accent"
-              onClick={() => navigate('/memory-hall')}
+              onClick={() => navigate(project.reviewApprovedAt ? '/memory-hall' : '/review')}
             >
-              🧊 Open 3D Room
+              {project.reviewApprovedAt ? '🧊 Open 3D Room' : '🧊 Review & Generate 3D'}
             </button>
           </div>
         </div>

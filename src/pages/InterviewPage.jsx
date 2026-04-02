@@ -284,7 +284,7 @@ const InterviewPage = ({ project, setProject }) => {
         transcript: result.transcript,
       },
     }));
-    navigate('/memory-hall');
+    navigate('/review');
   };
 
   const orbClass = [
@@ -400,7 +400,7 @@ const InterviewPage = ({ project, setProject }) => {
             </div>
           ))}
           <button className="voice-apply-btn" onClick={applyResultToProject}>
-            นำไปใส่ห้อง 3D →
+            ไปหน้า Review ก่อนเข้า 3D →
           </button>
         </div>
       )}
