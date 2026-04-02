@@ -7,23 +7,29 @@ const ReviewPage = ({ project, setProject }) => {
   const memories = project?.memories || [];
   const textSlots = project?.textSlots || [];
   const audioSlots = project?.audioSlots || [];
-  const memoryPhotos = memories
-    .filter((memory) => Boolean(memory?.photo))
-    .map((memory, index) => ({
-      id: memory.id || `memory-photo-${index}`,
-      url: memory.photo,
-      name: memory.title || `Memory Photo ${index + 1}`,
-      source: 'memory',
-    }));
-  const allPhotos = [
-    ...photos.map((photo, index) => ({
+  const memoryPhotos = memories.map((memory, index) => ({
+    id: memory?.id || `memory-photo-${index}`,
+    url: memory?.photo || '',
+    name: memory?.title || `Memory ${index + 1}`,
+    source: 'memory',
+    slot: index + 1,
+    hasPhoto: Boolean(memory?.photo),
+  }));
+
+  const uploadedPhotos = photos
+    .filter((photo) => Boolean(photo?.url))
+    .map((photo, index) => ({
       id: photo?.id || `photo-${index}`,
       url: photo?.url || '',
       name: photo?.name || `Photo ${index + 1}`,
       source: 'upload',
-    })),
+      hasPhoto: Boolean(photo?.url),
+    }));
+
+  const allPhotos = [
+    ...uploadedPhotos,
     ...memoryPhotos,
-  ].filter((photo) => Boolean(photo.url));
+  ];
 
   const memorySlotCount = Math.max(
     photos.length,
@@ -66,11 +72,20 @@ const ReviewPage = ({ project, setProject }) => {
           <div className="memory-list">
             {allPhotos.map((photo, index) => (
               <div className="list-item" key={`${photo.source}-${photo.id}-${index}`}>
-                <span className="order-tag">#{index + 1}</span>
+                <span className="order-tag">#{photo.slot || index + 1}</span>
                 <div className="photo-thumb" style={{ width: '120px' }}>
-                  <img src={photo.url} alt={photo.name} />
+                  {photo.hasPhoto ? (
+                    <img src={photo.url} alt={photo.name} />
+                  ) : (
+                    <div className="small-note">ไม่มีรูป</div>
+                  )}
                 </div>
-                <div>{photo.name}</div>
+                <div>
+                  {photo.name}
+                  {!photo.hasPhoto ? (
+                    <div className="small-note">ไม่มีรูป</div>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>

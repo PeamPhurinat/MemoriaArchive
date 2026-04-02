@@ -223,56 +223,155 @@ export function createPhotoTexture(entry, themeKey = "dream") {
   canvas.width = 1024;
   canvas.height = 768;
   const context = canvas.getContext("2d");
-
   const palette = getTextureThemePalette(themeKey);
-  const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, palette.photoStart);
-  gradient.addColorStop(0.55, entry.color);
-  gradient.addColorStop(1, palette.photoEnd);
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, canvas.width, canvas.height);
 
-  context.globalAlpha = 0.45;
-  context.fillStyle = "rgba(255,255,255,0.55)";
-  context.beginPath();
-  context.arc(160, 132, 120, 0, Math.PI * 2);
-  context.fill();
+  const texture = new THREE.CanvasTexture(canvas);
 
-  context.fillStyle = palette.photoOrb;
-  context.beginPath();
-  context.arc(780, 210, 180, 0, Math.PI * 2);
-  context.fill();
-  context.globalAlpha = 1;
+  const drawBase = () => {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, palette.photoStart);
+    gradient.addColorStop(0.55, entry.color);
+    gradient.addColorStop(1, palette.photoEnd);
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
 
-  const hillColors = palette.hillColors;
-  hillColors.forEach((fill, index) => {
-    context.fillStyle = fill;
+    context.globalAlpha = 0.45;
+    context.fillStyle = "rgba(255,255,255,0.55)";
     context.beginPath();
-    context.moveTo(0, 530 + index * 34);
-    context.bezierCurveTo(150, 430 - index * 12, 320, 650, 510, 560 - index * 8);
-    context.bezierCurveTo(650, 500 - index * 10, 780, 720, 1024, 540 - index * 4);
-    context.lineTo(1024, 768);
-    context.lineTo(0, 768);
-    context.closePath();
+    context.arc(160, 132, 120, 0, Math.PI * 2);
     context.fill();
-  });
 
-  context.strokeStyle = "rgba(255,255,255,0.3)";
-  context.lineWidth = 4;
-  for (let index = 0; index < 5; index += 1) {
+    context.fillStyle = palette.photoOrb;
     context.beginPath();
-    context.moveTo(64, 90 + index * 110);
-    context.bezierCurveTo(250, 20 + index * 95, 520, 210 + index * 84, 940, 76 + index * 104);
-    context.stroke();
+    context.arc(780, 210, 180, 0, Math.PI * 2);
+    context.fill();
+    context.globalAlpha = 1;
+
+    const hillColors = palette.hillColors;
+    hillColors.forEach((fill, index) => {
+      context.fillStyle = fill;
+      context.beginPath();
+      context.moveTo(0, 530 + index * 34);
+      context.bezierCurveTo(150, 430 - index * 12, 320, 650, 510, 560 - index * 8);
+      context.bezierCurveTo(650, 500 - index * 10, 780, 720, 1024, 540 - index * 4);
+      context.lineTo(1024, 768);
+      context.lineTo(0, 768);
+      context.closePath();
+      context.fill();
+    });
+
+    context.strokeStyle = "rgba(255,255,255,0.3)";
+    context.lineWidth = 4;
+    for (let index = 0; index < 5; index += 1) {
+      context.beginPath();
+      context.moveTo(64, 90 + index * 110);
+      context.bezierCurveTo(250, 20 + index * 95, 520, 210 + index * 84, 940, 76 + index * 104);
+      context.stroke();
+    }
+
+    context.fillStyle = "rgba(255,255,255,0.88)";
+    context.fillRect(58, 56, 300, 94);
+    context.fillStyle = palette.photoTitleInk;
+    context.font = "700 44px Segoe UI";
+    context.fillText(entry.title, 82, 114);
+  };
+
+  const drawPhoto = (image) => {
+    const frameX = 0;
+    const frameY = 0;
+    const frameWidth = canvas.width;
+    const frameHeight = canvas.height;
+
+    context.save();
+    context.beginPath();
+    context.rect(frameX, frameY, frameWidth, frameHeight);
+    context.clip();
+
+    const imageAspect = image.width / image.height;
+    const frameAspect = frameWidth / frameHeight;
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceWidth = image.width;
+    let sourceHeight = image.height;
+
+    if (imageAspect > frameAspect) {
+      sourceWidth = image.height * frameAspect;
+      sourceX = (image.width - sourceWidth) / 2;
+    } else {
+      sourceHeight = image.width / frameAspect;
+      sourceY = (image.height - sourceHeight) / 2;
+    }
+
+    context.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      frameX,
+      frameY,
+      frameWidth,
+      frameHeight,
+    );
+
+    const overlay = context.createLinearGradient(0, 0, 0, frameHeight);
+    overlay.addColorStop(0, "rgba(0,0,0,0.22)");
+    overlay.addColorStop(0.25, "rgba(0,0,0,0)");
+    overlay.addColorStop(1, "rgba(0,0,0,0.18)");
+    context.fillStyle = overlay;
+    context.fillRect(frameX, frameY, frameWidth, frameHeight);
+    context.restore();
+
+    context.fillStyle = "rgba(255,255,255,0.88)";
+    context.fillRect(30, 30, 320, 80);
+    context.fillStyle = palette.photoTitleInk;
+    context.font = "700 44px Segoe UI";
+    context.fillText(entry.title, 54, 86);
+  };
+
+  drawBase();
+  texture.needsUpdate = true;
+
+  const photoSource =
+    typeof entry?.photo === "string" && entry.photo.trim().length > 0
+      ? entry.photo.trim()
+      : null;
+
+  if (photoSource) {
+    const image = new Image();
+    if (/^https?:\/\//i.test(photoSource)) {
+      image.crossOrigin = "anonymous";
+    }
+    image.onload = () => {
+      drawBase();
+      drawPhoto(image);
+      texture.needsUpdate = true;
+    };
+    image.onerror = () => {
+      // Fallback: use TextureLoader flow (same approach used in legacy ThreeRoom).
+      const loader = new THREE.TextureLoader();
+      loader.load(
+        photoSource,
+        (loadedTexture) => {
+          const loadedImage = loadedTexture.image;
+          if (loadedImage?.width && loadedImage?.height) {
+            drawBase();
+            drawPhoto(loadedImage);
+            texture.needsUpdate = true;
+          }
+          loadedTexture.dispose?.();
+        },
+        undefined,
+        () => {
+          texture.needsUpdate = true;
+        },
+      );
+    };
+    image.src = photoSource;
   }
 
-  context.fillStyle = "rgba(255,255,255,0.88)";
-  context.fillRect(58, 56, 300, 94);
-  context.fillStyle = palette.photoTitleInk;
-  context.font = "700 44px Segoe UI";
-  context.fillText(entry.title, 82, 114);
-
-  return new THREE.CanvasTexture(canvas);
+  return texture;
 }
 
 export function createDescriptionTexture(entry, themeKey = "dream") {

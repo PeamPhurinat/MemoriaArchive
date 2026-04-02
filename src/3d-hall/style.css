@@ -1,14 +1,5 @@
-.memory-hall-root {
-  --mh-bg: #fff7fc;
-  --mh-panel: rgba(255, 245, 250, 0.58);
-  --mh-line: rgba(255, 201, 225, 0.72);
-  --mh-text: #ffffff;
-  --mh-muted: rgba(177, 112, 146, 0.92);
-  --mh-accent: #f3b7d6;
-  --mh-warm: #ffdce9;
+:root {
   color-scheme: dark;
-<<<<<<< HEAD:src/3d-hall/style.css
-=======
   --panel: rgba(255, 245, 250, 0.58);
   --line: rgba(255, 201, 225, 0.72);
   --muted: rgba(177, 112, 146, 0.92);
@@ -27,8 +18,12 @@
   --ui-input-border: rgba(228, 174, 205, 0.95);
   --ui-reticle: rgba(255, 231, 242, 0.96);
 }
->>>>>>> Tee:src/style.css
 
+* {
+  box-sizing: border-box;
+}
+
+.memory-hall-root {
   position: fixed;
   inset: 0;
   margin: 0;
@@ -43,10 +38,7 @@
   font-family: "Segoe UI", "Helvetica Neue", sans-serif;
 }
 
-<<<<<<< HEAD:src/3d-hall/style.css
-.memory-hall-root canvas {
-=======
-body[data-world-theme="dream"] {
+.memory-hall-root[data-world-theme="dream"] {
   --panel: rgba(255, 245, 250, 0.58);
   --line: rgba(255, 201, 225, 0.72);
   --muted: rgba(177, 112, 146, 0.92);
@@ -66,7 +58,7 @@ body[data-world-theme="dream"] {
   --ui-reticle: rgba(255, 231, 242, 0.96);
 }
 
-body[data-world-theme="midnight"] {
+.memory-hall-root[data-world-theme="midnight"] {
   --panel: rgba(24, 28, 50, 0.72);
   --line: rgba(122, 146, 226, 0.52);
   --muted: rgba(186, 202, 255, 0.88);
@@ -90,7 +82,7 @@ body[data-world-theme="midnight"] {
     linear-gradient(180deg, #11142e 0%, #1a1f43 32%, #26295a 62%, #141636 100%);
 }
 
-body[data-world-theme="sunset"] {
+.memory-hall-root[data-world-theme="sunset"] {
   --panel: rgba(255, 241, 222, 0.68);
   --line: rgba(229, 157, 123, 0.62);
   --muted: rgba(130, 82, 65, 0.9);
@@ -115,30 +107,29 @@ body[data-world-theme="sunset"] {
 }
 
 canvas {
->>>>>>> Tee:src/style.css
   display: block;
 }
 
-.memory-hall-root .mh-overlay {
+.overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
 }
 
-.memory-hall-root .mh-title-card {
+.title-card {
   position: absolute;
   top: 24px;
   left: 24px;
   max-width: 320px;
   padding: 18px 20px;
-  border: 1px solid var(--mh-line);
+  border: 1px solid var(--line);
   border-radius: 22px;
-  background: var(--mh-panel);
+  background: var(--panel);
   backdrop-filter: blur(20px);
   box-shadow: 0 24px 70px var(--ui-shadow);
 }
 
-.memory-hall-root .mh-eyebrow {
+.eyebrow {
   margin: 0 0 8px;
   color: var(--ui-btn-text);
   font-size: 0.72rem;
@@ -147,40 +138,39 @@ canvas {
   text-transform: uppercase;
 }
 
-.memory-hall-root .mh-title-card h1 {
+.title-card h1 {
   margin: 0;
   color: var(--ui-heading);
   font-size: clamp(1.9rem, 3vw, 3rem);
   line-height: 0.94;
-  color: #fff;
 }
 
-.memory-hall-root .mh-title-card p {
+.title-card p {
   margin: 12px 0 0;
-  color: var(--mh-muted);
+  color: var(--muted);
   line-height: 1.5;
 }
 
-.memory-hall-root .mh-controls {
+.controls {
   position: absolute;
   right: 24px;
   bottom: 24px;
   width: min(320px, calc(100vw - 48px));
   padding: 16px 18px;
-  border: 1px solid var(--mh-line);
+  border: 1px solid var(--line);
   border-radius: 22px;
-  background: var(--mh-panel);
+  background: var(--panel);
   backdrop-filter: blur(20px);
   box-shadow: 0 24px 60px var(--ui-shadow);
 }
 
-.memory-hall-root .mh-controls p {
+.controls p {
   margin: 0;
-  color: var(--mh-muted);
+  color: var(--muted);
   line-height: 1.45;
 }
 
-.memory-hall-root .mh-launch {
+.launch {
   position: absolute;
   left: 24px;
   bottom: 24px;
@@ -201,47 +191,22 @@ canvas {
   box-shadow: 0 18px 46px var(--ui-shadow);
 }
 
-.memory-hall-root .mh-launch:hover {
+.launch:hover {
   transform: translateY(-1px);
   box-shadow: 0 22px 54px var(--ui-shadow);
 }
 
-.memory-hall-root .mh-launch.is-hidden {
+.launch.is-hidden {
   opacity: 0;
   pointer-events: none;
 }
 
-.memory-hall-root .mh-launch.is-disabled {
+.launch.is-disabled {
   opacity: 0.48;
   pointer-events: none;
 }
 
-<<<<<<< HEAD:src/3d-hall/style.css
-.memory-hall-root .mh-back-btn {
-  position: absolute;
-  left: 24px;
-  top: 24px;
-  pointer-events: auto;
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 207, 227, 0.92);
-  border-radius: 999px;
-  background: rgba(255, 244, 250, 0.9);
-  color: #a25f86;
-  font: inherit;
-  font-size: 0.92rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 12px 32px rgba(234, 186, 210, 0.24);
-}
-
-.memory-hall-root .mh-back-btn:hover {
-  transform: translateY(-1px);
-}
-
-.memory-hall-root .mh-mode-toggle {
-=======
 .menu-toggle {
->>>>>>> Tee:src/style.css
   position: absolute;
   top: 24px;
   right: 24px;
@@ -262,11 +227,7 @@ canvas {
   box-shadow: 0 12px 32px var(--ui-shadow);
 }
 
-<<<<<<< HEAD:src/3d-hall/style.css
-.memory-hall-root .mh-mode-toggle:hover {
-=======
 .menu-toggle:hover {
->>>>>>> Tee:src/style.css
   transform: translateY(-1px);
   box-shadow: 0 16px 40px var(--ui-shadow);
 }
@@ -315,11 +276,6 @@ canvas {
   background: var(--ui-btn-hover);
 }
 
-<<<<<<< HEAD:src/3d-hall/style.css
-.memory-hall-root .mh-mode-toggle.is-active {
-  background: rgba(255, 229, 242, 0.96);
-  color: #8e486f;
-=======
 .mode-toggle.is-active {
   background: var(--ui-btn-active-bg);
   border-color: var(--ui-btn-active-border);
@@ -379,16 +335,15 @@ canvas {
 
 .theme-preview-sunset {
   background: linear-gradient(150deg, #e09db2, #efab9f 46%, #fff0d4);
->>>>>>> Tee:src/style.css
 }
 
-.memory-hall-root .mh-custom-panel {
+.custom-panel {
   position: absolute;
   left: 24px;
   bottom: 90px;
   width: min(420px, calc(100vw - 48px));
   padding: 16px;
-  border: 1px solid var(--mh-line);
+  border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--panel);
   backdrop-filter: blur(16px);
@@ -397,11 +352,11 @@ canvas {
   display: none;
 }
 
-.memory-hall-root .mh-custom-panel.is-visible {
+.custom-panel.is-visible {
   display: block;
 }
 
-.memory-hall-root .mh-custom-title {
+.custom-title {
   margin: 0 0 10px;
   color: var(--ui-btn-text);
   font-size: 0.96rem;
@@ -409,7 +364,7 @@ canvas {
   letter-spacing: 0.03em;
 }
 
-.memory-hall-root .mh-custom-label {
+.custom-label {
   display: block;
   margin: 0 0 6px;
   color: var(--ui-btn-text);
@@ -419,7 +374,7 @@ canvas {
   text-transform: uppercase;
 }
 
-.memory-hall-root .mh-custom-user-input {
+.custom-user-input {
   width: 100%;
   margin: 0;
   padding: 9px 10px;
@@ -430,36 +385,31 @@ canvas {
   font: inherit;
 }
 
-<<<<<<< HEAD:src/3d-hall/style.css
-.memory-hall-root .mh-custom-user-input:focus {
-  outline: 2px solid rgba(235, 171, 208, 0.45);
-=======
 .custom-user-input:focus {
   outline: 2px solid var(--ui-btn-active-border);
->>>>>>> Tee:src/style.css
   outline-offset: 1px;
 }
 
-.memory-hall-root .mh-custom-actions {
+.custom-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
 }
 
-.memory-hall-root .mh-custom-scale-row {
+.custom-scale-row {
   margin-top: 6px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.memory-hall-root .mh-custom-scale {
+.custom-scale {
   flex: 1;
   accent-color: var(--ui-btn-text);
 }
 
-.memory-hall-root .mh-custom-scale-value {
+.custom-scale-value {
   min-width: 48px;
   text-align: right;
   color: var(--ui-text);
@@ -467,7 +417,7 @@ canvas {
   font-weight: 700;
 }
 
-.memory-hall-root .mh-custom-actions button {
+.custom-actions button {
   padding: 8px 10px;
   border: 1px solid var(--ui-btn-border);
   border-radius: 10px;
@@ -480,16 +430,6 @@ canvas {
   transition: background 140ms ease;
 }
 
-<<<<<<< HEAD:src/3d-hall/style.css
-.memory-hall-root .mh-custom-actions button:hover {
-  background: rgba(255, 232, 244, 0.96);
-}
-
-.memory-hall-root .mh-custom-actions button.is-active {
-  background: rgba(255, 219, 239, 0.98);
-  border-color: rgba(223, 147, 190, 0.95);
-  color: #7d3e61;
-=======
 .custom-actions button:hover {
   background: var(--ui-btn-hover);
 }
@@ -498,24 +438,23 @@ canvas {
   background: var(--ui-btn-active-bg);
   border-color: var(--ui-btn-active-border);
   color: var(--ui-btn-active-text);
->>>>>>> Tee:src/style.css
 }
 
-.memory-hall-root .mh-custom-hint {
+.custom-hint {
   margin: 10px 0 0;
   color: var(--muted);
   font-size: 0.8rem;
   line-height: 1.35;
 }
 
-.memory-hall-root .mh-custom-status {
+.custom-status {
   margin: 8px 0 0;
   color: var(--ui-text);
   font-size: 0.84rem;
   line-height: 1.4;
 }
 
-.memory-hall-root .mh-reticle {
+.reticle {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -528,32 +467,32 @@ canvas {
   transition: opacity 180ms ease;
 }
 
-.memory-hall-root .mh-reticle::before,
-.memory-hall-root .mh-reticle::after {
+.reticle::before,
+.reticle::after {
   content: "";
   position: absolute;
   background: var(--ui-reticle);
 }
 
-.memory-hall-root .mh-reticle::before {
+.reticle::before {
   top: 7px;
   left: 2px;
   right: 2px;
   height: 1px;
 }
 
-.memory-hall-root .mh-reticle::after {
+.reticle::after {
   left: 7px;
   top: 2px;
   bottom: 2px;
   width: 1px;
 }
 
-.memory-hall-root .mh-reticle.is-visible {
+.reticle.is-visible {
   opacity: 1;
 }
 
-.memory-hall-root .mh-vr-button {
+.vr-button {
   right: 24px !important;
   bottom: 176px !important;
   left: auto !important;
@@ -564,38 +503,26 @@ canvas {
 }
 
 @media (max-width: 720px) {
-  .memory-hall-root .mh-title-card,
-  .memory-hall-root .mh-controls,
-  .memory-hall-root .mh-launch {
+  .title-card,
+  .controls,
+  .launch {
     left: 16px;
     right: 16px;
     width: auto;
   }
 
-<<<<<<< HEAD:src/3d-hall/style.css
-  .memory-hall-root .mh-mode-toggle,
-  .memory-hall-root .mh-custom-panel {
-=======
   .menu-toggle,
   .custom-panel {
->>>>>>> Tee:src/style.css
     left: 16px;
     right: 16px;
     width: auto;
   }
 
-<<<<<<< HEAD:src/3d-hall/style.css
-  .memory-hall-root .mh-mode-toggle {
-=======
   .menu-toggle {
->>>>>>> Tee:src/style.css
     top: 16px;
     text-align: center;
   }
 
-<<<<<<< HEAD:src/3d-hall/style.css
-  .memory-hall-root .mh-controls {
-=======
   .menu-panel {
     top: 60px;
     left: 16px;
@@ -604,22 +531,21 @@ canvas {
   }
 
   .controls {
->>>>>>> Tee:src/style.css
     bottom: 16px;
   }
 
-  .memory-hall-root .mh-launch {
+  .launch {
     bottom: 126px;
     text-align: center;
   }
 
-  .memory-hall-root .mh-custom-panel {
+  .custom-panel {
     bottom: 178px;
     max-height: min(46vh, 320px);
     overflow-y: auto;
   }
 
-  .memory-hall-root .mh-title-card {
+  .title-card {
     top: 16px;
     max-width: none;
     padding-top: 64px;

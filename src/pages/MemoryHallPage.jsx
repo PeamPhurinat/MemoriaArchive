@@ -1,93 +1,76 @@
 import React, { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { initMemoryHall } from '../3d-hall/memoryHallScene';
 import '../3d-hall/style.css';
 
+const buildMemoryHallSlots = (project) => {
+  const memories = Array.isArray(project?.memories) ? project.memories : [];
+  const textSlots = Array.isArray(project?.textSlots) ? project.textSlots : [];
+  const photos = Array.isArray(project?.photos) ? project.photos : [];
+
+  const slotCount = Math.max(memories.length, textSlots.length, photos.length);
+  if (slotCount === 0) {
+    return null;
+  }
+
+  return Array.from({ length: Math.min(slotCount, 5) }, (_, index) => {
+    const memory = memories[index] || {};
+    const textSlot = textSlots[index] || {};
+    const photo = photos[index] || {};
+
+    const title =
+      memory?.title ||
+      textSlot?.title ||
+      photo?.name ||
+      `Memory ${index + 1}`;
+
+    const description =
+      memory?.description ||
+      memory?.text ||
+      textSlot?.text ||
+      textSlot?.description ||
+      'No description provided.';
+
+    return {
+      id: memory?.id || textSlot?.id || photo?.id || `memory-slot-${index + 1}`,
+      year: memory?.year || textSlot?.year || `#${index + 1}`,
+      title,
+      note: memory?.note || textSlot?.note || 'Interview Memory',
+      description,
+      text: description,
+      voice:
+        memory?.voice ||
+        textSlot?.voice ||
+        memory?.sourceQuote ||
+        textSlot?.sourceQuote ||
+        description,
+      photo:
+        memory?.photo ||
+        memory?.url ||
+        textSlot?.photo ||
+        textSlot?.url ||
+        photo?.url ||
+        null,
+    };
+  });
+};
+
 const MemoryHallPage = ({ project }) => {
   const containerRef = useRef(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const memories =
-      project?.textSlots?.length > 0 ? project.textSlots :
-      project?.memories?.length > 0  ? project.memories  :
-      null;
-    const cleanup = initMemoryHall(container, memories);
+
+    const memoriesData = buildMemoryHallSlots(project);
+
+    const cleanup = initMemoryHall(container, memoriesData);
+
     return () => {
       if (cleanup) cleanup();
     };
   }, [project]);
 
-  return (
-    <div ref={containerRef} className="memory-hall-root">
-      <div className="mh-overlay">
-        <section className="mh-title-card">
-          <p className="mh-eyebrow">Memoria Prototype</p>
-          <h1>Dream Archive Realm</h1>
-          <p>
-            A drifting timeline of memories arranged left and right through the
-            dream realm. Follow photos, written descriptions, and floating voice
-            clouds step by step through the archive.
-          </p>
-        </section>
-        <button className="mh-launch" type="button">Enter the realm</button>
-        <button className="mh-back-btn" type="button" onClick={() => navigate('/projects')}>
-          ← My Projects
-        </button>
-        <button className="mh-mode-toggle" type="button" aria-pressed="false">
-          Switch to Custom Mode
-        </button>
-        <section className="mh-controls">
-          <p>
-            View mode: move with W A S D and look with the mouse. Custom mode: click memory
-            stations to move, resize, or delete them, then save each user layout. Press Esc
-            to unlock. Use the VR button when WebXR is available.
-          </p>
-        </section>
-        <section className="mh-custom-panel" aria-live="polite">
-          <p className="mh-custom-title">Memory Layout Customizer</p>
-          <label className="mh-custom-label" htmlFor="custom-user-id">User ID</label>
-          <input
-            id="custom-user-id"
-            className="mh-custom-user-input"
-            type="text"
-            maxLength="32"
-            placeholder="guest"
-          />
-          <div className="mh-custom-actions">
-            <button className="mh-tool-move is-active" type="button">Move</button>
-            <button className="mh-tool-resize" type="button">Resize</button>
-            <button className="mh-tool-delete" type="button">Delete Selected</button>
-          </div>
-          <label className="mh-custom-label" htmlFor="custom-scale">Scale</label>
-          <div className="mh-custom-scale-row">
-            <input
-              id="custom-scale"
-              className="mh-custom-scale"
-              type="range"
-              min="0.35"
-              max="3"
-              step="0.01"
-              defaultValue="1"
-            />
-            <span className="mh-custom-scale-value">100%</span>
-          </div>
-          <div className="mh-custom-actions">
-            <button className="mh-tool-save" type="button">Save Layout</button>
-            <button className="mh-tool-load" type="button">Load Layout</button>
-            <button className="mh-tool-reset" type="button">Reset Layout</button>
-          </div>
-          <p className="mh-custom-hint">
-            Tip: press E for move, R for resize, and Delete to remove selected memory.
-          </p>
-          <p className="mh-custom-status">View mode enabled.</p>
-        </section>
-        <div className="mh-reticle" aria-hidden="true"></div>
-      </div>
-    </div>
-  );
+  return <div ref={containerRef} className="memory-hall-root" />;
 };
 
 export default MemoryHallPage;

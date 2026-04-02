@@ -5,8 +5,8 @@ import { PointerLockControls } from "three/examples/jsm/controls/PointerLockCont
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { VRButton } from "three/examples/jsm/webxr/VRButton.js";
 import { isSupabaseConfigured, loadLayoutFromCloud, saveLayoutToCloud } from "./supabaseClient.js";
-import { AppShell } from "./ui/AppShell.js";
-import { WorldBuilder } from "./world/WorldBuilder.js";
+import { AppShell } from "./3d-hall/ui/AppShell.js";
+import { WorldBuilder } from "./3d-hall/world/WorldBuilder.js";
 
 const app = document.querySelector("#app");
 const appShell = new AppShell(app);

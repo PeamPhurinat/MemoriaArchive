@@ -11,12 +11,20 @@ import {
 } from "./textureFactory.js";
 
 export class WorldBuilder {
-  constructor({ scene, animatedObjects, pulseLights, world, registerCustomizableComponent }) {
+  constructor({
+    scene,
+    animatedObjects,
+    pulseLights,
+    world,
+    registerCustomizableComponent,
+    memoriesData = null,
+  }) {
     this.scene = scene;
     this.animatedObjects = animatedObjects;
     this.pulseLights = pulseLights;
     this.world = world;
     this.registerCustomizableComponent = registerCustomizableComponent;
+    this.memoriesData = memoriesData;
     this.memoryStations = [];
     this.activeThemeKey = "dream";
     this.groundMesh = null;
@@ -25,14 +33,15 @@ export class WorldBuilder {
     this.mistMaterials = [];
   }
 
-  buildAll() {
+  buildAll(memoriesData = this.memoriesData) {
+    this.memoriesData = memoriesData;
     this.createGround();
     this.createSkyHalo();
     this.createSkyMist();
     this.createBrokenColumns();
     this.createStandingPillars();
     this.createTimelineTrail();
-    this.createMemoryMonoliths();
+    this.createMemoryMonoliths(memoriesData);
     this.createFloatingRuinFragments();
     this.createDreamParticles();
     this.createGlitterStars();
@@ -250,9 +259,9 @@ export class WorldBuilder {
     return group;
   }
 
-  createMemoryMonoliths() {
+  createMemoryMonoliths(memoriesData = this.memoriesData) {
     const dreamThemeColors = this.getMemoryThemeColors("dream");
-    const entries = [
+    const demoEntries = [
       {
         year: "2012",
         title: "Lantern Festival",
@@ -304,6 +313,38 @@ export class WorldBuilder {
         side: -1,
       },
     ];
+
+    const slotPositions = [
+      { x: -11, z: 18, side: -1 },
+      { x: 10, z: 4, side: 1 },
+      { x: -9, z: -11, side: -1 },
+      { x: 11, z: -28, side: 1 },
+      { x: -10, z: -45, side: -1 },
+    ];
+
+    const mappedEntries =
+      Array.isArray(memoriesData) && memoriesData.length > 0
+        ? memoriesData.slice(0, 5).map((memory, index) => ({
+            year: memory?.year || `#${index + 1}`,
+            title: memory?.title || `Memory ${index + 1}`,
+            note: memory?.note || "Interview Memory",
+            photo: memory?.photo || memory?.url || null,
+            description:
+              memory?.description ||
+              memory?.text ||
+              "No description provided.",
+            voice:
+              memory?.voice ||
+              memory?.sourceQuote ||
+              memory?.description ||
+              "No voice memory.",
+            x: slotPositions[index].x,
+            z: slotPositions[index].z,
+            side: slotPositions[index].side,
+          }))
+        : [];
+
+    const entries = mappedEntries.length > 0 ? mappedEntries : demoEntries;
 
     entries.forEach((entry, index) => {
       const themedEntry = {
@@ -438,6 +479,7 @@ export class WorldBuilder {
           description: themedEntry.description,
           voice: themedEntry.voice,
           side: themedEntry.side,
+          photo: themedEntry.photo || null,
         },
         photoPanel,
         archivePanel,

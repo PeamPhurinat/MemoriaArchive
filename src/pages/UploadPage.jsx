@@ -27,17 +27,34 @@ const UploadPage = ({ project, setProject }) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    const newPhotos = files.map((file, index) => ({
-      id: `${Date.now()}-${index}`,
-      url: URL.createObjectURL(file),
-      name: file.name,
-      source: 'upload'
-    }));
-
-    setProject((prev) => ({
-      ...prev,
-      photos: [...prev.photos, ...newPhotos]
-    }));
+    Promise.all(
+      files.map(
+        (file, index) =>
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () =>
+              resolve({
+                id: `${Date.now()}-${index}`,
+                url: typeof reader.result === 'string' ? reader.result : '',
+                name: file.name,
+                source: 'upload'
+              });
+            reader.onerror = () =>
+              resolve({
+                id: `${Date.now()}-${index}`,
+                url: '',
+                name: file.name,
+                source: 'upload'
+              });
+            reader.readAsDataURL(file);
+          })
+      )
+    ).then((newPhotos) => {
+      setProject((prev) => ({
+        ...prev,
+        photos: [...prev.photos, ...newPhotos]
+      }));
+    });
   };
 
   const handleAddMemory = () => {
