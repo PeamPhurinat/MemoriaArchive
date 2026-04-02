@@ -13,50 +13,47 @@ const SUMMARY_SYSTEM_PROMPT = [
   "  analysis: { themes: string[], tone: string, highlights: string[] }",
   "  memoryCards: { title: string, description: string, emotion: string, sourceQuote: string }[]",
   "Rules:",
-  "- Extract 4 to 8 distinct memoryCards from real moments in the conversation.",
+  "- Extract 1 to 8 distinct memoryCards from real moments in the conversation.",
+  "- Never output more cards than the number of user messages.",
+  "- Never invent facts that are not explicitly stated by the user.",
   "- Each card must describe a specific event or moment, not a general feeling.",
   "- description: concrete and vivid, <= 180 chars.",
-  "- sourceQuote: an actual phrase or sentence from the user's own words.",
+  "- sourceQuote: an exact phrase from the user's own words.",
   "- Do not duplicate cards with the same event.",
   "- tone should reflect the overall mood of the conversation.",
   "- highlights: 2-3 most emotionally significant moments."
 ].join("\n");
 
-const STEP_SYSTEM_PROMPT = `You are Nong, a warm and empathetic Thai interviewer helping a user preserve their shared memories in a 3D memory room.
+const STEP_SYSTEM_PROMPT = `You are Nong, a warm and empathetic interviewer helping a user preserve shared memories in a 3D memory room.
 
 Your personality:
-- Genuine, curious, and emotionally present — like a close friend who really wants to hear the story
-- React with real emotion before asking the next question:
-  e.g. "ฟังดูน่าประทับใจมากเลย!", "อ้าว จริงๆ ด้วย? แล้วตอนนั้นรู้สึกยังไงบ้าง?"
-- Never robotic, never form-filling
-- Speak Thai naturally and warmly. Keep each message to 2-4 sentences max.
+- Genuine, curious, and emotionally present, like a close friend
+- React briefly with emotion before your next question
+- Never robotic and never checklist-like
+- Speak naturally in English, with 2-4 sentences per reply
 
 How you interview:
-1. Read what the user just said carefully.
-2. Respond with a brief emotional reaction that shows you were listening.
-3. Ask ONE follow-up question — based on something they actually said, not a checklist.
-   Examples of good follow-ups:
-   - "แล้วตอนนั้นอยู่ที่ไหนกัน?"
-   - "เล่าให้ฟังเพิ่มเติมได้ไหมว่าเกิดอะไรขึ้น?"
-   - "ตอนนั้นรู้สึกยังไงบ้าง?"
-   - "มีอะไรที่จำได้แม่นๆ จากวันนั้นไหม?"
-4. A memory is complete enough for a card when you know: what happened, roughly when/where, and how they felt.
-   When it's complete, transition naturally: "ขอบคุณที่เล่าให้ฟังนะ ✨ แล้วมีความทรงจำอีกช่วงไหนที่อยากเก็บไว้บ้างไหม?"
-5. After 4+ cards, if the user seems to be running out of stories, gently offer to wrap up.
-6. After 8 cards, thank them warmly and set readyToFinish = true.
+1. Read the user's latest message carefully.
+2. Respond with a brief emotional acknowledgment.
+3. Ask exactly one follow-up question based on what the user just said.
+4. A memory is card-ready when you understand: what happened, roughly when or where, and how they felt.
+5. After 4+ cards, if stories are running out, gently offer to wrap up.
+6. After 8 cards, thank the user and set readyToFinish = true.
 
-What NOT to do:
-- Do NOT ask about "what, where, when, feeling" in order like a form
-- Do NOT ask multiple questions at once
-- Do NOT repeat question patterns you just used
-- Do NOT ignore emotional cues in the user's message
+Do not:
+- Ask a rigid form sequence
+- Ask multiple questions at once
+- Repeat the same question pattern
+- Ignore emotional signals
+- Add details that the user did not say
+- Add more than one new card from a single user turn
 
-Output ONLY strict JSON (no markdown, no extra text):
+Output ONLY strict JSON (no markdown):
 {
-  "assistantMessage": "your warm 2-4 sentence response in Thai",
+  "assistantMessage": "your warm 2-4 sentence response in English",
   "updatedState": {
-    "currentThread": "one-line description of the story currently being explored",
-    "turnsOnCurrentThread": <number, reset to 0 when moving to new topic>,
+    "currentThread": "one-line description of current memory thread",
+    "turnsOnCurrentThread": <number, reset to 0 when moving to a new thread>,
     "cards": [<all completed cards including previous ones>],
     "readyToFinish": <boolean>
   }
@@ -64,10 +61,10 @@ Output ONLY strict JSON (no markdown, no extra text):
 
 Card format:
 {
-  "title": "3-5 word memorable title in Thai",
-  "description": "concrete vivid description of the moment, <= 160 chars",
-  "emotion": "primary emotion word in Thai (e.g. ตื้นตัน, ตื่นเต้น, อบอุ่น)",
-  "sourceQuote": "actual phrase from user's own words, <= 100 chars"
+  "title": "3-5 word memorable title in English",
+  "description": "concrete vivid description, <= 160 chars",
+  "emotion": "primary emotion word in English (e.g. joyful, nostalgic, calm)",
+  "sourceQuote": "exact phrase from the user's own words, <= 100 chars"
 }`;
 
 const INITIAL_STATE = {
@@ -214,49 +211,64 @@ const buildRecentTranscript = (messages, limit = 20, userName = "User") =>
     .map((msg) => `${msg.role === "assistant" ? "Nong" : userName}: ${msg.content}`)
     .join("\n");
 
-const ensureMinCards = (cards, messages) => {
-  const normalized = dedupeCards(
-    cards.map((card, index) => normalizeCard(card, index)).filter(Boolean)
-  );
-  if (normalized.length >= MIN_CARDS) return normalized.slice(0, MAX_CARDS);
+const normalizeForMatch = (value) =>
+  asText(value)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
-  const userLines = messages
+const extractUserLines = (messages) =>
+  messages
     .filter((msg) => msg.role === "user")
     .map((msg) => asText(msg.content))
     .filter(Boolean);
 
-  for (let i = 0; i < userLines.length && normalized.length < MIN_CARDS; i += 1) {
-    const line = userLines[i];
-    normalized.push({
-      title: `Memory ${normalized.length + 1}`,
-      description: line.slice(0, 180),
-      emotion: "",
-      sourceQuote: line.slice(0, 120)
-    });
-  }
+const hasEvidenceInUserLines = (card, userLines) => {
+  const quote = normalizeForMatch(card?.sourceQuote);
+  if (!quote) return false;
+  return userLines.some((line) => normalizeForMatch(line).includes(quote));
+};
 
-  return dedupeCards(normalized).slice(0, MAX_CARDS);
+const keepEvidenceBasedCards = (cards, userLines) =>
+  dedupeCards(
+    cards
+      .map((card, index) => normalizeCard(card, index))
+      .filter(Boolean)
+      .filter((card) => hasEvidenceInUserLines(card, userLines))
+  ).slice(0, MAX_CARDS);
+
+const buildFallbackCardFromUserLine = (userLines) => {
+  if (!Array.isArray(userLines) || userLines.length === 0) return [];
+  const latestLine = asText(userLines[userLines.length - 1]);
+  if (!latestLine) return [];
+  return [{
+    title: "Memory 1",
+    description: latestLine.slice(0, 180),
+    emotion: "",
+    sourceQuote: latestLine.slice(0, 100)
+  }];
 };
 
 const buildFirstQuestion = (userName) =>
-  `สวัสดีครับ ${userName}! ยินดีมากเลยที่ได้มาช่วยเก็บความทรงจำดีๆ ไว้ด้วยกัน 😊\n\nเริ่มเลยนะครับ — มีช่วงเวลาไหนกับคนพิเศษที่นึกถึงแล้วยังรู้สึกดีอยู่เลย? เล่าให้ฟังได้เลย ไม่ต้องเป็นเรื่องใหญ่โตก็ได้ครับ`;
+  `Hi ${userName}! I am glad to help you preserve meaningful memories for your 3D room.\n\nTo start, what is one moment with your special person that still feels vivid to you? You can share any story, big or small.`;
 
 const runInterviewerStep = async ({ userName, latestUserMessage, recentMessages, state }) => {
   const cardsSummary = state.cards.length === 0
-    ? "ยังไม่มี card ที่สมบูรณ์"
-    : state.cards.map((c, i) => `  ${i + 1}. "${c.title}" — ${c.description}`).join("\n");
+    ? "No completed memory cards yet."
+    : state.cards.map((c, i) => `  ${i + 1}. "${c.title}" - ${c.description}`).join("\n");
 
   const payloadPrompt = [
-    `ชื่อผู้ใช้: ${userName}`,
-    `Cards ที่เก็บได้แล้ว: ${state.cards.length}/${MAX_CARDS}`,
-    `Cards ที่เก็บแล้ว:\n${cardsSummary}`,
-    `กำลังคุยเรื่อง: ${state.currentThread || "(เพิ่งเริ่ม)"}`,
-    `เทิร์นที่ใช้กับเรื่องนี้: ${state.turnsOnCurrentThread}`,
+    `User name: ${userName}`,
+    `Cards collected: ${state.cards.length}/${MAX_CARDS}`,
+    `Completed cards:\n${cardsSummary}`,
+    `Current thread: ${state.currentThread || "(just started)"}`,
+    `Turns on this thread: ${state.turnsOnCurrentThread}`,
     "",
-    "บทสนทนาล่าสุด:",
+    "Recent transcript:",
     buildRecentTranscript(recentMessages, 20, userName),
     "",
-    `ผู้ใช้พึ่งพูดว่า: "${latestUserMessage}"`
+    `Latest user message: "${latestUserMessage}"`
   ].join("\n");
 
   const raw = await callChat(
@@ -279,13 +291,12 @@ const runInterviewerStep = async ({ userName, latestUserMessage, recentMessages,
     updatedState
   };
 };
-
 const startInterviewSession = async ({ projectId, userName, durationMinutes }) => {
   assertOpenAiKey();
 
   const cleanProjectId = sanitizeProjectId(projectId);
   const duration = Number(durationMinutes) > 0 ? Number(durationMinutes) : interviewDurationMinutes;
-  const safeUserName = asText(userName) || "ผู้ใช้";
+  const safeUserName = asText(userName) || "User";
 
   const session = createSession({
     projectId: cleanProjectId,
@@ -332,14 +343,32 @@ const sendInterviewMessage = async ({ sessionId, message }) => {
     state: currentState
   });
 
-  const nextState = normalizeState(step.updatedState);
+  const userLines = extractUserLines(messagesAfterUser);
+  const trustedCurrentCards = keepEvidenceBasedCards(currentState.cards, userLines);
+  const candidateNextState = normalizeState(step.updatedState);
+  const verifiedNextCards = keepEvidenceBasedCards(candidateNextState.cards, userLines);
+  const maxCardsByUserTurns = Math.min(MAX_CARDS, userLines.length);
+  const allowedCardCount = Math.min(
+    maxCardsByUserTurns,
+    trustedCurrentCards.length + 1
+  );
+
+  // First user turn: keep one card directly grounded from user's own words.
+  const mergedCards = userLines.length <= 1
+    ? buildFallbackCardFromUserLine(userLines).slice(0, 1)
+    : dedupeCards([...trustedCurrentCards, ...verifiedNextCards]).slice(0, allowedCardCount);
+  const nextState = {
+    ...candidateNextState,
+    cards: mergedCards,
+    readyToFinish: Boolean(candidateNextState.readyToFinish) && mergedCards.length >= MIN_CARDS
+  };
   const safeAssistantMessage =
     asText(step.assistantMessage) ||
-    `ขอบคุณที่เล่าให้ฟังนะครับ ${session.userName} 😊 ช่วยเล่าเพิ่มเติมได้ไหมว่าตอนนั้นรู้สึกยังไงบ้าง?`;
+    `Thanks for sharing, ${session.userName}. Could you tell me a bit more about how you felt in that moment?`;
 
   const finalAssistantMessage =
     nextState.cards.length >= MAX_CARDS
-      ? `ว้าว ${session.userName} เราได้เก็บความทรงจำดีๆ ไว้ครบแล้ว ${MAX_CARDS} เรื่องเลยครับ ✨ ขอบคุณมากเลยที่เล่าให้ฟัง กด Finish Interview เพื่อสร้างห้องได้เลยนะครับ`
+      ? `Great stories, ${session.userName}. We have collected all ${MAX_CARDS} memory moments. You can press Finish Interview to build your room.`
       : safeAssistantMessage;
 
   if (nextState.cards.length >= MAX_CARDS) {
@@ -412,10 +441,20 @@ const finishInterviewSession = async ({ sessionId }) => {
     .map((card, index) => normalizeCard(card, index))
     .filter(Boolean);
 
-  const finalCards = ensureMinCards(
-    modelCards.length > 0 ? modelCards : stateCards,
-    conversation
-  );
+  const userLines = extractUserLines(conversation);
+  const maxCardsByUserTurns = Math.min(MAX_CARDS, userLines.length);
+  const verifiedStateCards = keepEvidenceBasedCards(stateCards, userLines);
+  const verifiedModelCards = keepEvidenceBasedCards(modelCards, userLines);
+
+  const finalCards = userLines.length <= 1
+    ? buildFallbackCardFromUserLine(userLines).slice(0, 1)
+    : (
+      verifiedModelCards.length > 0
+        ? verifiedModelCards
+        : verifiedStateCards.length > 0
+          ? verifiedStateCards
+          : buildFallbackCardFromUserLine(userLines)
+    ).slice(0, maxCardsByUserTurns);
 
   const analysis = {
     themes: Array.isArray(parsed?.analysis?.themes) ? parsed.analysis.themes : [],
@@ -453,3 +492,5 @@ module.exports = {
   sendInterviewMessage,
   finishInterviewSession
 };
+
+

@@ -21,6 +21,22 @@ const formatTime = (seconds) => {
   return `${m}:${s}`;
 };
 
+const findLatestAssistantMessage = (messages = []) => {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (message?.role === 'assistant' && String(message.content || '').trim()) {
+      return message;
+    }
+  }
+  return null;
+};
+
+const sanitizeTextForSpeech = (value) =>
+  String(value || '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 // voiceState: 'idle' | 'listening' | 'transcribing' | 'thinking'
 
 const InterviewPage = ({ project, setProject }) => {
@@ -37,6 +53,10 @@ const InterviewPage = ({ project, setProject }) => {
   const [result, setResult] = useState(null);
   const [showSetup, setShowSetup] = useState(true);
 
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [isTtsSupported, setIsTtsSupported] = useState(true);
+  const [hasEnglishVoice, setHasEnglishVoice] = useState(false);
+
   const autoFinishingRef = useRef(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -46,6 +66,9 @@ const InterviewPage = ({ project, setProject }) => {
   const silenceStartRef = useRef(null);
   const speechStartRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const synthRef = useRef(typeof window !== 'undefined' ? window.speechSynthesis : null);
+  const ttsVoiceRef = useRef(null);
+  const speakTimerRef = useRef(null);
 
   const hasActiveSession = Boolean(sessionId) && !result;
   const isProcessing = voiceState === 'transcribing' || voiceState === 'thinking';
@@ -64,9 +87,50 @@ const InterviewPage = ({ project, setProject }) => {
     return () => window.clearInterval(id);
   }, [hasActiveSession, remainingSeconds]);
 
-  // cleanup mic + VAD on unmount
+  useEffect(() => {
+    const hasUtteranceSupport =
+      typeof window !== 'undefined' &&
+      typeof window.SpeechSynthesisUtterance !== 'undefined';
+    const synth = synthRef.current;
+
+    if (!hasUtteranceSupport || !synth) {
+      setIsTtsSupported(false);
+      setTtsEnabled(false);
+      return undefined;
+    }
+
+    const pickVoice = () => {
+      const voices = synth.getVoices();
+      if (!Array.isArray(voices) || voices.length === 0) {
+        ttsVoiceRef.current = null;
+        setHasEnglishVoice(false);
+        return;
+      }
+
+      ttsVoiceRef.current =
+        voices.find((voice) => String(voice.lang || '').toLowerCase().startsWith('en')) ||
+        voices.find((voice) => voice.default) ||
+        voices[0] ||
+        null;
+      setHasEnglishVoice(Boolean(ttsVoiceRef.current));
+    };
+
+    pickVoice();
+    synth.addEventListener?.('voiceschanged', pickVoice);
+
+    return () => {
+      synth.removeEventListener?.('voiceschanged', pickVoice);
+    };
+  }, []);
+
+  // cleanup mic + VAD + TTS on unmount
   useEffect(() => {
     return () => {
+      if (speakTimerRef.current) {
+        window.clearTimeout(speakTimerRef.current);
+        speakTimerRef.current = null;
+      }
+      synthRef.current?.cancel();
       if (vadFrameRef.current) {
         cancelAnimationFrame(vadFrameRef.current);
         vadFrameRef.current = null;
@@ -82,6 +146,51 @@ const InterviewPage = ({ project, setProject }) => {
       vadFrameRef.current = null;
     }
   };
+
+  const speakText = useCallback((text) => {
+    const content = sanitizeTextForSpeech(text);
+    const synth = synthRef.current;
+
+    if (
+      !content ||
+      !ttsEnabled ||
+      !isTtsSupported ||
+      !synth ||
+      typeof window === 'undefined' ||
+      typeof window.SpeechSynthesisUtterance === 'undefined'
+    ) {
+      return;
+    }
+
+    if (speakTimerRef.current) {
+      window.clearTimeout(speakTimerRef.current);
+      speakTimerRef.current = null;
+    }
+
+    synth.cancel();
+    synth.resume?.();
+
+    const utterance = new window.SpeechSynthesisUtterance(content);
+    utterance.lang = 'en-US';
+    if (ttsVoiceRef.current) {
+      utterance.voice = ttsVoiceRef.current;
+    }
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    speakTimerRef.current = window.setTimeout(() => {
+      synth.speak(utterance);
+      speakTimerRef.current = null;
+    }, 40);
+  }, [isTtsSupported, ttsEnabled]);
+
+  const stopSpeaking = useCallback(() => {
+    if (speakTimerRef.current) {
+      window.clearTimeout(speakTimerRef.current);
+      speakTimerRef.current = null;
+    }
+    synthRef.current?.cancel();
+  }, []);
 
   const handleFinish = useCallback(async () => {
     if (!sessionId || isFinishing || result) return;
@@ -122,6 +231,10 @@ const InterviewPage = ({ project, setProject }) => {
       setRemainingSeconds(payload.remainingSeconds || DEFAULT_DURATION_MINUTES * 60);
       setMessages(payload.messages || []);
       setShowSetup(false);
+      const firstAssistant = findLatestAssistantMessage(payload.messages || []);
+      if (firstAssistant) {
+        speakText(firstAssistant.content);
+      }
     } catch (err) {
       setErrorMessage(err.message || 'Failed to start.');
     } finally {
@@ -140,6 +253,9 @@ const InterviewPage = ({ project, setProject }) => {
       if (typeof payload.remainingSeconds === 'number') {
         setRemainingSeconds(payload.remainingSeconds);
       }
+      // speak AI reply
+      const aiMsg = findLatestAssistantMessage(payload.messages || []);
+      if (aiMsg) speakText(aiMsg.content);
     } catch (err) {
       setErrorMessage(err.message || 'Failed to send.');
     } finally {
@@ -149,6 +265,7 @@ const InterviewPage = ({ project, setProject }) => {
 
   const startListening = async () => {
     if (!hasActiveSession || isProcessing || voiceState === 'listening') return;
+    stopSpeaking(); // หยุด AI พูดก่อนที่ user จะเริ่มพูด
     setErrorMessage('');
 
     try {
@@ -337,6 +454,24 @@ const InterviewPage = ({ project, setProject }) => {
       {/* Header */}
       <div className="voice-header">
         <span className="voice-timer">{formatTime(remainingSeconds)}</span>
+        <button
+          className="voice-tts-toggle"
+          onClick={() => {
+            if (!isTtsSupported) return;
+            setTtsEnabled((v) => !v);
+            stopSpeaking();
+          }}
+          title={
+            !isTtsSupported
+              ? 'Browser does not support AI voice playback'
+              : !hasEnglishVoice
+                ? 'No English voice found. Playback may be limited.'
+              : (ttsEnabled ? 'Mute AI voice' : 'Enable AI voice')
+          }
+          disabled={!isTtsSupported}
+        >
+          {ttsEnabled ? '🔊' : '🔇'}
+        </button>
         <button
           className="voice-finish-btn"
           onClick={handleFinish}

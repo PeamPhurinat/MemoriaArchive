@@ -296,6 +296,20 @@ a {
   font-size: 13px;
 }
 
+.voice-tts-toggle {
+  background: none;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: border-color 0.2s;
+}
+.voice-tts-toggle:hover {
+  border-color: #666;
+}
+
 .voice-finish-btn {
   background: none;
   border: 1px solid #333;
