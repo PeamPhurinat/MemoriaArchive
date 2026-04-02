@@ -64,6 +64,28 @@ const ProjectDetailPage = ({ project, setProject }) => {
     showSaved();
   };
 
+  const moveMemory = (index, direction) => {
+    setProject((p) => {
+      const current = [...(p.memories || [])];
+      const targetIndex = index + direction;
+      if (
+        index < 0 ||
+        targetIndex < 0 ||
+        index >= current.length ||
+        targetIndex >= current.length
+      ) {
+        return p;
+      }
+
+      const temp = current[index];
+      current[index] = current[targetIndex];
+      current[targetIndex] = temp;
+
+      return { ...p, memories: current };
+    });
+    showSaved();
+  };
+
   const addMemory = () => {
     const newMem = {
       id: `mem-${Date.now()}`,
@@ -186,6 +208,28 @@ const ProjectDetailPage = ({ project, setProject }) => {
                     {mem.emotion && (
                       <span className="ma-memory-emotion">{mem.emotion}</span>
                     )}
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <button
+                        type="button"
+                        className="ma-btn ma-btn-ghost ma-btn-sm"
+                        onClick={() => moveMemory(i, -1)}
+                        disabled={i === 0}
+                        aria-label="Move memory up"
+                        title="Move up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="ma-btn ma-btn-ghost ma-btn-sm"
+                        onClick={() => moveMemory(i, 1)}
+                        disabled={i === memories.length - 1}
+                        aria-label="Move memory down"
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
+                    </div>
                   </div>
 
                   {/* Delete */}

@@ -39,6 +39,30 @@ const ReviewPage = ({ project, setProject }) => {
   );
   const canGenerate3D = memorySlotCount > 0;
 
+  const moveMemory = (index, direction) => {
+    setProject((prev) => {
+      const next = [...(prev.memories || [])];
+      const targetIndex = index + direction;
+      if (
+        index < 0 ||
+        targetIndex < 0 ||
+        index >= next.length ||
+        targetIndex >= next.length
+      ) {
+        return prev;
+      }
+
+      const temp = next[index];
+      next[index] = next[targetIndex];
+      next[targetIndex] = temp;
+
+      return {
+        ...prev,
+        memories: next,
+      };
+    });
+  };
+
   const approveAndGenerate = () => {
     if (!canGenerate3D) return;
 
@@ -105,6 +129,28 @@ const ReviewPage = ({ project, setProject }) => {
                   <strong>{memory.title}</strong>
                 </div>
                 <div className="small-note">{memory.description}</div>
+                <div className="button-row" style={{ marginTop: '8px' }}>
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={() => moveMemory(index, -1)}
+                    disabled={index === 0}
+                    aria-label="Move memory up"
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={() => moveMemory(index, 1)}
+                    disabled={index === memories.length - 1}
+                    aria-label="Move memory down"
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                </div>
               </div>
             ))}
           </div>
