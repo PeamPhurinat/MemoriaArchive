@@ -14,16 +14,13 @@ const DEFAULT_SLOT_POSITIONS = [
 /**
  * Attach the walkthrough-video export system to an existing Memory Hall scene.
  *
- * Call this after `initMemoryHall` has run and placed its context on the container:
- *   const ctx = container.__memoriaWalkthroughContext;
- *   initWalkthroughExport({ ...ctx, container, memoryTitles });
- *
  * @param {{
+ *   scene: import('three').Scene,
  *   camera: import('three').PerspectiveCamera,
  *   renderer: import('three').WebGLRenderer,
- *   worldBuilder: import('../world/WorldBuilder').WorldBuilder,
  *   controls: import('three/examples/jsm/controls/PointerLockControls').PointerLockControls,
  *   orbitControls: import('three/examples/jsm/controls/OrbitControls').OrbitControls,
+ *   animate: Function,
  *   container: HTMLElement,
  *   memoryTitles?: string[],
  * }} options
@@ -32,9 +29,9 @@ export function initWalkthroughExport({
   scene,
   camera,
   renderer,
-  worldBuilder,
   controls,
   orbitControls,
+  animate,
   container,
   memoryTitles = [],
 }) {
@@ -53,8 +50,7 @@ export function initWalkthroughExport({
   // ── Helpers ──────────────────────────────────────────────────────
 
   function getStationPositions() {
-    // Find the actual station groups in the scene (supports user-moved stations).
-    // Stations are registered with userData.isCustomizable and componentId "memory-*".
+    // Find actual station groups in the scene (supports user-moved stations).
     if (scene) {
       const groups = scene.children.filter(
         (obj) =>
@@ -88,11 +84,15 @@ export function initWalkthroughExport({
     savedPos = camera.position.clone();
     savedQuat = camera.quaternion.clone();
 
-    // Disable user controls so they can't interfere during recording
+    // Disable all user controls
     try { controls?.unlock?.(); } catch (_) { /* ignore */ }
     if (orbitControls) orbitControls.enabled = false;
 
-    // Build camera path from actual (possibly moved) station positions
+    // Stop the scene's own animation loop — we take over rendering completely.
+    // This prevents orbitControls.update() and other interference.
+    renderer.setAnimationLoop(null);
+
+    // Build camera path
     const allStations = getStationPositions();
     const count = memoryTitles.length > 0
       ? Math.min(memoryTitles.length, allStations.length)
@@ -105,7 +105,6 @@ export function initWalkthroughExport({
     };
 
     cameraPath.onComplete = () => {
-      // Path finished — camera stays at last station, user decides when to stop
       if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
       ui.updateProgress(1, 'All memories visited');
       ui.showStopButton(finishWalkthrough);
@@ -116,7 +115,7 @@ export function initWalkthroughExport({
     ui.updateProgress(0, 'Starting walkthrough…');
     recorder.start(renderer.domElement);
 
-    // Begin our own RAF loop to drive the camera path
+    // Begin our RAF loop — we render every frame ourselves
     lastTime = performance.now();
     rafId = requestAnimationFrame(tick);
   }
@@ -127,8 +126,12 @@ export function initWalkthroughExport({
     const delta = Math.min((now - lastTime) / 1000, 0.1);
     lastTime = now;
 
+    // Advance camera along the path
     cameraPath.update(delta, camera);
     ui.updateProgress(cameraPath.progress, cameraPath.currentLabel);
+
+    // Render the scene with our camera position
+    renderer.render(scene, camera);
 
     if (!cameraPath.isComplete) {
       rafId = requestAnimationFrame(tick);
@@ -147,12 +150,17 @@ export function initWalkthroughExport({
 
     await recorder.stop('memoria-walkthrough');
 
-    // Restore camera to where the user left it
+    // Restore camera
     if (savedPos) camera.position.copy(savedPos);
     if (savedQuat) camera.quaternion.copy(savedQuat);
 
-    // Restore controls to their original state (view mode = orbitControls off)
+    // Restore controls
     if (orbitControls) orbitControls.enabled = false;
+
+    // Restore the scene's animation loop
+    if (typeof animate === 'function') {
+      renderer.setAnimationLoop(animate);
+    }
 
     ui.setRecording(false);
   }

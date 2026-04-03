@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find . -path ./node_modules -prune -o -name \"*.js\" -type f -exec grep -l \"route\\\\|Route\" {} \\\\;)",
+      "Bash(grep -n \"entry.video\\\\|videoSource\\\\|video:$\" src/3d-hall/world/WorldBuilder.js)"
+    ]
+  }
+}

@@ -1,6 +1,43 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const pickMediaUrl = (...candidates) => {
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+  }
+  return '';
+};
+
+const normalizeVideoSource = (source) => {
+  if (typeof source !== 'string' || source.trim().length === 0) {
+    return '';
+  }
+
+  if (/^(https?:|blob:|data:)/i.test(source)) {
+    return source;
+  }
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+
+    if (isLocalHost && source.startsWith('/uploads/')) {
+      return `${protocol}//${host}:5000${source}`;
+    }
+
+    try {
+      return new URL(source, window.location.origin).toString();
+    } catch {
+      return source;
+    }
+  }
+
+  return source;
+};
+
 const ReviewPage = ({ project, setProject }) => {
   const navigate = useNavigate();
   const photos = project?.photos || [];
@@ -30,6 +67,24 @@ const ReviewPage = ({ project, setProject }) => {
     ...uploadedPhotos,
     ...memoryPhotos,
   ];
+  const memoryVideos = memories.map((memory, index) => {
+    const videoUrl = normalizeVideoSource(
+      pickMediaUrl(
+        memory?.video,
+        memory?.videoUrl,
+        memory?.videoSrc,
+        memory?.clip
+      )
+    );
+
+    return {
+      id: memory?.id || `memory-video-${index}`,
+      url: videoUrl,
+      name: memory?.title || `Memory ${index + 1}`,
+      slot: index + 1,
+      hasVideo: Boolean(videoUrl),
+    };
+  });
 
   const memorySlotCount = Math.max(
     photos.length,
@@ -151,6 +206,46 @@ const ReviewPage = ({ project, setProject }) => {
                     ↓
                   </button>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="section">
+        <h2>Videos</h2>
+        {memoryVideos.length === 0 ? (
+          <p className="helper">No memory slots yet.</p>
+        ) : (
+          <div className="memory-list">
+            {memoryVideos.map((video, index) => (
+              <div className="memory-card" key={`${video.id}-${index}`}>
+                <div className="list-item">
+                  <span className="order-tag">#{video.slot}</span>
+                  <strong>{video.name}</strong>
+                </div>
+                <div className="photo-thumb" style={{ width: '220px', height: '124px' }}>
+                  {video.hasVideo ? (
+                    <video
+                      src={video.url}
+                      preload="auto"
+                      muted
+                      playsInline
+                      onLoadedData={(event) => {
+                        event.currentTarget.pause();
+                        event.currentTarget.currentTime = 0;
+                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div className="small-note">No video</div>
+                  )}
+                </div>
+                {!video.hasVideo ? (
+                  <div className="small-note" style={{ marginTop: '8px' }}>
+                    Upload video from Project Detail page.
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

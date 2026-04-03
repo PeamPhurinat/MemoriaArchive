@@ -13,6 +13,16 @@ import { demoProject } from './data/mockProject';
 const STORAGE_KEY = 'memoria_projects';
 const ACTIVE_KEY  = 'memoria_active_project';
 
+const isTransientVideoUrl = (value) =>
+  typeof value === 'string' && (value.startsWith('blob:') || /^data:video\//i.test(value));
+
+const storageReplacer = (key, value) => {
+  if (isTransientVideoUrl(value)) {
+    return null;
+  }
+  return value;
+};
+
 const createEmptyProject = () => ({
   id: `project-${Date.now()}`,
   title: 'New Project',
@@ -50,8 +60,12 @@ const App = () => {
   // Persist to localStorage whenever projects change
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-    } catch {}
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects, storageReplacer));
+    } catch (error) {
+      // Keep runtime state usable even when persistence fails.
+      // eslint-disable-next-line no-console
+      console.warn('Failed to persist projects to localStorage:', error);
+    }
   }, [projects]);
 
   useEffect(() => {
@@ -77,17 +91,6 @@ const App = () => {
 
         if (!nextProject || typeof nextProject !== 'object') return project;
 
-        const changed =
-          JSON.stringify(nextProject) !== JSON.stringify(project);
-
-        // Any data edit after approval should force a re-review.
-        if (
-          changed &&
-          project.reviewApprovedAt &&
-          nextProject.reviewApprovedAt === project.reviewApprovedAt
-        ) {
-          return { ...nextProject, reviewApprovedAt: null };
-        }
 
         return nextProject;
       });

@@ -298,6 +298,7 @@ export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChang
 
   const drawPhoto = (image) => {
     const imageAspect = image.width / image.height;
+<<<<<<< Updated upstream
     const displayAspect = THREE.MathUtils.clamp(imageAspect, 0.9, 2.2);
     const targetWidth = 1024;
     const targetHeight = Math.max(420, Math.round(targetWidth / displayAspect));
@@ -312,6 +313,18 @@ export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChang
 
     // Draw base layer first so background is never blank
     drawBase();
+=======
+    const displayAspect = THREE.MathUtils.clamp(imageAspect, 0.741, 2.2);
+
+    // ห้าม resize canvas หลังจาก CanvasTexture ถูก allocate บน GPU แล้ว
+    // เพราะจะทำให้เกิด GL_INVALID_VALUE: Offset overflows texture dimensions
+    // ใช้ fixed size 1024x768 แล้ว draw image ให้พอดีแทน
+    canvas.width = 1024;
+    canvas.height = 768;
+
+    drawBase();
+    notifyPhotoAspect(displayAspect);
+>>>>>>> Stashed changes
 
     const frameWidth = canvas.width;
     const frameHeight = canvas.height;

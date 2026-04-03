@@ -17,7 +17,20 @@ const buildMemoryHallSlots = (project) => {
       : []);
   const videos = Array.isArray(project?.videos) ? project.videos : [];
 
+<<<<<<< Updated upstream
   const slotCount = Math.max(memories.length, textSlots.length, photos.length, videos.length);
+=======
+  const pickMediaUrl = (...candidates) => {
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+    }
+    return null;
+  };
+
+  const slotCount = Math.max(memories.length, textSlots.length, photos.length);
+>>>>>>> Stashed changes
   if (slotCount === 0) {
     return null;
   }
@@ -139,8 +152,30 @@ const buildMemoryHallSlots = (project) => {
         memory?.sourceQuote ||
         textSlot?.sourceQuote ||
         description,
+<<<<<<< Updated upstream
       photo: resolvedPhoto,
       video: resolvedVideo,
+=======
+      photo:
+        pickMediaUrl(
+          memory?.photo,
+          memory?.url,
+          textSlot?.photo,
+          textSlot?.url,
+          photo?.url
+        ),
+      video:
+        pickMediaUrl(
+          memory?.video,
+          memory?.videoUrl,
+          memory?.videoSrc,
+          memory?.clip,
+          textSlot?.video,
+          textSlot?.videoUrl,
+          photo?.video,
+          photo?.videoUrl
+        ),
+>>>>>>> Stashed changes
     };
   });
 };
@@ -154,7 +189,7 @@ const MemoryHallPage = ({ project }) => {
 
     const memoriesData = buildMemoryHallSlots(project);
 
-    const cleanup = initMemoryHall(container, memoriesData);
+const cleanup = initMemoryHall(container, memoriesData);
 
     return () => {
       if (cleanup) cleanup();

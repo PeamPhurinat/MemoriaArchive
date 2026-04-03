@@ -1,7 +1,17 @@
-const { sttModel } = require("../config/env");
+const { sttModel, serverPublicOrigin } = require("../config/env");
 const { sanitizeProjectId } = require("../repositories/projectRepository");
 const { saveAudioAndTranscript } = require("../services/projectService");
 const { transcribeAudio } = require("../services/sttService");
+
+const toPublicUrl = (pathOrUrl) => {
+  if (typeof pathOrUrl !== "string" || pathOrUrl.trim().length === 0) {
+    return pathOrUrl;
+  }
+  if (/^https?:\/\//i.test(pathOrUrl)) {
+    return pathOrUrl;
+  }
+  return new URL(pathOrUrl, serverPublicOrigin).toString();
+};
 
 const createTranscription = async (req, res, next) => {
   try {
@@ -33,7 +43,7 @@ const createTranscription = async (req, res, next) => {
       projectId,
       model: sttModel,
       transcript,
-      audioUrl: slot.audioUrl,
+      audioUrl: toPublicUrl(slot.audioUrl),
       slot
     });
   } catch (error) {

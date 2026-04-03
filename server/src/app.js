@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const sttRoutes = require("./routes/sttRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
+const mediaRoutes = require("./routes/mediaRoutes");
 const {
   clientOrigin,
   projectsRootDir,
@@ -41,16 +42,20 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/stt", sttRoutes);
 app.use("/api/interview", interviewRoutes);
+app.use("/api/media", mediaRoutes);
 
 app.use((error, req, res, next) => {
   if (error.name === "MulterError" && error.code === "LIMIT_FILE_SIZE") {
     return res.status(400).json({
       ok: false,
-      error: "Audio file is too large. Max size is 25MB."
+      error: "Uploaded file is too large. Max audio is 25MB and video is 200MB."
     });
   }
 
-  if (error.message === "Only audio files are allowed.") {
+  if (
+    error.message === "Only audio files are allowed." ||
+    error.message === "Only video files are allowed."
+  ) {
     return res.status(400).json({
       ok: false,
       error: error.message

@@ -9,6 +9,9 @@ import {
   createStarTexture,
   createVoiceCloudTexture,
 } from "./textureFactory.js";
+import {
+  createVideoTexture,
+} from "./VideoTextureBuilder.js";
 
 export class WorldBuilder {
   constructor({
@@ -261,6 +264,7 @@ export class WorldBuilder {
 
   createMemoryMonoliths(memoriesData = this.memoriesData) {
     const dreamThemeColors = this.getMemoryThemeColors("dream");
+<<<<<<< Updated upstream
     const getLocalVideoFallbackForIndex = (index) =>
       index === 0
         ? "/videos/memory-monolith-test.mp4"
@@ -319,6 +323,8 @@ export class WorldBuilder {
       },
     ];
 
+=======
+>>>>>>> Stashed changes
     const slotPositions = [
       { x: -11, z: 18, side: -1 },
       { x: 10, z: 4, side: 1 },
@@ -327,6 +333,7 @@ export class WorldBuilder {
       { x: -10, z: -45, side: -1 },
     ];
 
+<<<<<<< Updated upstream
     const mappedEntries =
       Array.isArray(memoriesData) && memoriesData.length > 0
         ? memoriesData.slice(0, 5).map((memory, index) => ({
@@ -362,8 +369,38 @@ export class WorldBuilder {
             side: slotPositions[index].side,
           }))
         : [];
+=======
+    const entries = Array.isArray(memoriesData)
+      ? memoriesData.slice(0, 5).map((memory, index) => ({
+          year: memory?.year || `#${index + 1}`,
+          title: memory?.title || `Memory ${index + 1}`,
+          note: memory?.note || "Interview Memory",
+          photo: memory?.photo || memory?.url || null,
+          video:
+            memory?.video ||
+            memory?.videoUrl ||
+            memory?.videoSrc ||
+            memory?.clip ||
+            null,
+          description:
+            memory?.description ||
+            memory?.text ||
+            "No description provided.",
+          voice:
+            memory?.voice ||
+            memory?.sourceQuote ||
+            memory?.description ||
+            "No voice memory.",
+          x: slotPositions[index].x,
+          z: slotPositions[index].z,
+          side: slotPositions[index].side,
+        }))
+      : [];
+>>>>>>> Stashed changes
 
-    const entries = mappedEntries.length > 0 ? mappedEntries : demoEntries;
+    if (entries.length === 0) {
+      return;
+    }
 
     entries.forEach((entry, index) => {
       const themedEntry = {
@@ -415,6 +452,11 @@ export class WorldBuilder {
       videoFrame.castShadow = true;
       videoFrame.receiveShadow = true;
 
+<<<<<<< Updated upstream
+=======
+      // Keep panel slightly in front of a 0.24-depth frame (front face at z=0.12)
+      // so video texture is not hidden by z-fighting/occlusion.
+>>>>>>> Stashed changes
       const videoPanel = createReadablePanel(3.18, 1.79, new THREE.Texture(), { offset: 0.13 });
       videoFrame.add(videoPanel);
       station.add(videoFrame);
@@ -623,7 +665,7 @@ export class WorldBuilder {
     const voiceTexture = createVoiceCloudTexture(entry.voice, entry.color, this.activeThemeKey);
     voiceTexture.colorSpace = THREE.SRGBColorSpace;
 
-    const { videoTexture, videoFallbackTexture } = this.createVideoTexture(
+    const { videoTexture, videoFallbackTexture } = createVideoTexture(
       entry,
       onVideoAspectChange,
       onVideoTextureReady,
@@ -639,6 +681,7 @@ export class WorldBuilder {
     };
   }
 
+<<<<<<< Updated upstream
   createVideoTexture(entry, onVideoAspectChange = null, onVideoTextureReady = null) {
     const rawVideoSource =
       typeof entry?.video === "string" && entry.video.trim().length > 0
@@ -839,6 +882,8 @@ export class WorldBuilder {
     return new THREE.CanvasTexture(canvas);
   }
 
+=======
+>>>>>>> Stashed changes
   updatePanelTexture(panelGroup, texture) {
     if (!panelGroup) {
       return;

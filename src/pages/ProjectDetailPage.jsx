@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { uploadMemoryVideo } from '../services/mediaApi';
 
 const formatDate = (iso) => {
   try {
@@ -16,6 +17,8 @@ const formatDate = (iso) => {
 const ProjectDetailPage = ({ project, setProject }) => {
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
+  const [uploadingVideoById, setUploadingVideoById] = useState({});
+  const [videoUploadError, setVideoUploadError] = useState('');
   const saveTimer = useRef(null);
 
   if (!project) {
@@ -27,6 +30,12 @@ const ProjectDetailPage = ({ project, setProject }) => {
   }
 
   const memories = project.memories || [];
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(saveTimer.current);
+    };
+  }, []);
 
   const showSaved = () => {
     setSaved(true);
@@ -54,6 +63,29 @@ const ProjectDetailPage = ({ project, setProject }) => {
     const reader = new FileReader();
     reader.onload = (e) => updateMemory(id, 'photo', e.target.result);
     reader.readAsDataURL(file);
+  };
+
+  const addVideo = async (id, file) => {
+    if (!file) return;
+    setVideoUploadError('');
+    setUploadingVideoById((prev) => ({ ...prev, [id]: true }));
+    try {
+      const payload = await uploadMemoryVideo({
+        projectId: project?.id,
+        memoryId: id,
+        videoFile: file,
+      });
+
+      if (!payload?.videoUrl || typeof payload.videoUrl !== 'string') {
+        throw new Error('Upload completed but server did not return videoUrl.');
+      }
+
+      updateMemory(id, 'video', payload.videoUrl);
+    } catch (error) {
+      setVideoUploadError(error?.message || 'Video upload failed.');
+    } finally {
+      setUploadingVideoById((prev) => ({ ...prev, [id]: false }));
+    }
   };
 
   const deleteMemory = (id) => {
@@ -93,6 +125,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
       description: '',
       emotion: '',
       photo: null,
+      video: null,
     };
     setProject((p) => ({ ...p, memories: [...(p.memories || []), newMem] }));
   };
@@ -186,8 +219,31 @@ const ProjectDetailPage = ({ project, setProject }) => {
                     />
                   </label>
 
+                  {/* Video slot */}
+                  <label className="ma-memory-photo" title="คลิกเพื่อใส่วิดิโอ" style={{ background: '#1a1428' }}>
+                    {mem.video ? (
+                      <video
+                        src={mem.video}
+                        muted
+                        playsInline
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }}
+                      />
+                    ) : (
+                      <span className="ma-memory-photo-icon">🎬</span>
+                    )}
+                    <input
+                      type="file"
+                      accept="video/*"
+                      disabled={Boolean(uploadingVideoById[mem.id])}
+                      onChange={(e) => addVideo(mem.id, e.target.files?.[0])}
+                    />
+                  </label>
+
                   {/* Text fields */}
                   <div className="ma-memory-content">
+                    {uploadingVideoById[mem.id] ? (
+                      <span className="ma-memory-emotion">Uploading video...</span>
+                    ) : null}
                     <input
                       className="ma-memory-title-input"
                       value={mem.title || ''}
@@ -247,6 +303,11 @@ const ProjectDetailPage = ({ project, setProject }) => {
         </div>
       </div>
 
+      {videoUploadError ? (
+        <div className="ma-save-toast visible" style={{ background: '#8f1d1d' }}>
+          {videoUploadError}
+        </div>
+      ) : null}
       {/* Save toast */}
       <div className={`ma-save-toast ${saved ? 'visible' : ''}`}>✓ บันทึกแล้ว</div>
     </div>
@@ -254,3 +315,4 @@ const ProjectDetailPage = ({ project, setProject }) => {
 };
 
 export default ProjectDetailPage;
+

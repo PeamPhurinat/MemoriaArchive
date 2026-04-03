@@ -29,9 +29,14 @@ const normalizeEnvValue = (rawValue, fallback = "") => {
 const storageRootDir = path.join(rootDir, "server", "storage");
 const projectsRootDir = path.join(storageRootDir, "projects");
 const uploadsRootDir = path.join(storageRootDir, "uploads");
+const port = Number(normalizeEnvValue(process.env.SERVER_PORT, "5000"));
 
 module.exports = {
-  port: Number(normalizeEnvValue(process.env.SERVER_PORT, "5000")),
+  port,
+  serverPublicOrigin: normalizeEnvValue(
+    process.env.SERVER_PUBLIC_ORIGIN,
+    `http://localhost:${port}`
+  ),
   clientOrigin: normalizeEnvValue(
     process.env.CLIENT_ORIGIN,
     "http://localhost:3000"
