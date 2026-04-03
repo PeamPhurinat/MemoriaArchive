@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { initMemoryHall } from '../3d-hall/memoryHallScene';
+import { initWalkthroughExport } from '../3d-hall/video/walkthroughExport';
 import '../3d-hall/style.css';
 
 const buildMemoryHallSlots = (project) => {
@@ -65,8 +66,14 @@ const MemoryHallPage = ({ project }) => {
 
     const cleanup = initMemoryHall(container, memoriesData);
 
+    const walkthroughCtx = container.__memoriaWalkthroughContext;
+    if (walkthroughCtx) {
+      const titles = Array.isArray(memoriesData) ? memoriesData.map((m) => m.title || '') : [];
+      initWalkthroughExport({ ...walkthroughCtx, container, memoryTitles: titles });
+    }
+
     return () => {
-      if (cleanup) cleanup();
+      if (typeof cleanup === 'function') cleanup();
     };
   }, [project]);
 

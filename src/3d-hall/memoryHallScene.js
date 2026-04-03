@@ -1119,6 +1119,8 @@ window.addEventListener("resize", () => {
 });
 
 
+app.__memoriaWalkthroughContext = { scene, camera, renderer, worldBuilder, controls, orbitControls };
+
 return function cleanup() {
   renderer.setAnimationLoop(null);
   worldBuilder.dispose?.();
