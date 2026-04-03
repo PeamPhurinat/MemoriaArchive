@@ -252,13 +252,18 @@ export class WorldBuilder {
 
   createMemoryMonoliths() {
     const dreamThemeColors = this.getMemoryThemeColors("dream");
-    const entries = [
+    const getLocalVideoFallbackForIndex = (index) =>
+      index === 0
+        ? "/videos/memory-monolith-test.mp4"
+        : `/videos/memory-monolith-test-${index + 1}.mp4`;
+    const demoEntries = [
       {
         year: "2012",
         title: "Lantern Festival",
         note: "First uploaded photo",
         description: "A warm night market, paper lanterns, and the first memory saved into the archive.",
         voice: "We stayed until the lights disappeared into the sky.",
+        video: getLocalVideoFallbackForIndex(0),
         x: -11,
         z: 18,
         side: -1,
@@ -305,6 +310,52 @@ export class WorldBuilder {
       },
     ];
 
+    const slotPositions = [
+      { x: -11, z: 18, side: -1 },
+      { x: 10, z: 4, side: 1 },
+      { x: -9, z: -11, side: -1 },
+      { x: 11, z: -28, side: 1 },
+      { x: -10, z: -45, side: -1 },
+    ];
+
+    const mappedEntries =
+      Array.isArray(memoriesData) && memoriesData.length > 0
+        ? memoriesData.slice(0, 5).map((memory, index) => ({
+            year: memory?.year || `#${index + 1}`,
+            title: memory?.title || `Memory ${index + 1}`,
+            note: memory?.note || "Interview Memory",
+            photo:
+              memory?.photo ||
+              memory?.photoUrl ||
+              memory?.image ||
+              memory?.imageUrl ||
+              memory?.imageSrc ||
+              memory?.url ||
+              null,
+            video:
+              memory?.video ||
+              memory?.videoUrl ||
+              memory?.videoSrc ||
+              memory?.clip ||
+              memory?.src ||
+              getLocalVideoFallbackForIndex(index),
+            description:
+              memory?.description ||
+              memory?.text ||
+              "No description provided.",
+            voice:
+              memory?.voice ||
+              memory?.sourceQuote ||
+              memory?.description ||
+              "No voice memory.",
+            x: slotPositions[index].x,
+            z: slotPositions[index].z,
+            side: slotPositions[index].side,
+          }))
+        : [];
+
+    const entries = mappedEntries.length > 0 ? mappedEntries : demoEntries;
+
     entries.forEach((entry, index) => {
       const themedEntry = {
         ...entry,
@@ -339,6 +390,78 @@ export class WorldBuilder {
       const photoPanel = createReadablePanel(3.88, 2.88, stationTextures.photoTexture, { offset: 0.13 });
       photoFrame.add(photoPanel);
       station.add(photoFrame);
+
+      const videoFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(3.32, 1.93, 0.2),
+        new THREE.MeshStandardMaterial({
+          color: 0xe8e8e8,
+          emissive: 0x8f8f8f,
+          emissiveIntensity: 0.1,
+          roughness: 0.36,
+          metalness: 0.12,
+        }),
+      );
+      videoFrame.position.set(themedEntry.side * -3.15, 4.95, -1.2);
+      videoFrame.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? -26 : 26);
+      videoFrame.castShadow = true;
+      videoFrame.receiveShadow = true;
+
+      const videoPanel = createReadablePanel(3.18, 1.79, new THREE.Texture(), { offset: 0.13 });
+      videoFrame.add(videoPanel);
+      station.add(videoFrame);
+
+      const photoAspectState = {
+        requestId: 0,
+        currentAspect: 3.88 / 2.88,
+      };
+      const videoAspectState = {
+        requestId: 0,
+        currentAspect: 16 / 9,
+      };
+
+      photoAspectState.requestId += 1;
+      const initialPhotoRequestId = photoAspectState.requestId;
+      videoAspectState.requestId += 1;
+      const initialVideoRequestId = videoAspectState.requestId;
+
+      const stationTextures = this.createMemoryStationTextures(
+        themedEntry,
+        (aspect) => {
+          if (initialPhotoRequestId !== photoAspectState.requestId) {
+            return;
+          }
+          photoAspectState.currentAspect = aspect;
+          this.applyPhotoFrameAspect(photoFrame, photoPanel, aspect);
+        },
+        (aspect) => {
+          if (initialVideoRequestId !== videoAspectState.requestId) {
+            return;
+          }
+          videoAspectState.currentAspect = aspect;
+          this.applyVideoFrameAspect(videoFrame, videoPanel, aspect);
+        },
+        (texture) => {
+          if (initialVideoRequestId !== videoAspectState.requestId) {
+            return;
+          }
+          this.updatePanelTexture(videoPanel, texture);
+        },
+      );
+
+      this.updatePanelTexture(photoPanel, stationTextures.photoTexture);
+      const initialPhotoAspect =
+        stationTextures.photoTexture.userData?.photoAspect ?? photoAspectState.currentAspect;
+      photoAspectState.currentAspect = initialPhotoAspect;
+      this.applyPhotoFrameAspect(photoFrame, photoPanel, initialPhotoAspect);
+
+      this.updatePanelTexture(
+        videoPanel,
+        stationTextures.videoFallbackTexture ?? stationTextures.videoTexture,
+      );
+      const initialVideoAspect =
+        stationTextures.videoTexture.userData?.mediaAspect ?? videoAspectState.currentAspect;
+      videoAspectState.currentAspect = initialVideoAspect;
+      this.applyVideoFrameAspect(videoFrame, videoPanel, initialVideoAspect);
 
       const archiveCard = new THREE.Mesh(
         new THREE.BoxGeometry(2.4, 3.6, 0.2),
@@ -480,6 +603,206 @@ export class WorldBuilder {
     };
   }
 
+  createVideoTexture(entry, onVideoAspectChange = null, onVideoTextureReady = null) {
+    const rawVideoSource =
+      typeof entry?.video === "string" && entry.video.trim().length > 0
+        ? entry.video.trim()
+        : null;
+
+    const normalizeVideoSource = (source) => {
+      if (!source) {
+        return null;
+      }
+
+      const normalized = source.trim().replaceAll("\\", "/");
+      if (!normalized) {
+        return null;
+      }
+
+      if (/^file:\/\//i.test(normalized) || /^[a-zA-Z]:\//.test(normalized)) {
+        const fileName = normalized.split("/").filter(Boolean).pop();
+        return fileName ? `/videos/${encodeURIComponent(fileName)}` : null;
+      }
+
+      if (/^https?:\/\//i.test(normalized) || /^blob:/i.test(normalized) || /^data:/i.test(normalized)) {
+        return normalized;
+      }
+
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(normalized)) {
+        return null;
+      }
+
+      if (normalized.startsWith("/")) {
+        return normalized;
+      }
+
+      if (/^videos\//i.test(normalized)) {
+        return `/${normalized}`;
+      }
+
+      return normalized;
+    };
+
+    const videoSource = normalizeVideoSource(rawVideoSource);
+
+    const fallbackTexture = this.createVideoPlaceholderTexture(
+      videoSource ? "Video loading..." : "Add a local video path",
+      videoSource ? "Waiting for media stream" : "Set `video` on a memory slot",
+    );
+    fallbackTexture.colorSpace = THREE.SRGBColorSpace;
+    fallbackTexture.userData = {
+      mediaAspect: 16 / 9,
+    };
+
+    if (typeof onVideoAspectChange === "function") {
+      onVideoAspectChange(16 / 9);
+    }
+
+    if (!videoSource) {
+      return {
+        videoTexture: fallbackTexture,
+        videoFallbackTexture: fallbackTexture,
+      };
+    }
+
+    const videoElement = document.createElement("video");
+    videoElement.src = videoSource;
+    videoElement.loop = true;
+    videoElement.muted = true;
+    videoElement.autoplay = true;
+    videoElement.preload = "auto";
+    videoElement.playsInline = true;
+    videoElement.setAttribute("playsinline", "");
+    videoElement.setAttribute("muted", "");
+    if (/^https?:\/\//i.test(videoSource)) {
+      videoElement.crossOrigin = "anonymous";
+    }
+
+    const videoTexture = new THREE.VideoTexture(videoElement);
+    videoTexture.colorSpace = THREE.SRGBColorSpace;
+    videoTexture.minFilter = THREE.LinearFilter;
+    videoTexture.magFilter = THREE.LinearFilter;
+    videoTexture.generateMipmaps = false;
+    videoTexture.userData = {
+      mediaAspect: 16 / 9,
+      videoElement,
+      source: videoSource,
+      rawSource: rawVideoSource,
+    };
+
+    let didNotifyReady = false;
+    let timeoutId = null;
+
+    const clearReadyTimeout = () => {
+      if (timeoutId !== null) {
+        globalThis.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
+    const notifyAspect = () => {
+      if (!videoElement.videoWidth || !videoElement.videoHeight) {
+        return;
+      }
+
+      const aspect = THREE.MathUtils.clamp(videoElement.videoWidth / videoElement.videoHeight, 0.56, 2.4);
+      videoTexture.userData.mediaAspect = aspect;
+      fallbackTexture.userData.mediaAspect = aspect;
+      if (typeof onVideoAspectChange === "function") {
+        onVideoAspectChange(aspect);
+      }
+    };
+
+    const tryPlay = () => {
+      const playPromise = videoElement.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
+    };
+
+    const notifyReady = (texture) => {
+      if (didNotifyReady && texture === videoTexture) {
+        return;
+      }
+      if (texture === videoTexture) {
+        didNotifyReady = true;
+      }
+      if (typeof onVideoTextureReady === "function") {
+        onVideoTextureReady(texture);
+      }
+    };
+
+    const fallbackReady = () => {
+      clearReadyTimeout();
+      notifyReady(fallbackTexture);
+    };
+
+    const handleLoadedMetadata = () => {
+      notifyAspect();
+    };
+    const handleCanPlay = () => {
+      clearReadyTimeout();
+      notifyAspect();
+      notifyReady(videoTexture);
+      tryPlay();
+    };
+    const handleError = () => {
+      fallbackReady();
+    };
+
+    videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+    videoElement.addEventListener("canplay", handleCanPlay);
+    videoElement.addEventListener("error", handleError);
+
+    timeoutId = globalThis.setTimeout(() => {
+      fallbackReady();
+    }, 8000);
+
+    videoTexture.userData.cleanup = () => {
+      clearReadyTimeout();
+      videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      videoElement.removeEventListener("canplay", handleCanPlay);
+      videoElement.removeEventListener("error", handleError);
+      videoElement.pause();
+      videoElement.removeAttribute("src");
+      videoElement.load();
+    };
+
+    tryPlay();
+
+    return {
+      videoTexture,
+      videoFallbackTexture: fallbackTexture,
+    };
+  }
+
+  createVideoPlaceholderTexture(title, subtitle) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 960;
+    canvas.height = 540;
+    const context = canvas.getContext("2d");
+
+    const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "#2d2230");
+    gradient.addColorStop(1, "#463341");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.strokeStyle = "rgba(255, 255, 255, 0.78)";
+    context.lineWidth = 3;
+    context.strokeRect(24, 24, canvas.width - 48, canvas.height - 48);
+
+    context.fillStyle = "rgba(255, 255, 255, 0.9)";
+    context.font = "700 52px Segoe UI";
+    context.fillText(title, 60, 250);
+
+    context.fillStyle = "rgba(255, 255, 255, 0.75)";
+    context.font = "500 32px Segoe UI";
+    context.fillText(subtitle, 60, 310);
+
+    return new THREE.CanvasTexture(canvas);
+  }
+
   updatePanelTexture(panelGroup, texture) {
     panelGroup.children.forEach((child) => {
       if (!child.material) {
@@ -488,6 +811,79 @@ export class WorldBuilder {
 
       child.material.map = texture;
       child.material.needsUpdate = true;
+    });
+  }
+
+  resizeReadablePanel(panelGroup, width, height) {
+    if (!panelGroup) {
+      return;
+    }
+
+    panelGroup.children.forEach((child) => {
+      if (!child?.isMesh || !child.geometry) {
+        return;
+      }
+
+      child.geometry.dispose?.();
+      child.geometry = new THREE.PlaneGeometry(width, height);
+    });
+  }
+
+  applyMediaFrameAspect(frame, panel, aspect, options = {}) {
+    if (!frame || !Number.isFinite(aspect) || aspect <= 0) {
+      return;
+    }
+
+    const baseInnerWidth = options.baseInnerWidth ?? 3.88;
+    const baseInnerHeight = options.baseInnerHeight ?? 2.88;
+    const frameBorder = options.frameBorder ?? 0.06;
+    const minAspect = options.minAspect ?? 0.9;
+    const maxAspect = options.maxAspect ?? 2.2;
+    const maxLandscapeScale = options.maxLandscapeScale ?? 1.3;
+
+    const baseInnerAspect = baseInnerWidth / baseInnerHeight;
+    const boundedAspect = THREE.MathUtils.clamp(aspect, minAspect, maxAspect);
+
+    let innerWidth;
+    let innerHeight;
+
+    if (boundedAspect >= 1) {
+      innerWidth = baseInnerWidth * Math.min(boundedAspect / baseInnerAspect, maxLandscapeScale);
+      innerHeight = innerWidth / boundedAspect;
+    } else {
+      innerHeight = baseInnerHeight;
+      innerWidth = innerHeight * boundedAspect;
+    }
+
+    const outerWidth = innerWidth + frameBorder * 2;
+    const outerHeight = innerHeight + frameBorder * 2;
+
+    frame.geometry.dispose?.();
+    frame.geometry = new THREE.BoxGeometry(outerWidth, outerHeight, 0.24);
+
+    this.resizeReadablePanel(panel, innerWidth, innerHeight);
+    frame.scale.set(1, 1, 1);
+  }
+
+  applyPhotoFrameAspect(photoFrame, photoPanel, aspect) {
+    this.applyMediaFrameAspect(photoFrame, photoPanel, aspect, {
+      baseInnerWidth: 3.88,
+      baseInnerHeight: 2.88,
+      frameBorder: 0.06,
+      minAspect: 0.9,
+      maxAspect: 2.2,
+      maxLandscapeScale: 1.3,
+    });
+  }
+
+  applyVideoFrameAspect(videoFrame, videoPanel, aspect) {
+    this.applyMediaFrameAspect(videoFrame, videoPanel, aspect, {
+      baseInnerWidth: 3.68,
+      baseInnerHeight: 2.79,
+      frameBorder: 0.06,
+      minAspect: 0.56,
+      maxAspect: 2.4,
+      maxLandscapeScale: 1.2,
     });
   }
 
@@ -759,3 +1155,4 @@ export class WorldBuilder {
     });
   }
 }
+
