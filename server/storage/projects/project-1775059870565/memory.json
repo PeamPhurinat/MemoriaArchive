@@ -1,0 +1,232 @@
+{
+  "id": "project-1775059870565",
+  "title": "",
+  "coupleNames": "",
+  "createdAt": "2026-04-01T16:11:27.062Z",
+  "updatedAt": "2026-04-01T16:13:11.836Z",
+  "photoSlots": [],
+  "textSlots": [
+    {
+      "id": "text-1",
+      "title": "University Friendships",
+      "text": "Parin recalls the joy of meeting many friends during his third year at university, creating lasting bonds. Emotion: Joyful.",
+      "sourceQuote": "ได้เจอเพื่อนมากมายได้สนุกมากครับ"
+    },
+    {
+      "id": "text-2",
+      "title": "Playing with Friends",
+      "text": "A memorable moment playing with friends from different years, filled with laughter and camaraderie. Emotion: Excited.",
+      "sourceQuote": "ได้เจอเพื่อนเพื่อนมากมาย รุ่นพี่รุ่นน้อง"
+    },
+    {
+      "id": "text-3",
+      "title": "Trip to Singapore",
+      "text": "An exciting trip to Singapore with friends, filled with fun and unforgettable experiences. Emotion: Thrilled.",
+      "sourceQuote": "รู้สึกสนุกมากครับ"
+    },
+    {
+      "id": "text-4",
+      "title": "First Golf Experience",
+      "text": "The challenge and excitement of playing golf for the first time, a memorable milestone for Parin. Emotion: Challenged.",
+      "sourceQuote": "รู้สึกสนุกมากแล้วก็ท้าทายมาก"
+    }
+  ],
+  "audioSlots": [
+    {
+      "id": "audio-1775059887062",
+      "title": "voice.webm",
+      "transcript": "โอเคงั้นมาเริ่มเรื่องที่หนึ่งเกี่ยวกับมหาลัย",
+      "audioUrl": "/uploads/project-1775059870565/audio/1775059887060-692aecda.webm",
+      "createdAt": "2026-04-01T16:11:27.063Z",
+      "visible": true,
+      "order": 1
+    },
+    {
+      "id": "audio-1775059906811",
+      "title": "voice.webm",
+      "transcript": "ผมเรียนอยู่ที่ราชกาลบาง Software Engineer ปี 3 ก็ได้เจอเพื่อนมากมายได้สนุกมากครับ ไปเรื่องที่ 2 เลย",
+      "audioUrl": "/uploads/project-1775059870565/audio/1775059906810-e03dedb1.webm",
+      "createdAt": "2026-04-01T16:11:46.811Z",
+      "visible": true,
+      "order": 2
+    },
+    {
+      "id": "audio-1775059937604",
+      "title": "voice.webm",
+      "transcript": "ไปเรื่องที่สองเลย ตอนนั้นเตะที่อาสามชั้นได้เจอเพื่อนเพื่อนมากมาย รุ่นพี่รุ่นน้อง",
+      "audioUrl": "/uploads/project-1775059870565/audio/1775059937603-944b92cd.webm",
+      "createdAt": "2026-04-01T16:12:17.605Z",
+      "visible": true,
+      "order": 3
+    },
+    {
+      "id": "audio-1775059955031",
+      "title": "voice.webm",
+      "transcript": "ไปเรื่องที่สาม เอ่อ ตอนนั้นได้ไปเที่ยวที่สิงคโปร์รู้สึกสนุกมากครับ",
+      "audioUrl": "/uploads/project-1775059870565/audio/1775059955030-1bba227f.webm",
+      "createdAt": "2026-04-01T16:12:35.032Z",
+      "visible": true,
+      "order": 4
+    },
+    {
+      "id": "audio-1775059970407",
+      "title": "voice.webm",
+      "transcript": "ไปเรื่องที่สี่ ตอนนั้น เอ่อ ตีกอล์ฟครั้งแรกรู้สึกสนุกมากแล้วก็ท้าทายมาก",
+      "audioUrl": "/uploads/project-1775059870565/audio/1775059970406-ef16b5f0.webm",
+      "createdAt": "2026-04-01T16:12:50.407Z",
+      "visible": true,
+      "order": 5
+    }
+  ],
+  "interview": {
+    "completedAt": "2026-04-01T16:13:11.836Z",
+    "userName": "Parin",
+    "analysis": {
+      "themes": [
+        "University Memories",
+        "Friendship",
+        "Travel Experiences",
+        "First-time Challenges"
+      ],
+      "tone": "Nostalgic and Excited",
+      "highlights": [
+        "Meeting friends from different years at university.",
+        "A fun trip to Singapore with friends.",
+        "The thrill of playing golf for the first time."
+      ]
+    },
+    "transcript": "AI: สวัสดีครับ Parin! ยินดีมากเลยที่ได้มาช่วยเก็บความทรงจำดีๆ ไว้ด้วยกัน 😊\n\nเริ่มเลยนะครับ — มีช่วงเวลาไหนกับคนพิเศษที่นึกถึงแล้วยังรู้สึกดีอยู่เลย? เล่าให้ฟังได้เลย ไม่ต้องเป็นเรื่องใหญ่โตก็ได้ครับ\nParin: โอเคงั้นมาเริ่มเรื่องที่หนึ่งเกี่ยวกับมหาลัย\nAI: ฟังดูน่าตื่นเต้นมากเลย! มหาวิทยาลัยมีความทรงจำดีๆ เยอะเลยนะครับ เล่าให้ฟังหน่อยว่าเกิดอะไรขึ้นในช่วงนั้น?\nParin: ผมเรียนอยู่ที่ราชกาลบาง Software Engineer ปี 3 ก็ได้เจอเพื่อนมากมายได้สนุกมากครับ ไปเรื่องที่ 2 เลย\nAI: ฟังดูน่าสนุกมากเลยครับ! การได้เจอเพื่อนใหม่ในมหาวิทยาลัยเป็นอะไรที่พิเศษจริงๆ ✨ แล้วมีช่วงไหนที่สนุกหรือประทับใจเป็นพิเศษไหม?\nParin: ไปเรื่องที่สองเลย ตอนนั้นเตะที่อาสามชั้นได้เจอเพื่อนเพื่อนมากมาย รุ่นพี่รุ่นน้อง\nAI: ฟังดูมีความสนุกสนานมากเลยครับ! การได้เจอเพื่อนจากรุ่นต่างๆ ทำให้ช่วงเวลานั้นพิเศษจริงๆ ✨ แล้วตอนนั้นคุณรู้สึกยังไงบ้างเมื่อได้เล่นกับเพื่อนๆ?\nParin: ไปเรื่องที่สาม เอ่อ ตอนนั้นได้ไปเที่ยวที่สิงคโปร์รู้สึกสนุกมากครับ\nAI: ฟังดูน่าตื่นเต้นจริงๆ ครับ! การไปเที่ยวสิงคโปร์กับเพื่อนๆ เป็นประสบการณ์ที่น่าจดจำมากๆ เล่าให้ฟังเพิ่มเติมได้ไหมว่าเกิดอะไรขึ้นที่นั่น?\nParin: ไปเรื่องที่สี่ ตอนนั้น เอ่อ ตีกอล์ฟครั้งแรกรู้สึกสนุกมากแล้วก็ท้าทายมาก\nAI: ฟังดูน่าสนใจมากเลยครับ! การได้ลองเล่นกอล์ฟครั้งแรกเป็นประสบการณ์ที่น่าตื่นเต้นแน่นอน ✨ แล้วตอนนั้นคุณอยู่ที่ไหนกันครับ?",
+    "rawMessages": [
+      {
+        "id": "assistant-1775059873808-mt7y47",
+        "role": "assistant",
+        "content": "สวัสดีครับ Parin! ยินดีมากเลยที่ได้มาช่วยเก็บความทรงจำดีๆ ไว้ด้วยกัน 😊\n\nเริ่มเลยนะครับ — มีช่วงเวลาไหนกับคนพิเศษที่นึกถึงแล้วยังรู้สึกดีอยู่เลย? เล่าให้ฟังได้เลย ไม่ต้องเป็นเรื่องใหญ่โตก็ได้ครับ",
+        "createdAt": "2026-04-01T16:11:13.808Z"
+      },
+      {
+        "id": "user-1775059887071-snqiqh",
+        "role": "user",
+        "content": "โอเคงั้นมาเริ่มเรื่องที่หนึ่งเกี่ยวกับมหาลัย",
+        "createdAt": "2026-04-01T16:11:27.071Z"
+      },
+      {
+        "id": "assistant-1775059891597-jxucpi",
+        "role": "assistant",
+        "content": "ฟังดูน่าตื่นเต้นมากเลย! มหาวิทยาลัยมีความทรงจำดีๆ เยอะเลยนะครับ เล่าให้ฟังหน่อยว่าเกิดอะไรขึ้นในช่วงนั้น?",
+        "createdAt": "2026-04-01T16:11:31.597Z"
+      },
+      {
+        "id": "user-1775059906817-g3b6nq",
+        "role": "user",
+        "content": "ผมเรียนอยู่ที่ราชกาลบาง Software Engineer ปี 3 ก็ได้เจอเพื่อนมากมายได้สนุกมากครับ ไปเรื่องที่ 2 เลย",
+        "createdAt": "2026-04-01T16:11:46.817Z"
+      },
+      {
+        "id": "assistant-1775059912080-ldo3i3",
+        "role": "assistant",
+        "content": "ฟังดูน่าสนุกมากเลยครับ! การได้เจอเพื่อนใหม่ในมหาวิทยาลัยเป็นอะไรที่พิเศษจริงๆ ✨ แล้วมีช่วงไหนที่สนุกหรือประทับใจเป็นพิเศษไหม?",
+        "createdAt": "2026-04-01T16:11:52.080Z"
+      },
+      {
+        "id": "user-1775059937611-fcr48n",
+        "role": "user",
+        "content": "ไปเรื่องที่สองเลย ตอนนั้นเตะที่อาสามชั้นได้เจอเพื่อนเพื่อนมากมาย รุ่นพี่รุ่นน้อง",
+        "createdAt": "2026-04-01T16:12:17.611Z"
+      },
+      {
+        "id": "assistant-1775059942558-wlwt4w",
+        "role": "assistant",
+        "content": "ฟังดูมีความสนุกสนานมากเลยครับ! การได้เจอเพื่อนจากรุ่นต่างๆ ทำให้ช่วงเวลานั้นพิเศษจริงๆ ✨ แล้วตอนนั้นคุณรู้สึกยังไงบ้างเมื่อได้เล่นกับเพื่อนๆ?",
+        "createdAt": "2026-04-01T16:12:22.558Z"
+      },
+      {
+        "id": "user-1775059955038-kozv7v",
+        "role": "user",
+        "content": "ไปเรื่องที่สาม เอ่อ ตอนนั้นได้ไปเที่ยวที่สิงคโปร์รู้สึกสนุกมากครับ",
+        "createdAt": "2026-04-01T16:12:35.038Z"
+      },
+      {
+        "id": "assistant-1775059959196-svdlwc",
+        "role": "assistant",
+        "content": "ฟังดูน่าตื่นเต้นจริงๆ ครับ! การไปเที่ยวสิงคโปร์กับเพื่อนๆ เป็นประสบการณ์ที่น่าจดจำมากๆ เล่าให้ฟังเพิ่มเติมได้ไหมว่าเกิดอะไรขึ้นที่นั่น?",
+        "createdAt": "2026-04-01T16:12:39.196Z"
+      },
+      {
+        "id": "user-1775059970413-gykea6",
+        "role": "user",
+        "content": "ไปเรื่องที่สี่ ตอนนั้น เอ่อ ตีกอล์ฟครั้งแรกรู้สึกสนุกมากแล้วก็ท้าทายมาก",
+        "createdAt": "2026-04-01T16:12:50.413Z"
+      },
+      {
+        "id": "assistant-1775059974706-wx7n15",
+        "role": "assistant",
+        "content": "ฟังดูน่าสนใจมากเลยครับ! การได้ลองเล่นกอล์ฟครั้งแรกเป็นประสบการณ์ที่น่าตื่นเต้นแน่นอน ✨ แล้วตอนนั้นคุณอยู่ที่ไหนกันครับ?",
+        "createdAt": "2026-04-01T16:12:54.706Z"
+      }
+    ]
+  },
+  "memories": [
+    {
+      "id": "text-1",
+      "title": "University Friendships",
+      "description": "Parin recalls the joy of meeting many friends during his third year at university, creating lasting bonds. Emotion: Joyful."
+    },
+    {
+      "id": "text-2",
+      "title": "Playing with Friends",
+      "description": "A memorable moment playing with friends from different years, filled with laughter and camaraderie. Emotion: Excited."
+    },
+    {
+      "id": "text-3",
+      "title": "Trip to Singapore",
+      "description": "An exciting trip to Singapore with friends, filled with fun and unforgettable experiences. Emotion: Thrilled."
+    },
+    {
+      "id": "text-4",
+      "title": "First Golf Experience",
+      "description": "The challenge and excitement of playing golf for the first time, a memorable milestone for Parin. Emotion: Challenged."
+    }
+  ],
+  "roomPayload": {
+    "textSlots": [
+      {
+        "id": "text-1",
+        "title": "University Friendships",
+        "text": "Parin recalls the joy of meeting many friends during his third year at university, creating lasting bonds. Emotion: Joyful.",
+        "sourceQuote": "ได้เจอเพื่อนมากมายได้สนุกมากครับ"
+      },
+      {
+        "id": "text-2",
+        "title": "Playing with Friends",
+        "text": "A memorable moment playing with friends from different years, filled with laughter and camaraderie. Emotion: Excited.",
+        "sourceQuote": "ได้เจอเพื่อนเพื่อนมากมาย รุ่นพี่รุ่นน้อง"
+      },
+      {
+        "id": "text-3",
+        "title": "Trip to Singapore",
+        "text": "An exciting trip to Singapore with friends, filled with fun and unforgettable experiences. Emotion: Thrilled.",
+        "sourceQuote": "รู้สึกสนุกมากครับ"
+      },
+      {
+        "id": "text-4",
+        "title": "First Golf Experience",
+        "text": "The challenge and excitement of playing golf for the first time, a memorable milestone for Parin. Emotion: Challenged.",
+        "sourceQuote": "รู้สึกสนุกมากแล้วก็ท้าทายมาก"
+      }
+    ],
+    "photoSlots": [],
+    "audioSlots": [],
+    "ordering": [
+      "text-1",
+      "text-2",
+      "text-3",
+      "text-4"
+    ],
+    "visibility": {
+      "text-1": true,
+      "text-2": true,
+      "text-3": true,
+      "text-4": true
+    }
+  }
+}

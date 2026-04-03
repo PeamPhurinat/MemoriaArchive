@@ -1,0 +1,212 @@
+{
+  "id": "project-1775126939479",
+  "title": "",
+  "coupleNames": "",
+  "createdAt": "2026-04-02T12:56:02.494Z",
+  "updatedAt": "2026-04-02T13:17:21.373Z",
+  "photoSlots": [],
+  "textSlots": [
+    {
+      "id": "text-1",
+      "title": "Debut Match Glory",
+      "text": "At just 10 years old, I scored ten goals in my first football match, a moment of pure joy and pride. Emotion: exhilaration.",
+      "sourceQuote": "ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว"
+    },
+    {
+      "id": "text-2",
+      "title": "Memory 2",
+      "text": "สวัสดีครับผมจะมาเล่าเรื่องเกี่ยวกับการเล่นฟุตบอลของผมตอนอายุ 10 ขวบจนถึง 20 ปี",
+      "sourceQuote": "สวัสดีครับผมจะมาเล่าเรื่องเกี่ยวกับการเล่นฟุตบอลของผมตอนอายุ 10 ขวบจนถึง 20 ปี"
+    },
+    {
+      "id": "text-3",
+      "title": "Memory 3",
+      "text": "ก็ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว",
+      "sourceQuote": "ก็ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว"
+    }
+  ],
+  "audioSlots": [
+    {
+      "id": "audio-1775134562492",
+      "title": "voice.webm",
+      "transcript": "สวัสดีครับ",
+      "audioUrl": "/uploads/project-1775126939479/audio/1775134562491-0fca744d.webm",
+      "createdAt": "2026-04-02T12:56:02.496Z",
+      "visible": true,
+      "order": 1
+    },
+    {
+      "id": "audio-1775134575267",
+      "title": "voice.webm",
+      "transcript": "ได้ยินไหมครับ",
+      "audioUrl": "/uploads/project-1775126939479/audio/1775134575265-8874fe34.webm",
+      "createdAt": "2026-04-02T12:56:15.267Z",
+      "visible": true,
+      "order": 2
+    },
+    {
+      "id": "audio-1775134893571",
+      "title": "voice.webm",
+      "transcript": "คุณเขียนอิโมจิมาให้หน่อยได้ไหม?",
+      "audioUrl": "/uploads/project-1775126939479/audio/1775134893570-f7cf3a68.webm",
+      "createdAt": "2026-04-02T13:01:33.571Z",
+      "visible": true,
+      "order": 3
+    },
+    {
+      "id": "audio-1775135080131",
+      "title": "voice.webm",
+      "transcript": "สวัสดีครับ",
+      "audioUrl": "/uploads/project-1775126939479/audio/1775135080130-12e860da.webm",
+      "createdAt": "2026-04-02T13:04:40.132Z",
+      "visible": true,
+      "order": 4
+    },
+    {
+      "id": "audio-1775135381881",
+      "title": "voice.webm",
+      "transcript": "อันนี้คือเข้าใจที่ผมพูดไหม?",
+      "audioUrl": "/uploads/project-1775126939479/audio/1775135381879-a6c81cbd.webm",
+      "createdAt": "2026-04-02T13:09:41.882Z",
+      "visible": true,
+      "order": 5
+    },
+    {
+      "id": "audio-1775135413090",
+      "title": "voice.webm",
+      "transcript": "ก็เกี่ยวกับการเตะฟุตบอลของผม ผมก็ได้เริ่มเตะฟุตบอลตั้งแต่ 7 ขวบจนถึงตอน 16-17 ครับ",
+      "audioUrl": "/uploads/project-1775126939479/audio/1775135413088-67d88636.webm",
+      "createdAt": "2026-04-02T13:10:13.091Z",
+      "visible": true,
+      "order": 6
+    },
+    {
+      "id": "audio-1775135647998",
+      "title": "voice.webm",
+      "transcript": "สวัสดีครับผมอยากมาเล่าเกี่ยวกับฟุตบอลผมได้เตะฟุตบอลตอนอายุประมาณ 10 ขวบจนถึงยี่สิบ",
+      "audioUrl": "/uploads/project-1775126939479/audio/1775135647997-66bb22e7.webm",
+      "createdAt": "2026-04-02T13:14:07.999Z",
+      "visible": true,
+      "order": 7
+    },
+    {
+      "id": "audio-1775135813473",
+      "title": "voice.webm",
+      "transcript": "สวัสดีครับผมจะมาเล่าเรื่องเกี่ยวกับการเล่นฟุตบอลของผมตอนอายุ 10 ขวบจนถึง 20 ปี",
+      "audioUrl": "/uploads/project-1775126939479/audio/1775135813472-97deb81b.webm",
+      "createdAt": "2026-04-02T13:16:53.474Z",
+      "visible": true,
+      "order": 8
+    },
+    {
+      "id": "audio-1775135827730",
+      "title": "voice.webm",
+      "transcript": "ก็ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว",
+      "audioUrl": "/uploads/project-1775126939479/audio/1775135827729-2d96bce2.webm",
+      "createdAt": "2026-04-02T13:17:07.731Z",
+      "visible": true,
+      "order": 9
+    }
+  ],
+  "interview": {
+    "completedAt": "2026-04-02T13:17:21.373Z",
+    "userName": "111",
+    "analysis": {
+      "themes": [
+        "football",
+        "achievement",
+        "childhood memories"
+      ],
+      "tone": "excited",
+      "highlights": [
+        "Scoring ten goals in the debut match",
+        "The exhilaration of showcasing skills",
+        "The significance of childhood football experiences"
+      ]
+    },
+    "transcript": "AI: Hi 111! I am glad to help you preserve meaningful memories for your 3D room.\n\nTo start, what is one moment with your special person that still feels vivid to you? You can share any story, big or small.\n111: สวัสดีครับผมจะมาเล่าเรื่องเกี่ยวกับการเล่นฟุตบอลของผมตอนอายุ 10 ขวบจนถึง 20 ปี\nAI: That sounds like a wonderful journey through your football experiences! It must hold a lot of memories for you. Can you share a specific moment from those years that stands out the most?\n111: ก็ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว\nAI: Wow, scoring ten goals in your debut match is such an incredible achievement! It must have felt exhilarating to showcase your skills like that. Can you tell me how you felt during that match and what the atmosphere was like?",
+    "rawMessages": [
+      {
+        "id": "assistant-1775135800861-5pji35",
+        "role": "assistant",
+        "content": "Hi 111! I am glad to help you preserve meaningful memories for your 3D room.\n\nTo start, what is one moment with your special person that still feels vivid to you? You can share any story, big or small.",
+        "createdAt": "2026-04-02T13:16:40.861Z"
+      },
+      {
+        "id": "user-1775135813480-exj1mu",
+        "role": "user",
+        "content": "สวัสดีครับผมจะมาเล่าเรื่องเกี่ยวกับการเล่นฟุตบอลของผมตอนอายุ 10 ขวบจนถึง 20 ปี",
+        "createdAt": "2026-04-02T13:16:53.480Z"
+      },
+      {
+        "id": "assistant-1775135816063-e6pvu0",
+        "role": "assistant",
+        "content": "That sounds like a wonderful journey through your football experiences! It must hold a lot of memories for you. Can you share a specific moment from those years that stands out the most?",
+        "createdAt": "2026-04-02T13:16:56.063Z"
+      },
+      {
+        "id": "user-1775135827739-rlhz5p",
+        "role": "user",
+        "content": "ก็ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว",
+        "createdAt": "2026-04-02T13:17:07.739Z"
+      },
+      {
+        "id": "assistant-1775135831575-gx75v0",
+        "role": "assistant",
+        "content": "Wow, scoring ten goals in your debut match is such an incredible achievement! It must have felt exhilarating to showcase your skills like that. Can you tell me how you felt during that match and what the atmosphere was like?",
+        "createdAt": "2026-04-02T13:17:11.575Z"
+      }
+    ]
+  },
+  "memories": [
+    {
+      "id": "text-1",
+      "title": "Debut Match Glory",
+      "description": "At just 10 years old, I scored ten goals in my first football match, a moment of pure joy and pride. Emotion: exhilaration."
+    },
+    {
+      "id": "text-2",
+      "title": "Memory 2",
+      "description": "สวัสดีครับผมจะมาเล่าเรื่องเกี่ยวกับการเล่นฟุตบอลของผมตอนอายุ 10 ขวบจนถึง 20 ปี"
+    },
+    {
+      "id": "text-3",
+      "title": "Memory 3",
+      "description": "ก็ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว"
+    }
+  ],
+  "roomPayload": {
+    "textSlots": [
+      {
+        "id": "text-1",
+        "title": "Debut Match Glory",
+        "text": "At just 10 years old, I scored ten goals in my first football match, a moment of pure joy and pride. Emotion: exhilaration.",
+        "sourceQuote": "ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว"
+      },
+      {
+        "id": "text-2",
+        "title": "Memory 2",
+        "text": "สวัสดีครับผมจะมาเล่าเรื่องเกี่ยวกับการเล่นฟุตบอลของผมตอนอายุ 10 ขวบจนถึง 20 ปี",
+        "sourceQuote": "สวัสดีครับผมจะมาเล่าเรื่องเกี่ยวกับการเล่นฟุตบอลของผมตอนอายุ 10 ขวบจนถึง 20 ปี"
+      },
+      {
+        "id": "text-3",
+        "title": "Memory 3",
+        "text": "ก็ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว",
+        "sourceQuote": "ก็ผมได้ยิงประตูเข้าสิบลูกในแมตช์แรกของผมเดบิว"
+      }
+    ],
+    "photoSlots": [],
+    "audioSlots": [],
+    "ordering": [
+      "text-1",
+      "text-2",
+      "text-3"
+    ],
+    "visibility": {
+      "text-1": true,
+      "text-2": true,
+      "text-3": true
+    }
+  }
+}

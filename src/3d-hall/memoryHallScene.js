@@ -1,15 +1,16 @@
-import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { VRButton } from "three/examples/jsm/webxr/VRButton.js";
 import { isSupabaseConfigured, loadLayoutFromCloud, saveLayoutToCloud } from "./supabaseClient.js";
-import { AppShell } from "./3d-hall/ui/AppShell.js";
-import { WorldBuilder } from "./3d-hall/world/WorldBuilder.js";
+import { AppShell } from "../3d-hall/ui/AppShell.js";
+import { WorldBuilder } from "../3d-hall/world/WorldBuilder.js";
 
-const app = document.querySelector("#app");
+export function initMemoryHall(container, memoriesData) {
+const app = container;
 const appShell = new AppShell(app);
+document.body.removeAttribute("data-world-theme");
 
 const {
   launchButton,
@@ -135,8 +136,10 @@ selectionOutline.visible = false;
 scene.add(selectionOutline);
 
 const controls = new PointerLockControls(camera, renderer.domElement);
-controls.object.position.set(0, 1.7, 22);
-scene.add(controls.object);
+const controlObject =
+  controls.object ?? (typeof controls.getObject === "function" ? controls.getObject() : camera);
+controlObject.position.set(0, 1.7, 22);
+scene.add(controlObject);
 
 const orbitControls = new OrbitControls(camera, renderer.domElement);
 orbitControls.enabled = false;
@@ -333,9 +336,10 @@ const worldBuilder = new WorldBuilder({
   pulseLights,
   world,
   registerCustomizableComponent,
+  memoriesData,
 });
 
-worldBuilder.buildAll();
+worldBuilder.buildAll(memoriesData);
 captureThemeBaseline();
 initializeCustomizer();
 
@@ -526,7 +530,7 @@ function applyTheme(themeKey, options = {}) {
     button.classList.toggle("is-active", button.dataset.theme === selectedThemeKey);
   });
 
-  document.body.setAttribute("data-world-theme", selectedThemeKey);
+  app.setAttribute("data-world-theme", selectedThemeKey);
   localStorage.setItem(THEME_STORAGE_KEY, selectedThemeKey);
 
   if (!silent) {
@@ -1018,18 +1022,18 @@ function updateCustomModeMovement(delta) {
     movementOffset.addScaledVector(right, step);
   }
 
-  controls.object.position.add(movementOffset);
-  controls.object.position.x = THREE.MathUtils.clamp(
-    controls.object.position.x,
+  controlObject.position.add(movementOffset);
+  controlObject.position.x = THREE.MathUtils.clamp(
+    controlObject.position.x,
     -world.size + 8,
     world.size - 8,
   );
-  controls.object.position.z = THREE.MathUtils.clamp(
-    controls.object.position.z,
+  controlObject.position.z = THREE.MathUtils.clamp(
+    controlObject.position.z,
     -world.size + 8,
     world.size - 8,
   );
-  controls.object.position.y = world.minY;
+  controlObject.position.y = world.minY;
 
   orbitControls.target.add(movementOffset);
   orbitControls.target.x = THREE.MathUtils.clamp(
@@ -1064,17 +1068,17 @@ function updateMovement(delta) {
     controls.moveRight(step);
   }
 
-  controls.object.position.x = THREE.MathUtils.clamp(
-    controls.object.position.x,
+  controlObject.position.x = THREE.MathUtils.clamp(
+    controlObject.position.x,
     -world.size + 8,
     world.size - 8,
   );
-  controls.object.position.z = THREE.MathUtils.clamp(
-    controls.object.position.z,
+  controlObject.position.z = THREE.MathUtils.clamp(
+    controlObject.position.z,
     -world.size + 8,
     world.size - 8,
   );
-  controls.object.position.y = world.minY;
+  controlObject.position.y = world.minY;
 }
 
 function animate() {
@@ -1113,3 +1117,24 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   updateSelectionOutline();
 });
+
+
+app.__memoriaWalkthroughContext = { scene, camera, renderer, worldBuilder, controls, orbitControls };
+
+return function cleanup() {
+  renderer.setAnimationLoop(null);
+  worldBuilder.dispose?.();
+  controls.unlock();
+  controls.dispose();
+  orbitControls.dispose();
+  transformControls.dispose();
+  renderer.dispose();
+  if (app.contains(renderer.domElement)) {
+    app.removeChild(renderer.domElement);
+  }
+  if (vrButton && vrButton.parentNode) {
+    vrButton.parentNode.removeChild(vrButton);
+  }
+  app.removeAttribute("data-world-theme");
+};
+}

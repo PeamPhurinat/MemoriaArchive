@@ -165,4 +165,3 @@ const MemoryHallPage = ({ project }) => {
 };
 
 export default MemoryHallPage;
-

@@ -1,0 +1,110 @@
+{
+  "id": "project-1775127307887",
+  "title": "",
+  "coupleNames": "",
+  "createdAt": "2026-04-02T15:52:21.654Z",
+  "updatedAt": "2026-04-02T15:53:03.188Z",
+  "photoSlots": [],
+  "textSlots": [
+    {
+      "id": "text-1",
+      "title": "First Love at University",
+      "text": "Shared meals in the bustling cafeteria, laughter echoing around. Emotion: joyful.",
+      "sourceQuote": "ที่มหาลัยตอนกินข้าวที่โรงอาหาร"
+    }
+  ],
+  "audioSlots": [
+    {
+      "id": "audio-1775145141651",
+      "title": "voice.webm",
+      "transcript": "มีความรักกับคนที่ชื่อว่าวิเศษ",
+      "audioUrl": "/uploads/project-1775127307887/audio/1775145141646-81c9e265.webm",
+      "createdAt": "2026-04-02T15:52:21.659Z",
+      "visible": true,
+      "order": 1
+    },
+    {
+      "id": "audio-1775145171300",
+      "title": "voice.webm",
+      "transcript": "ที่มหาลัยตอนกินข้าวที่โรงอาหาร",
+      "audioUrl": "/uploads/project-1775127307887/audio/1775145171297-bd6fd2bd.webm",
+      "createdAt": "2026-04-02T15:52:51.306Z",
+      "visible": true,
+      "order": 2
+    }
+  ],
+  "interview": {
+    "completedAt": "2026-04-02T15:53:03.188Z",
+    "userName": "Visit",
+    "analysis": {
+      "themes": [
+        "love",
+        "nostalgia",
+        "shared experiences"
+      ],
+      "tone": "warm",
+      "highlights": [
+        "The joy of sharing meals in the university cafeteria.",
+        "The vivid memory of a special person named วิเศษ."
+      ]
+    },
+    "transcript": "AI: Hi Visit! I am glad to help you preserve meaningful memories for your 3D room.\n\nTo start, what is one moment with your special person that still feels vivid to you? You can share any story, big or small.\nVisit: มีความรักกับคนที่ชื่อว่าวิเศษ\nAI: That sounds beautiful! Love is such a powerful and vivid feeling. Can you tell me more about a specific moment you shared with this person, like where you were or what you were doing?\nVisit: ที่มหาลัยตอนกินข้าวที่โรงอาหาร\nAI: Eating together in the university cafeteria sounds like such a warm and cherished moment. It must have been nice to share meals and conversations there! What do you remember most about that time together?",
+    "rawMessages": [
+      {
+        "id": "assistant-1775145114548-gbo8e9",
+        "role": "assistant",
+        "content": "Hi Visit! I am glad to help you preserve meaningful memories for your 3D room.\n\nTo start, what is one moment with your special person that still feels vivid to you? You can share any story, big or small.",
+        "createdAt": "2026-04-02T15:51:54.548Z"
+      },
+      {
+        "id": "user-1775145141975-swkste",
+        "role": "user",
+        "content": "มีความรักกับคนที่ชื่อว่าวิเศษ",
+        "createdAt": "2026-04-02T15:52:21.975Z"
+      },
+      {
+        "id": "assistant-1775145144748-67obuw",
+        "role": "assistant",
+        "content": "That sounds beautiful! Love is such a powerful and vivid feeling. Can you tell me more about a specific moment you shared with this person, like where you were or what you were doing?",
+        "createdAt": "2026-04-02T15:52:24.748Z"
+      },
+      {
+        "id": "user-1775145171631-54xe5c",
+        "role": "user",
+        "content": "ที่มหาลัยตอนกินข้าวที่โรงอาหาร",
+        "createdAt": "2026-04-02T15:52:51.631Z"
+      },
+      {
+        "id": "assistant-1775145175461-m9yqgz",
+        "role": "assistant",
+        "content": "Eating together in the university cafeteria sounds like such a warm and cherished moment. It must have been nice to share meals and conversations there! What do you remember most about that time together?",
+        "createdAt": "2026-04-02T15:52:55.461Z"
+      }
+    ]
+  },
+  "memories": [
+    {
+      "id": "text-1",
+      "title": "First Love at University",
+      "description": "Shared meals in the bustling cafeteria, laughter echoing around. Emotion: joyful."
+    }
+  ],
+  "roomPayload": {
+    "textSlots": [
+      {
+        "id": "text-1",
+        "title": "First Love at University",
+        "text": "Shared meals in the bustling cafeteria, laughter echoing around. Emotion: joyful.",
+        "sourceQuote": "ที่มหาลัยตอนกินข้าวที่โรงอาหาร"
+      }
+    ],
+    "photoSlots": [],
+    "audioSlots": [],
+    "ordering": [
+      "text-1"
+    ],
+    "visibility": {
+      "text-1": true
+    }
+  }
+}
