@@ -1,4 +1,4 @@
-import * as THREE from "three";
+﻿import * as THREE from "three";
 import {
   createDescriptionTexture,
   createGroundTexture,
@@ -261,6 +261,10 @@ export class WorldBuilder {
 
   createMemoryMonoliths(memoriesData = this.memoriesData) {
     const dreamThemeColors = this.getMemoryThemeColors("dream");
+    const getLocalVideoFallbackForIndex = (index) =>
+      index === 0
+        ? "/videos/memory-monolith-test.mp4"
+        : `/videos/memory-monolith-test-${index + 1}.mp4`;
     const demoEntries = [
       {
         year: "2012",
@@ -268,7 +272,7 @@ export class WorldBuilder {
         note: "First uploaded photo",
         description: "A warm night market, paper lanterns, and the first memory saved into the archive.",
         voice: "We stayed until the lights disappeared into the sky.",
-        video: "/videos/memory-monolith-test.mp4",
+        video: getLocalVideoFallbackForIndex(0),
         x: -11,
         z: 18,
         side: -1,
@@ -329,13 +333,21 @@ export class WorldBuilder {
             year: memory?.year || `#${index + 1}`,
             title: memory?.title || `Memory ${index + 1}`,
             note: memory?.note || "Interview Memory",
-            photo: memory?.photo || memory?.url || null,
+            photo:
+              memory?.photo ||
+              memory?.photoUrl ||
+              memory?.image ||
+              memory?.imageUrl ||
+              memory?.imageSrc ||
+              memory?.url ||
+              null,
             video:
               memory?.video ||
               memory?.videoUrl ||
               memory?.videoSrc ||
               memory?.clip ||
-              null,
+              memory?.src ||
+              getLocalVideoFallbackForIndex(index),
             description:
               memory?.description ||
               memory?.text ||
@@ -403,7 +415,7 @@ export class WorldBuilder {
       videoFrame.castShadow = true;
       videoFrame.receiveShadow = true;
 
-      const videoPanel = createReadablePanel(3.18, 1.79, new THREE.Texture(), { offset: 0.1 });
+      const videoPanel = createReadablePanel(3.18, 1.79, new THREE.Texture(), { offset: 0.13 });
       videoFrame.add(videoPanel);
       station.add(videoFrame);
 
@@ -628,10 +640,46 @@ export class WorldBuilder {
   }
 
   createVideoTexture(entry, onVideoAspectChange = null, onVideoTextureReady = null) {
-    const videoSource =
+    const rawVideoSource =
       typeof entry?.video === "string" && entry.video.trim().length > 0
         ? entry.video.trim()
         : null;
+
+    const normalizeVideoSource = (source) => {
+      if (!source) {
+        return null;
+      }
+
+      const normalized = source.trim().replaceAll("\\", "/");
+      if (!normalized) {
+        return null;
+      }
+
+      if (/^file:\/\//i.test(normalized) || /^[a-zA-Z]:\//.test(normalized)) {
+        const fileName = normalized.split("/").filter(Boolean).pop();
+        return fileName ? `/videos/${encodeURIComponent(fileName)}` : null;
+      }
+
+      if (/^https?:\/\//i.test(normalized) || /^blob:/i.test(normalized) || /^data:/i.test(normalized)) {
+        return normalized;
+      }
+
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(normalized)) {
+        return null;
+      }
+
+      if (normalized.startsWith("/")) {
+        return normalized;
+      }
+
+      if (/^videos\//i.test(normalized)) {
+        return `/${normalized}`;
+      }
+
+      return normalized;
+    };
+
+    const videoSource = normalizeVideoSource(rawVideoSource);
 
     const fallbackTexture = this.createVideoPlaceholderTexture(
       videoSource ? "Video loading..." : "Add a local video path",
@@ -674,15 +722,26 @@ export class WorldBuilder {
     videoTexture.userData = {
       mediaAspect: 16 / 9,
       videoElement,
+      source: videoSource,
+      rawSource: rawVideoSource,
     };
 
     let didNotifyReady = false;
+    let timeoutId = null;
+
+    const clearReadyTimeout = () => {
+      if (timeoutId !== null) {
+        globalThis.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
     const notifyAspect = () => {
       if (!videoElement.videoWidth || !videoElement.videoHeight) {
         return;
       }
 
-      const aspect = THREE.MathUtils.clamp(videoElement.videoWidth / videoElement.videoHeight, 1, 2.4);
+      const aspect = THREE.MathUtils.clamp(videoElement.videoWidth / videoElement.videoHeight, 0.56, 2.4);
       videoTexture.userData.mediaAspect = aspect;
       fallbackTexture.userData.mediaAspect = aspect;
       if (typeof onVideoAspectChange === "function") {
@@ -709,23 +768,34 @@ export class WorldBuilder {
       }
     };
 
+    const fallbackReady = () => {
+      clearReadyTimeout();
+      notifyReady(fallbackTexture);
+    };
+
     const handleLoadedMetadata = () => {
       notifyAspect();
     };
     const handleCanPlay = () => {
+      clearReadyTimeout();
       notifyAspect();
       notifyReady(videoTexture);
       tryPlay();
     };
     const handleError = () => {
-      notifyReady(fallbackTexture);
+      fallbackReady();
     };
 
     videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
     videoElement.addEventListener("canplay", handleCanPlay);
     videoElement.addEventListener("error", handleError);
 
+    timeoutId = globalThis.setTimeout(() => {
+      fallbackReady();
+    }, 8000);
+
     videoTexture.userData.cleanup = () => {
+      clearReadyTimeout();
       videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
       videoElement.removeEventListener("canplay", handleCanPlay);
       videoElement.removeEventListener("error", handleError);
@@ -848,10 +918,10 @@ export class WorldBuilder {
 
   applyVideoFrameAspect(videoFrame, videoPanel, aspect) {
     this.applyMediaFrameAspect(videoFrame, videoPanel, aspect, {
-      baseInnerWidth: 3.18,
-      baseInnerHeight: 1.79,
+      baseInnerWidth: 3.68,
+      baseInnerHeight: 2.79,
       frameBorder: 0.06,
-      minAspect: 1,
+      minAspect: 0.56,
       maxAspect: 2.4,
       maxLandscapeScale: 1.2,
     });
@@ -1199,3 +1269,4 @@ export class WorldBuilder {
     });
   }
 }
+

@@ -298,19 +298,20 @@ export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChang
 
   const drawPhoto = (image) => {
     const imageAspect = image.width / image.height;
-    const displayAspect = THREE.MathUtils.clamp(imageAspect, 0.741, 2.2);
+    const displayAspect = THREE.MathUtils.clamp(imageAspect, 0.9, 2.2);
     const targetWidth = 1024;
     const targetHeight = Math.max(420, Math.round(targetWidth / displayAspect));
+
+    // FIX: Notify aspect FIRST before resizing canvas so the frame geometry
+    // updates correctly for all memory slots (not just the first one).
+    notifyPhotoAspect(displayAspect);
 
     // Resize canvas to match image aspect
     canvas.width = targetWidth;
     canvas.height = targetHeight;
 
-    // ✅ Always draw base layer first so background is never blank
+    // Draw base layer first so background is never blank
     drawBase();
-
-    // ✅ Notify aspect AFTER canvas is resized
-    notifyPhotoAspect(displayAspect);
 
     const frameWidth = canvas.width;
     const frameHeight = canvas.height;
@@ -349,7 +350,6 @@ export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChang
     canvas.width = 1024;
     canvas.height = 768;
     drawBase();
-    // ✅ Only notify aspect here, NOT at the top of the function
     notifyPhotoAspect(canvas.width / canvas.height);
     context.fillStyle = "rgba(40, 24, 42, 0.62)";
     context.fillRect(170, 210, 684, 300);
@@ -366,8 +366,10 @@ export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChang
     context.fillText("Check image URL / permissions", 322, 440);
   };
 
-  // ✅ Draw placeholder base only — do NOT call notifyPhotoAspect yet
+  // FIX: Draw base AND immediately notify aspect so all frame geometries
+  // are correctly sized from the start — not just memory slot 1.
   drawBase();
+  notifyPhotoAspect(canvas.width / canvas.height);
   texture.needsUpdate = true;
 
   const photoSource =
@@ -391,7 +393,7 @@ export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChang
     image.onload = () => {
       if (settled) return;
       window.clearTimeout(timeoutId);
-      drawPhoto(image); // drawBase is called inside drawPhoto now
+      drawPhoto(image);
       texture.needsUpdate = true;
       settle();
     };
