@@ -264,67 +264,6 @@ export class WorldBuilder {
 
   createMemoryMonoliths(memoriesData = this.memoriesData) {
     const dreamThemeColors = this.getMemoryThemeColors("dream");
-<<<<<<< Updated upstream
-    const getLocalVideoFallbackForIndex = (index) =>
-      index === 0
-        ? "/videos/memory-monolith-test.mp4"
-        : `/videos/memory-monolith-test-${index + 1}.mp4`;
-    const demoEntries = [
-      {
-        year: "2012",
-        title: "Lantern Festival",
-        note: "First uploaded photo",
-        description: "A warm night market, paper lanterns, and the first memory saved into the archive.",
-        voice: "We stayed until the lights disappeared into the sky.",
-        video: getLocalVideoFallbackForIndex(0),
-        x: -11,
-        z: 18,
-        side: -1,
-      },
-      {
-        year: "2015",
-        title: "Rainy Train Home",
-        note: "Journal entry",
-        description: "A quiet train ride, window reflections, and notes written while the city blurred past.",
-        voice: "The whole window looked like a moving watercolor.",
-        x: 10,
-        z: 4,
-        side: 1,
-      },
-      {
-        year: "2017",
-        title: "Studio Afternoon",
-        note: "Voice memory",
-        description: "Messy desks, half-finished sketches, and the kind of conversation you only appreciate later.",
-        voice: "We thought we had more time, so we talked slowly.",
-        x: -9,
-        z: -11,
-        side: -1,
-      },
-      {
-        year: "2020",
-        title: "Window Garden",
-        note: "Photo and text",
-        description: "Plants by the glass, handwritten lists, and the tiny routines that kept each day together.",
-        voice: "The room was small, but it still felt like growing something.",
-        x: 11,
-        z: -28,
-        side: 1,
-      },
-      {
-        year: "2023",
-        title: "Graduation Steps",
-        note: "Archive upload",
-        description: "Scattered friends, family photos, and a moment that felt both finished and unfinished.",
-        voice: "We kept saying goodbye, then taking one more picture.",
-        x: -10,
-        z: -45,
-        side: -1,
-      },
-    ];
-
-=======
->>>>>>> Stashed changes
     const slotPositions = [
       { x: -11, z: 18, side: -1 },
       { x: 10, z: 4, side: 1 },
@@ -333,54 +272,25 @@ export class WorldBuilder {
       { x: -10, z: -45, side: -1 },
     ];
 
-<<<<<<< Updated upstream
-    const mappedEntries =
-      Array.isArray(memoriesData) && memoriesData.length > 0
-        ? memoriesData.slice(0, 5).map((memory, index) => ({
-            year: memory?.year || `#${index + 1}`,
-            title: memory?.title || `Memory ${index + 1}`,
-            note: memory?.note || "Interview Memory",
-            photo:
-              memory?.photo ||
-              memory?.photoUrl ||
-              memory?.image ||
-              memory?.imageUrl ||
-              memory?.imageSrc ||
-              memory?.url ||
-              null,
-            video:
-              memory?.video ||
-              memory?.videoUrl ||
-              memory?.videoSrc ||
-              memory?.clip ||
-              memory?.src ||
-              getLocalVideoFallbackForIndex(index),
-            description:
-              memory?.description ||
-              memory?.text ||
-              "No description provided.",
-            voice:
-              memory?.voice ||
-              memory?.sourceQuote ||
-              memory?.description ||
-              "No voice memory.",
-            x: slotPositions[index].x,
-            z: slotPositions[index].z,
-            side: slotPositions[index].side,
-          }))
-        : [];
-=======
     const entries = Array.isArray(memoriesData)
       ? memoriesData.slice(0, 5).map((memory, index) => ({
           year: memory?.year || `#${index + 1}`,
           title: memory?.title || `Memory ${index + 1}`,
           note: memory?.note || "Interview Memory",
-          photo: memory?.photo || memory?.url || null,
+          photo:
+            memory?.photo ||
+            memory?.photoUrl ||
+            memory?.image ||
+            memory?.imageUrl ||
+            memory?.imageSrc ||
+            memory?.url ||
+            null,
           video:
             memory?.video ||
             memory?.videoUrl ||
             memory?.videoSrc ||
             memory?.clip ||
+            memory?.src ||
             null,
           description:
             memory?.description ||
@@ -396,7 +306,6 @@ export class WorldBuilder {
           side: slotPositions[index].side,
         }))
       : [];
->>>>>>> Stashed changes
 
     if (entries.length === 0) {
       return;
@@ -452,11 +361,8 @@ export class WorldBuilder {
       videoFrame.castShadow = true;
       videoFrame.receiveShadow = true;
 
-<<<<<<< Updated upstream
-=======
       // Keep panel slightly in front of a 0.24-depth frame (front face at z=0.12)
       // so video texture is not hidden by z-fighting/occlusion.
->>>>>>> Stashed changes
       const videoPanel = createReadablePanel(3.18, 1.79, new THREE.Texture(), { offset: 0.13 });
       videoFrame.add(videoPanel);
       station.add(videoFrame);
@@ -681,209 +587,6 @@ export class WorldBuilder {
     };
   }
 
-<<<<<<< Updated upstream
-  createVideoTexture(entry, onVideoAspectChange = null, onVideoTextureReady = null) {
-    const rawVideoSource =
-      typeof entry?.video === "string" && entry.video.trim().length > 0
-        ? entry.video.trim()
-        : null;
-
-    const normalizeVideoSource = (source) => {
-      if (!source) {
-        return null;
-      }
-
-      const normalized = source.trim().replaceAll("\\", "/");
-      if (!normalized) {
-        return null;
-      }
-
-      if (/^file:\/\//i.test(normalized) || /^[a-zA-Z]:\//.test(normalized)) {
-        const fileName = normalized.split("/").filter(Boolean).pop();
-        return fileName ? `/videos/${encodeURIComponent(fileName)}` : null;
-      }
-
-      if (/^https?:\/\//i.test(normalized) || /^blob:/i.test(normalized) || /^data:/i.test(normalized)) {
-        return normalized;
-      }
-
-      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(normalized)) {
-        return null;
-      }
-
-      if (normalized.startsWith("/")) {
-        return normalized;
-      }
-
-      if (/^videos\//i.test(normalized)) {
-        return `/${normalized}`;
-      }
-
-      return normalized;
-    };
-
-    const videoSource = normalizeVideoSource(rawVideoSource);
-
-    const fallbackTexture = this.createVideoPlaceholderTexture(
-      videoSource ? "Video loading..." : "Add a local video path",
-      videoSource ? "Waiting for media stream" : "Set `video` on a memory slot",
-    );
-    fallbackTexture.colorSpace = THREE.SRGBColorSpace;
-    fallbackTexture.userData = {
-      mediaAspect: 16 / 9,
-    };
-
-    if (typeof onVideoAspectChange === "function") {
-      onVideoAspectChange(16 / 9);
-    }
-
-    if (!videoSource) {
-      return {
-        videoTexture: fallbackTexture,
-        videoFallbackTexture: fallbackTexture,
-      };
-    }
-
-    const videoElement = document.createElement("video");
-    videoElement.src = videoSource;
-    videoElement.loop = true;
-    videoElement.muted = true;
-    videoElement.autoplay = true;
-    videoElement.preload = "auto";
-    videoElement.playsInline = true;
-    videoElement.setAttribute("playsinline", "");
-    videoElement.setAttribute("muted", "");
-    if (/^https?:\/\//i.test(videoSource)) {
-      videoElement.crossOrigin = "anonymous";
-    }
-
-    const videoTexture = new THREE.VideoTexture(videoElement);
-    videoTexture.colorSpace = THREE.SRGBColorSpace;
-    videoTexture.minFilter = THREE.LinearFilter;
-    videoTexture.magFilter = THREE.LinearFilter;
-    videoTexture.generateMipmaps = false;
-    videoTexture.userData = {
-      mediaAspect: 16 / 9,
-      videoElement,
-      source: videoSource,
-      rawSource: rawVideoSource,
-    };
-
-    let didNotifyReady = false;
-    let timeoutId = null;
-
-    const clearReadyTimeout = () => {
-      if (timeoutId !== null) {
-        globalThis.clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-    };
-
-    const notifyAspect = () => {
-      if (!videoElement.videoWidth || !videoElement.videoHeight) {
-        return;
-      }
-
-      const aspect = THREE.MathUtils.clamp(videoElement.videoWidth / videoElement.videoHeight, 0.56, 2.4);
-      videoTexture.userData.mediaAspect = aspect;
-      fallbackTexture.userData.mediaAspect = aspect;
-      if (typeof onVideoAspectChange === "function") {
-        onVideoAspectChange(aspect);
-      }
-    };
-
-    const tryPlay = () => {
-      const playPromise = videoElement.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(() => {});
-      }
-    };
-
-    const notifyReady = (texture) => {
-      if (didNotifyReady && texture === videoTexture) {
-        return;
-      }
-      if (texture === videoTexture) {
-        didNotifyReady = true;
-      }
-      if (typeof onVideoTextureReady === "function") {
-        onVideoTextureReady(texture);
-      }
-    };
-
-    const fallbackReady = () => {
-      clearReadyTimeout();
-      notifyReady(fallbackTexture);
-    };
-
-    const handleLoadedMetadata = () => {
-      notifyAspect();
-    };
-    const handleCanPlay = () => {
-      clearReadyTimeout();
-      notifyAspect();
-      notifyReady(videoTexture);
-      tryPlay();
-    };
-    const handleError = () => {
-      fallbackReady();
-    };
-
-    videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
-    videoElement.addEventListener("canplay", handleCanPlay);
-    videoElement.addEventListener("error", handleError);
-
-    timeoutId = globalThis.setTimeout(() => {
-      fallbackReady();
-    }, 8000);
-
-    videoTexture.userData.cleanup = () => {
-      clearReadyTimeout();
-      videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      videoElement.removeEventListener("canplay", handleCanPlay);
-      videoElement.removeEventListener("error", handleError);
-      videoElement.pause();
-      videoElement.removeAttribute("src");
-      videoElement.load();
-    };
-
-    tryPlay();
-
-    return {
-      videoTexture,
-      videoFallbackTexture: fallbackTexture,
-    };
-  }
-
-  createVideoPlaceholderTexture(title, subtitle) {
-    const canvas = document.createElement("canvas");
-    canvas.width = 960;
-    canvas.height = 540;
-    const context = canvas.getContext("2d");
-
-    const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, "#2d2230");
-    gradient.addColorStop(1, "#463341");
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-
-    context.strokeStyle = "rgba(255, 255, 255, 0.78)";
-    context.lineWidth = 3;
-    context.strokeRect(24, 24, canvas.width - 48, canvas.height - 48);
-
-    context.fillStyle = "rgba(255, 255, 255, 0.9)";
-    context.font = "700 52px Segoe UI";
-    context.fillText(title, 60, 250);
-
-    context.fillStyle = "rgba(255, 255, 255, 0.75)";
-    context.font = "500 32px Segoe UI";
-    context.fillText(subtitle, 60, 310);
-
-    return new THREE.CanvasTexture(canvas);
-  }
-
-=======
->>>>>>> Stashed changes
   updatePanelTexture(panelGroup, texture) {
     if (!panelGroup) {
       return;

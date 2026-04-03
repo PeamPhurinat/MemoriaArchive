@@ -298,33 +298,16 @@ export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChang
 
   const drawPhoto = (image) => {
     const imageAspect = image.width / image.height;
-<<<<<<< Updated upstream
-    const displayAspect = THREE.MathUtils.clamp(imageAspect, 0.9, 2.2);
-    const targetWidth = 1024;
-    const targetHeight = Math.max(420, Math.round(targetWidth / displayAspect));
-
-    // FIX: Notify aspect FIRST before resizing canvas so the frame geometry
-    // updates correctly for all memory slots (not just the first one).
-    notifyPhotoAspect(displayAspect);
-
-    // Resize canvas to match image aspect
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-
-    // Draw base layer first so background is never blank
-    drawBase();
-=======
     const displayAspect = THREE.MathUtils.clamp(imageAspect, 0.741, 2.2);
 
-    // ห้าม resize canvas หลังจาก CanvasTexture ถูก allocate บน GPU แล้ว
-    // เพราะจะทำให้เกิด GL_INVALID_VALUE: Offset overflows texture dimensions
-    // ใช้ fixed size 1024x768 แล้ว draw image ให้พอดีแทน
+    // à¸«à¹‰à¸²à¸¡ resize canvas à¸«à¸¥à¸±à¸‡à¸ˆà¸²à¸ CanvasTexture à¸–à¸¹à¸ allocate à¸šà¸™ GPU à¹à¸¥à¹‰à¸§
+    // à¹€à¸žà¸£à¸²à¸°à¸ˆà¸°à¸—à¸³à¹ƒà¸«à¹‰à¹€à¸à¸´à¸” GL_INVALID_VALUE: Offset overflows texture dimensions
+    // à¹ƒà¸Šà¹‰ fixed size 1024x768 à¹à¸¥à¹‰à¸§ draw image à¹ƒà¸«à¹‰à¸žà¸­à¸”à¸µà¹à¸—à¸™
     canvas.width = 1024;
     canvas.height = 768;
 
     drawBase();
     notifyPhotoAspect(displayAspect);
->>>>>>> Stashed changes
 
     const frameWidth = canvas.width;
     const frameHeight = canvas.height;
@@ -380,7 +363,7 @@ export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChang
   };
 
   // FIX: Draw base AND immediately notify aspect so all frame geometries
-  // are correctly sized from the start — not just memory slot 1.
+  // are correctly sized from the start â€” not just memory slot 1.
   drawBase();
   notifyPhotoAspect(canvas.width / canvas.height);
   texture.needsUpdate = true;
