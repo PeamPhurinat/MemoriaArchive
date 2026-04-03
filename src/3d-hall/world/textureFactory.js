@@ -4,7 +4,7 @@ function getTextureThemePalette(themeKey = "dream") {
   if (themeKey === "midnight") {
     return {
       groundStops: ["#1c2144", "#283161", "#141833"],
-      cloudTint: "rgba(134, 160, 255, 0.36)",
+      cloudTint: "rgba(134, 160, 255, 0.2)",
       cloudTintFade: "rgba(134, 160, 255, 0)",
       lineTint: "rgba(130, 152, 230, 0.2)",
       speckTint: "rgba(122, 146, 226, 0.18)",
@@ -596,7 +596,7 @@ export function createStarTexture() {
   const context = canvas.getContext("2d");
 
   context.translate(64, 64);
-  context.fillStyle = "#ffffff";
+  context.fillStyle = "rgba(255,255,255,0.5)";
   context.beginPath();
 
   for (let index = 0; index < 10; index += 1) {
@@ -615,8 +615,8 @@ export function createStarTexture() {
   context.fill();
 
   const glow = context.createRadialGradient(0, 0, 4, 0, 0, 54);
-  glow.addColorStop(0, "rgba(255,255,255,0.95)");
-  glow.addColorStop(0.45, "rgba(255,255,255,0.42)");
+  glow.addColorStop(0, "rgba(255,255,255,0.4)");
+  glow.addColorStop(0.45, "rgba(255,255,255,0.2)");
   glow.addColorStop(1, "rgba(255,255,255,0)");
   context.fillStyle = glow;
   context.beginPath();

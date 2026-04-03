@@ -138,7 +138,7 @@ scene.add(selectionOutline);
 const controls = new PointerLockControls(camera, renderer.domElement);
 const controlObject =
   controls.object ?? (typeof controls.getObject === "function" ? controls.getObject() : camera);
-controlObject.position.set(0, 1.7, 22);
+controlObject.position.set( 0, 1.7, 42);
 scene.add(controlObject);
 
 const orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -208,13 +208,28 @@ const movement = {
   backward: false,
   left: false,
   right: false,
+  up: false,
+  down: false,
+  sprint: false,
 };
+const MOVEMENT_KEY_CODES = new Set([
+  "KeyW",
+  "KeyA",
+  "KeyS",
+  "KeyD",
+  "Space",
+  "ControlLeft",
+  "ControlRight",
+  "ShiftLeft", 
+  "ShiftRight",
+]);
 
 const animatedObjects = [];
 const pulseLights = [];
 const world = {
   size: 120,
   minY: 1.7,
+  maxY: 42,
 };
 
 const themeState = {
@@ -226,11 +241,36 @@ const themeState = {
 
 const clock = new THREE.Clock();
 
+const SHORTCUT_BLOCKED_MOVE_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
+
+function suppressLockedMovementShortcuts(event) {
+  if (!(controls.isLocked && customState.mode === "view")) {
+    return;
+  }
+  if (!(event.ctrlKey || event.metaKey)) {
+    return;
+  }
+  if (!SHORTCUT_BLOCKED_MOVE_KEYS.has(event.code)) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  if (typeof event.stopImmediatePropagation === "function") {
+    event.stopImmediatePropagation();
+  }
+}
+
+window.addEventListener("keydown", suppressLockedMovementShortcuts, true);
+window.addEventListener("keyup", suppressLockedMovementShortcuts, true);
+
+
 document.addEventListener("keydown", (event) => {
   const isTypingField =
     document.activeElement === userIdInput ||
     document.activeElement?.tagName === "INPUT" ||
     document.activeElement?.tagName === "TEXTAREA";
+  const isLockedViewMode = controls.isLocked && customState.mode === "view";
 
   if (customState.mode === "custom") {
     if (!isTypingField) {
@@ -253,6 +293,12 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
+  // Prevent browser shortcuts (Ctrl+A/Ctrl+S, etc.) from interrupting movement
+  // while actively navigating in locked first-person view.
+  if (isLockedViewMode && MOVEMENT_KEY_CODES.has(event.code)) {
+    event.preventDefault();
+  }
+
   switch (event.code) {
     case "KeyW":
       movement.forward = true;
@@ -266,12 +312,28 @@ document.addEventListener("keydown", (event) => {
     case "KeyD":
       movement.right = true;
       break;
+    case "Space":
+      movement.up = true;
+      event.preventDefault();
+      break;
+    case "AltLeft":
+    case "AltRight":
+      movement.down = true;
+      break;
+    case "ShiftLeft":
+    case "ShiftRight":
+      movement.sprint = true;
+  break;
     default:
       break;
   }
 });
 
 document.addEventListener("keyup", (event) => {
+  if (controls.isLocked && customState.mode === "view" && MOVEMENT_KEY_CODES.has(event.code)) {
+    event.preventDefault();
+  }
+
   switch (event.code) {
     case "KeyW":
       movement.forward = false;
@@ -285,6 +347,17 @@ document.addEventListener("keyup", (event) => {
     case "KeyD":
       movement.right = false;
       break;
+    case "Space":
+      movement.up = false;
+      break;
+    case "AltLeft":
+    case "AltRight":
+      movement.down = false;
+      break;
+    case "ShiftLeft":
+    case "ShiftRight":
+      movement.sprint = false;
+  break;
     default:
       break;
   }
@@ -295,6 +368,8 @@ function resetMovementFlags() {
   movement.backward = false;
   movement.left = false;
   movement.right = false;
+  movement.up = false;
+  movement.down = false;
 }
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 1.7);
@@ -995,7 +1070,7 @@ function updateCustomModeMovement(delta) {
     return;
   }
 
-  const step = delta * 7;
+  const step = delta * 7 * (movement.sprint ? 1.25 : 1);
   const forward = new THREE.Vector3();
   camera.getWorldDirection(forward);
   forward.y = 0;
@@ -1053,7 +1128,7 @@ function updateMovement(delta) {
     return;
   }
 
-  const step = delta * 7;
+  const step = delta * 7 * (movement.sprint ? 1.25 : 1);
 
   if (movement.forward) {
     controls.moveForward(step);
@@ -1068,6 +1143,13 @@ function updateMovement(delta) {
     controls.moveRight(step);
   }
 
+  if (movement.up) {
+    controlObject.position.y += step;
+  }
+  if (movement.down) {
+    controlObject.position.y -= step;
+  }
+
   controlObject.position.x = THREE.MathUtils.clamp(
     controlObject.position.x,
     -world.size + 8,
@@ -1078,7 +1160,11 @@ function updateMovement(delta) {
     -world.size + 8,
     world.size - 8,
   );
-  controlObject.position.y = world.minY;
+  controlObject.position.y = THREE.MathUtils.clamp(
+    controlObject.position.y,
+    world.minY,
+    world.maxY,
+  );
 }
 
 function animate() {
@@ -1122,6 +1208,8 @@ window.addEventListener("resize", () => {
 app.__memoriaWalkthroughContext = { scene, camera, renderer, worldBuilder, controls, orbitControls };
 
 return function cleanup() {
+  window.removeEventListener("keydown", suppressLockedMovementShortcuts, true);
+  window.removeEventListener("keyup", suppressLockedMovementShortcuts, true);
   renderer.setAnimationLoop(null);
   worldBuilder.dispose?.();
   controls.unlock();

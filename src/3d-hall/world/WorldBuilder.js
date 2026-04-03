@@ -1152,6 +1152,8 @@ export class WorldBuilder {
       emissiveIntensity: 0.48,
       roughness: 0.38,
       metalness: 0.16,
+      transparent: true,
+      opacity: 0.38,
     });
 
     for (let index = 0; index < 16; index += 1) {
