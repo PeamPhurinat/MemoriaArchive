@@ -268,6 +268,7 @@ export class WorldBuilder {
         note: "First uploaded photo",
         description: "A warm night market, paper lanterns, and the first memory saved into the archive.",
         voice: "We stayed until the lights disappeared into the sky.",
+        video: "/videos/memory-monolith-test.mp4",
         x: -11,
         z: 18,
         side: -1,
@@ -329,6 +330,12 @@ export class WorldBuilder {
             title: memory?.title || `Memory ${index + 1}`,
             note: memory?.note || "Interview Memory",
             photo: memory?.photo || memory?.url || null,
+            video:
+              memory?.video ||
+              memory?.videoUrl ||
+              memory?.videoSrc ||
+              memory?.clip ||
+              null,
             description:
               memory?.description ||
               memory?.text ||
@@ -377,35 +384,81 @@ export class WorldBuilder {
       photoFrame.castShadow = true;
       photoFrame.receiveShadow = true;
 
-      // ✅ Create photoPanel FIRST before registering the callback
       const photoPanel = createReadablePanel(3.88, 2.88, new THREE.Texture(), { offset: 0.13 });
       photoFrame.add(photoPanel);
       station.add(photoFrame);
+
+      const videoFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(3.32, 1.93, 0.2),
+        new THREE.MeshStandardMaterial({
+          color: 0xe8e8e8,
+          emissive: 0x8f8f8f,
+          emissiveIntensity: 0.1,
+          roughness: 0.36,
+          metalness: 0.12,
+        }),
+      );
+      videoFrame.position.set(themedEntry.side * -3.15, 4.95, -1.2);
+      videoFrame.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? -26 : 26);
+      videoFrame.castShadow = true;
+      videoFrame.receiveShadow = true;
+
+      const videoPanel = createReadablePanel(3.18, 1.79, new THREE.Texture(), { offset: 0.1 });
+      videoFrame.add(videoPanel);
+      station.add(videoFrame);
 
       const photoAspectState = {
         requestId: 0,
         currentAspect: 3.88 / 2.88,
       };
-      photoAspectState.requestId += 1;
-      const initialRequestId = photoAspectState.requestId;
+      const videoAspectState = {
+        requestId: 0,
+        currentAspect: 16 / 9,
+      };
 
-      const stationTextures = this.createMemoryStationTextures(themedEntry, (aspect) => {
-        if (initialRequestId !== photoAspectState.requestId) {
-          return;
-        }
-        photoAspectState.currentAspect = aspect;
-        this.applyPhotoFrameAspect(photoFrame, photoPanel, aspect);
-      });
+      photoAspectState.requestId += 1;
+      const initialPhotoRequestId = photoAspectState.requestId;
+      videoAspectState.requestId += 1;
+      const initialVideoRequestId = videoAspectState.requestId;
+
+      const stationTextures = this.createMemoryStationTextures(
+        themedEntry,
+        (aspect) => {
+          if (initialPhotoRequestId !== photoAspectState.requestId) {
+            return;
+          }
+          photoAspectState.currentAspect = aspect;
+          this.applyPhotoFrameAspect(photoFrame, photoPanel, aspect);
+        },
+        (aspect) => {
+          if (initialVideoRequestId !== videoAspectState.requestId) {
+            return;
+          }
+          videoAspectState.currentAspect = aspect;
+          this.applyVideoFrameAspect(videoFrame, videoPanel, aspect);
+        },
+        (texture) => {
+          if (initialVideoRequestId !== videoAspectState.requestId) {
+            return;
+          }
+          this.updatePanelTexture(videoPanel, texture);
+        },
+      );
 
       this.updatePanelTexture(photoPanel, stationTextures.photoTexture);
-      const initialAspect =
+      const initialPhotoAspect =
         stationTextures.photoTexture.userData?.photoAspect ?? photoAspectState.currentAspect;
-      photoAspectState.currentAspect = initialAspect;
-      this.applyPhotoFrameAspect(
-        photoFrame,
-        photoPanel,
-        initialAspect,
+      photoAspectState.currentAspect = initialPhotoAspect;
+      this.applyPhotoFrameAspect(photoFrame, photoPanel, initialPhotoAspect);
+
+      this.updatePanelTexture(
+        videoPanel,
+        stationTextures.videoFallbackTexture ?? stationTextures.videoTexture,
       );
+      const initialVideoAspect =
+        stationTextures.videoTexture.userData?.mediaAspect ?? videoAspectState.currentAspect;
+      videoAspectState.currentAspect = initialVideoAspect;
+      this.applyVideoFrameAspect(videoFrame, videoPanel, initialVideoAspect);
 
       const archiveCard = new THREE.Mesh(
         new THREE.BoxGeometry(2.4, 3.6, 0.2),
@@ -482,6 +535,13 @@ export class WorldBuilder {
         spinSpeed: 0.03 * -themedEntry.side,
       });
       this.animatedObjects.push({
+        object: videoFrame,
+        baseY: videoFrame.position.y,
+        floatAmount: 0.11,
+        floatSpeed: 0.78 + index * 0.07,
+        spinSpeed: 0.024 * themedEntry.side,
+      });
+      this.animatedObjects.push({
         object: descriptionPanel,
         baseY: descriptionPanel.position.y,
         floatAmount: 0.12,
@@ -506,14 +566,18 @@ export class WorldBuilder {
           voice: themedEntry.voice,
           side: themedEntry.side,
           photo: themedEntry.photo || null,
+          video: themedEntry.video || null,
         },
         photoPanel,
         photoFrame,
+        videoPanel,
+        videoFrame,
         archivePanel,
         descriptionPanel,
         voiceCloud,
         textures: stationTextures,
         photoAspectState,
+        videoAspectState,
       });
 
       this.registerCustomizableComponent(componentId, station, {
@@ -524,7 +588,12 @@ export class WorldBuilder {
     });
   }
 
-  createMemoryStationTextures(entry, onPhotoAspectChange = null) {
+  createMemoryStationTextures(
+    entry,
+    onPhotoAspectChange = null,
+    onVideoAspectChange = null,
+    onVideoTextureReady = null,
+  ) {
     const photoTexture = createPhotoTexture(entry, this.activeThemeKey, onPhotoAspectChange);
     photoTexture.colorSpace = THREE.SRGBColorSpace;
 
@@ -542,15 +611,169 @@ export class WorldBuilder {
     const voiceTexture = createVoiceCloudTexture(entry.voice, entry.color, this.activeThemeKey);
     voiceTexture.colorSpace = THREE.SRGBColorSpace;
 
+    const { videoTexture, videoFallbackTexture } = this.createVideoTexture(
+      entry,
+      onVideoAspectChange,
+      onVideoTextureReady,
+    );
+
     return {
       photoTexture,
       photoFrameTexture,
       descriptionTexture,
       voiceTexture,
+      videoTexture,
+      videoFallbackTexture,
     };
   }
 
+  createVideoTexture(entry, onVideoAspectChange = null, onVideoTextureReady = null) {
+    const videoSource =
+      typeof entry?.video === "string" && entry.video.trim().length > 0
+        ? entry.video.trim()
+        : null;
+
+    const fallbackTexture = this.createVideoPlaceholderTexture(
+      videoSource ? "Video loading..." : "Add a local video path",
+      videoSource ? "Waiting for media stream" : "Set `video` on a memory slot",
+    );
+    fallbackTexture.colorSpace = THREE.SRGBColorSpace;
+    fallbackTexture.userData = {
+      mediaAspect: 16 / 9,
+    };
+
+    if (typeof onVideoAspectChange === "function") {
+      onVideoAspectChange(16 / 9);
+    }
+
+    if (!videoSource) {
+      return {
+        videoTexture: fallbackTexture,
+        videoFallbackTexture: fallbackTexture,
+      };
+    }
+
+    const videoElement = document.createElement("video");
+    videoElement.src = videoSource;
+    videoElement.loop = true;
+    videoElement.muted = true;
+    videoElement.autoplay = true;
+    videoElement.preload = "auto";
+    videoElement.playsInline = true;
+    videoElement.setAttribute("playsinline", "");
+    videoElement.setAttribute("muted", "");
+    if (/^https?:\/\//i.test(videoSource)) {
+      videoElement.crossOrigin = "anonymous";
+    }
+
+    const videoTexture = new THREE.VideoTexture(videoElement);
+    videoTexture.colorSpace = THREE.SRGBColorSpace;
+    videoTexture.minFilter = THREE.LinearFilter;
+    videoTexture.magFilter = THREE.LinearFilter;
+    videoTexture.generateMipmaps = false;
+    videoTexture.userData = {
+      mediaAspect: 16 / 9,
+      videoElement,
+    };
+
+    let didNotifyReady = false;
+    const notifyAspect = () => {
+      if (!videoElement.videoWidth || !videoElement.videoHeight) {
+        return;
+      }
+
+      const aspect = THREE.MathUtils.clamp(videoElement.videoWidth / videoElement.videoHeight, 1, 2.4);
+      videoTexture.userData.mediaAspect = aspect;
+      fallbackTexture.userData.mediaAspect = aspect;
+      if (typeof onVideoAspectChange === "function") {
+        onVideoAspectChange(aspect);
+      }
+    };
+
+    const tryPlay = () => {
+      const playPromise = videoElement.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
+    };
+
+    const notifyReady = (texture) => {
+      if (didNotifyReady && texture === videoTexture) {
+        return;
+      }
+      if (texture === videoTexture) {
+        didNotifyReady = true;
+      }
+      if (typeof onVideoTextureReady === "function") {
+        onVideoTextureReady(texture);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      notifyAspect();
+    };
+    const handleCanPlay = () => {
+      notifyAspect();
+      notifyReady(videoTexture);
+      tryPlay();
+    };
+    const handleError = () => {
+      notifyReady(fallbackTexture);
+    };
+
+    videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+    videoElement.addEventListener("canplay", handleCanPlay);
+    videoElement.addEventListener("error", handleError);
+
+    videoTexture.userData.cleanup = () => {
+      videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      videoElement.removeEventListener("canplay", handleCanPlay);
+      videoElement.removeEventListener("error", handleError);
+      videoElement.pause();
+      videoElement.removeAttribute("src");
+      videoElement.load();
+    };
+
+    tryPlay();
+
+    return {
+      videoTexture,
+      videoFallbackTexture: fallbackTexture,
+    };
+  }
+
+  createVideoPlaceholderTexture(title, subtitle) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 960;
+    canvas.height = 540;
+    const context = canvas.getContext("2d");
+
+    const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "#2d2230");
+    gradient.addColorStop(1, "#463341");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.strokeStyle = "rgba(255, 255, 255, 0.78)";
+    context.lineWidth = 3;
+    context.strokeRect(24, 24, canvas.width - 48, canvas.height - 48);
+
+    context.fillStyle = "rgba(255, 255, 255, 0.9)";
+    context.font = "700 52px Segoe UI";
+    context.fillText(title, 60, 250);
+
+    context.fillStyle = "rgba(255, 255, 255, 0.75)";
+    context.font = "500 32px Segoe UI";
+    context.fillText(subtitle, 60, 310);
+
+    return new THREE.CanvasTexture(canvas);
+  }
+
   updatePanelTexture(panelGroup, texture) {
+    if (!panelGroup) {
+      return;
+    }
+
     panelGroup.children.forEach((child) => {
       if (!child.material) {
         return;
@@ -576,37 +799,69 @@ export class WorldBuilder {
     });
   }
 
-  applyPhotoFrameAspect(photoFrame, photoPanel, aspect) {
-  if (!photoFrame || !Number.isFinite(aspect) || aspect <= 0) return;
+  applyMediaFrameAspect(frame, panel, aspect, options = {}) {
+    if (!frame || !Number.isFinite(aspect) || aspect <= 0) {
+      return;
+    }
 
-  const baseInnerWidth = 3.88;
-  const baseInnerHeight = 2.88;
-  const frameBorder = 0.06;
-  const baseInnerAspect = baseInnerWidth / baseInnerHeight;
+    const baseInnerWidth = options.baseInnerWidth ?? 3.88;
+    const baseInnerHeight = options.baseInnerHeight ?? 2.88;
+    const frameBorder = options.frameBorder ?? 0.06;
+    const minAspect = options.minAspect ?? 0.9;
+    const maxAspect = options.maxAspect ?? 2.2;
+    const maxLandscapeScale = options.maxLandscapeScale ?? 1.3;
 
-  const boundedAspect = THREE.MathUtils.clamp(aspect, 0.9, 2.2);
+    const baseInnerAspect = baseInnerWidth / baseInnerHeight;
+    const boundedAspect = THREE.MathUtils.clamp(aspect, minAspect, maxAspect);
 
-  let innerWidth, innerHeight;
-  if (boundedAspect >= 1.0) {
-    innerWidth = baseInnerWidth * Math.min(boundedAspect / baseInnerAspect, 1.3);
-    innerHeight = innerWidth / boundedAspect;
-  } else {
-    innerHeight = baseInnerHeight;
-    innerWidth = innerHeight * boundedAspect;
+    let innerWidth;
+    let innerHeight;
+
+    if (boundedAspect >= 1) {
+      innerWidth = baseInnerWidth * Math.min(boundedAspect / baseInnerAspect, maxLandscapeScale);
+      innerHeight = innerWidth / boundedAspect;
+    } else {
+      innerHeight = baseInnerHeight;
+      innerWidth = innerHeight * boundedAspect;
+    }
+
+    const outerWidth = innerWidth + frameBorder * 2;
+    const outerHeight = innerHeight + frameBorder * 2;
+
+    frame.geometry.dispose?.();
+    frame.geometry = new THREE.BoxGeometry(outerWidth, outerHeight, 0.24);
+
+    this.resizeReadablePanel(panel, innerWidth, innerHeight);
+    frame.scale.set(1, 1, 1);
   }
 
-  const outerWidth = innerWidth + frameBorder * 2;
-  const outerHeight = innerHeight + frameBorder * 2;
+  applyPhotoFrameAspect(photoFrame, photoPanel, aspect) {
+    this.applyMediaFrameAspect(photoFrame, photoPanel, aspect, {
+      baseInnerWidth: 3.88,
+      baseInnerHeight: 2.88,
+      frameBorder: 0.06,
+      minAspect: 0.9,
+      maxAspect: 2.2,
+      maxLandscapeScale: 1.3,
+    });
+  }
 
-  // Always dispose and rebuild — don't rely on the diff guard
-  photoFrame.geometry.dispose?.();
-  photoFrame.geometry = new THREE.BoxGeometry(outerWidth, outerHeight, 0.24);
-
-  this.resizeReadablePanel(photoPanel, innerWidth, innerHeight);
-  photoFrame.scale.set(1, 1, 1);
-}
+  applyVideoFrameAspect(videoFrame, videoPanel, aspect) {
+    this.applyMediaFrameAspect(videoFrame, videoPanel, aspect, {
+      baseInnerWidth: 3.18,
+      baseInnerHeight: 1.79,
+      frameBorder: 0.06,
+      minAspect: 1,
+      maxAspect: 2.4,
+      maxLandscapeScale: 1.2,
+    });
+  }
 
   updatePanelTint(panelGroup, tintColor) {
+    if (!panelGroup) {
+      return;
+    }
+
     panelGroup.children.forEach((child) => {
       if (!child.material || !child.material.color) {
         return;
@@ -621,7 +876,9 @@ export class WorldBuilder {
       return;
     }
 
-    Object.values(textures).forEach((texture) => {
+    const uniqueTextures = [...new Set(Object.values(textures).filter(Boolean))];
+    uniqueTextures.forEach((texture) => {
+      texture?.userData?.cleanup?.();
       texture?.dispose?.();
     });
   }
@@ -702,28 +959,63 @@ export class WorldBuilder {
         requestId: 0,
         currentAspect: 3.88 / 2.88,
       };
+      const videoAspectState = stationData.videoAspectState ?? {
+        requestId: 0,
+        currentAspect: 16 / 9,
+      };
       stationData.photoAspectState = photoAspectState;
+      stationData.videoAspectState = videoAspectState;
+
       photoAspectState.requestId += 1;
-      const requestId = photoAspectState.requestId;
+      videoAspectState.requestId += 1;
+      const photoRequestId = photoAspectState.requestId;
+      const videoRequestId = videoAspectState.requestId;
 
-      const nextTextures = this.createMemoryStationTextures(themedEntry, (aspect) => {
-        if (requestId !== photoAspectState.requestId) {
-          return;
-        }
-        photoAspectState.currentAspect = aspect;
-        this.applyPhotoFrameAspect(stationData.photoFrame, stationData.photoPanel, aspect);
-      });
+      const nextTextures = this.createMemoryStationTextures(
+        themedEntry,
+        (aspect) => {
+          if (photoRequestId !== photoAspectState.requestId) {
+            return;
+          }
+          photoAspectState.currentAspect = aspect;
+          this.applyPhotoFrameAspect(stationData.photoFrame, stationData.photoPanel, aspect);
+        },
+        (aspect) => {
+          if (videoRequestId !== videoAspectState.requestId) {
+            return;
+          }
+          videoAspectState.currentAspect = aspect;
+          this.applyVideoFrameAspect(stationData.videoFrame, stationData.videoPanel, aspect);
+        },
+        (texture) => {
+          if (videoRequestId !== videoAspectState.requestId) {
+            return;
+          }
+          this.updatePanelTexture(stationData.videoPanel, texture);
+        },
+      );
 
-      const nextAspect =
+      const nextPhotoAspect =
         nextTextures.photoTexture.userData?.photoAspect ?? photoAspectState.currentAspect;
-      photoAspectState.currentAspect = nextAspect;
-      this.applyPhotoFrameAspect(stationData.photoFrame, stationData.photoPanel, nextAspect);
+      photoAspectState.currentAspect = nextPhotoAspect;
+      this.applyPhotoFrameAspect(stationData.photoFrame, stationData.photoPanel, nextPhotoAspect);
+
+      const nextVideoAspect =
+        nextTextures.videoTexture.userData?.mediaAspect ?? videoAspectState.currentAspect;
+      videoAspectState.currentAspect = nextVideoAspect;
+      this.applyVideoFrameAspect(stationData.videoFrame, stationData.videoPanel, nextVideoAspect);
 
       this.updatePanelTexture(stationData.photoPanel, nextTextures.photoTexture);
+      this.updatePanelTexture(
+        stationData.videoPanel,
+        nextTextures.videoFallbackTexture ?? nextTextures.videoTexture,
+      );
       this.updatePanelTexture(stationData.archivePanel, nextTextures.photoFrameTexture);
       this.updatePanelTexture(stationData.descriptionPanel, nextTextures.descriptionTexture);
       this.updatePanelTexture(stationData.voiceCloud, nextTextures.voiceTexture);
+
       this.updatePanelTint(stationData.photoPanel, panelTint);
+      this.updatePanelTint(stationData.videoPanel, panelTint);
       this.updatePanelTint(stationData.archivePanel, panelTint);
       this.updatePanelTint(stationData.descriptionPanel, panelTint);
       this.updatePanelTint(stationData.voiceCloud, panelTint);
@@ -731,6 +1023,19 @@ export class WorldBuilder {
       this.disposeStationTextures(stationData.textures);
       stationData.textures = nextTextures;
     });
+  }
+
+  dispose() {
+    this.memoryStations.forEach((stationData) => {
+      this.disposeStationTextures(stationData.textures);
+    });
+    this.memoryStations = [];
+
+    this.groundTexture?.dispose?.();
+    this.groundTexture = null;
+
+    this.mistTexture?.dispose?.();
+    this.mistTexture = null;
   }
 
   createTimelineTrail() {

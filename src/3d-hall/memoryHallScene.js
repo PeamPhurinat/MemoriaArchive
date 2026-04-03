@@ -1121,6 +1121,7 @@ window.addEventListener("resize", () => {
 
 return function cleanup() {
   renderer.setAnimationLoop(null);
+  worldBuilder.dispose?.();
   controls.unlock();
   controls.dispose();
   orbitControls.dispose();
@@ -1135,6 +1136,3 @@ return function cleanup() {
   app.removeAttribute("data-world-theme");
 };
 }
-
-
-
