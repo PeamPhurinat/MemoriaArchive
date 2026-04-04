@@ -27,9 +27,16 @@ function getTextureThemePalette(themeKey = "dream") {
       mistStops: ["rgba(158, 185, 255, 0.5)", "rgba(110, 140, 228, 0.28)", "rgba(110, 140, 228, 0)"],
       mistPuff: "rgba(190, 208, 255, 0.4)",
       panelTint: "#e8f0ff",
+      voiceBgStart:    "rgba(22, 30, 64, 0.97)",
+      voiceBgEnd:      "rgba(14, 19, 44, 0.98)",
+      voiceGlowRing:   "rgba(124, 143, 255, 0.35)",
+      voiceAccent:     "#7c8fff",
+      voiceAccentFade: "rgba(124, 143, 255, 0.18)",
+      voiceAccentMid:  "rgba(124, 143, 255, 0.38)",
+      voiceHighlight:  "rgba(200, 216, 255, 0.09)",
     };
   }
-
+ 
   if (themeKey === "sunset") {
     return {
       groundStops: ["#ffe7cb", "#f4bd90", "#d88962"],
@@ -56,9 +63,17 @@ function getTextureThemePalette(themeKey = "dream") {
       mistStops: ["rgba(255, 213, 176, 0.52)", "rgba(239, 162, 113, 0.3)", "rgba(239, 162, 113, 0)"],
       mistPuff: "rgba(255, 225, 194, 0.42)",
       panelTint: "#fff0df",
+      voiceBgStart:    "rgba(100, 50, 28, 0.97)",
+      voiceBgEnd:      "rgba(68, 30, 14, 0.98)",
+      voiceGlowRing:   "rgba(224, 120, 64, 0.35)",
+      voiceAccent:     "#e07840",
+      voiceAccentFade: "rgba(224, 120, 64, 0.20)",
+      voiceAccentMid:  "rgba(224, 120, 64, 0.38)",
+      voiceHighlight:  "rgba(255, 230, 200, 0.09)",
     };
   }
-
+ 
+  // dream (default)
   return {
     groundStops: ["#fff7fc", "#ffe8f4", "#f7dce9"],
     cloudTint: "rgba(255, 216, 239, 0.4)",
@@ -84,6 +99,13 @@ function getTextureThemePalette(themeKey = "dream") {
     mistStops: ["rgba(255, 239, 232, 0.55)", "rgba(255, 205, 223, 0.32)", "rgba(255, 205, 223, 0)"],
     mistPuff: "rgba(255, 248, 243, 0.46)",
     panelTint: "#ffffff",
+    voiceBgStart:    "rgba(102, 56, 96, 0.97)",
+    voiceBgEnd:      "rgba(68, 34, 62, 0.98)",
+    voiceGlowRing:   "rgba(212, 122, 170, 0.38)",
+    voiceAccent:     "#d47aaa",
+    voiceAccentFade: "rgba(212, 122, 170, 0.20)",
+    voiceAccentMid:  "rgba(212, 122, 170, 0.38)",
+    voiceHighlight:  "rgba(255, 220, 240, 0.10)",
   };
 }
 
@@ -476,50 +498,124 @@ export function createDescriptionTexture(entry, themeKey = "dream") {
 }
 
 export function createVoiceCloudTexture(text, accentColor, themeKey = "dream") {
+  const W = 820;
+  const H = 440;
+ 
   const canvas = document.createElement("canvas");
-  canvas.width = 820;
-  canvas.height = 440;
-  const context = canvas.getContext("2d");
-
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+ 
   const palette = getTextureThemePalette(themeKey);
-  const bubbleGradient = context.createLinearGradient(0, 0, 0, canvas.height);
-  bubbleGradient.addColorStop(0, palette.voiceStops[0]);
-  bubbleGradient.addColorStop(1, palette.voiceStops[1]);
-  context.fillStyle = bubbleGradient;
-  context.beginPath();
-  context.ellipse(260, 190, 180, 108, 0, 0, Math.PI * 2);
-  context.ellipse(458, 176, 172, 98, 0, 0, Math.PI * 2);
-  context.ellipse(356, 244, 228, 112, 0, 0, Math.PI * 2);
-  context.ellipse(208, 252, 116, 74, 0, 0, Math.PI * 2);
-  context.ellipse(560, 248, 118, 72, 0, 0, Math.PI * 2);
-  context.fill();
-
-  context.strokeStyle = accentColor;
-  context.lineWidth = 5;
-  context.beginPath();
-  context.ellipse(260, 190, 180, 108, 0, 0, Math.PI * 2);
-  context.ellipse(458, 176, 172, 98, 0, 0, Math.PI * 2);
-  context.ellipse(356, 244, 228, 112, 0, 0, Math.PI * 2);
-  context.stroke();
-
-  context.beginPath();
-  context.moveTo(198, 308);
-  context.lineTo(154, 390);
-  context.lineTo(234, 326);
-  context.closePath();
-  context.fillStyle = palette.voiceTail;
-  context.fill();
-  context.strokeStyle = accentColor;
-  context.stroke();
-
-  context.fillStyle = palette.voiceLabel;
-  context.font = "600 22px Segoe UI";
-  context.fillText("Voice memory", 150, 134);
-
-  context.fillStyle = palette.voiceText;
-  context.font = "400 32px Segoe UI";
-  wrapText(context, `"${text}"`, 150, 198, 500, 42);
-
+ 
+  const bx  = 30;   
+  const by  = 20;    
+  const bw  = W - 60; 
+  const bh  = 310;   
+  const rad = 32;    
+ 
+  ctx.strokeStyle = palette.voiceGlowRing;
+  ctx.lineWidth   = 2.5;
+  roundedRect(ctx, bx - 6, by - 6, bw + 12, bh + 12, rad + 4);
+  ctx.stroke();
+ 
+  const bodyGrad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
+  bodyGrad.addColorStop(0, palette.voiceBgStart);
+  bodyGrad.addColorStop(1, palette.voiceBgEnd);
+  ctx.fillStyle = bodyGrad;
+  roundedRect(ctx, bx, by, bw, bh, rad);
+  ctx.fill();
+ 
+  ctx.save();
+  roundedRect(ctx, bx, by, bw, bh, rad);
+  ctx.clip();
+  ctx.fillStyle   = palette.voiceAccent;
+  ctx.globalAlpha = 0.9;
+  ctx.fillRect(bx, by, 7, bh);
+  ctx.globalAlpha = 1;
+  ctx.restore();
+ 
+  ctx.fillStyle = palette.voiceHighlight;
+  ctx.fillRect(bx + 20, by + 14, 340, 2);
+ 
+  const labelY = by + 58;
+  const iconX  = bx + 38;
+  const iconY  = labelY - 10;
+  ctx.save();
+  ctx.translate(iconX, iconY);
+  ctx.fillStyle   = palette.voiceAccent;
+  ctx.globalAlpha = 0.88;
+  ctx.beginPath();
+  ctx.moveTo(0, -9);
+  ctx.lineTo(9,  0);
+  ctx.lineTo(0,  9);
+  ctx.lineTo(-9, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+ 
+  ctx.fillStyle = palette.voiceLabel;
+  ctx.font      = "600 20px Segoe UI";
+  ctx.fillText("VOICE MEMORY", iconX + 18, labelY);
+ 
+  ctx.strokeStyle = palette.voiceHighlight;
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(bx + 20, by + 76);
+  ctx.lineTo(bx + bw - 20, by + 76);
+  ctx.stroke();
+ 
+  ctx.fillStyle = palette.voiceAccentFade;
+  ctx.font      = "700 96px Georgia, serif";
+  ctx.fillText("\u201C", bx + 24, by + 170);
+ 
+  ctx.fillStyle = palette.voiceText;
+  ctx.font      = "400 30px Segoe UI";
+  wrapText(ctx, `\u201C${text}\u201D`, bx + 72, by + 152, bw - 110, 44);
+ 
+  ctx.fillStyle = palette.voiceAccentFade;
+  ctx.font      = "700 96px Georgia, serif";
+  ctx.fillText("\u201D", bx + bw - 84, by + bh - 14);
+ 
+  const dotsY = by + bh - 26;
+  const dotsX = bx + 34;
+  [[0.70], [0.40], [0.20]].forEach(([alpha], i) => {
+    ctx.save();
+    ctx.fillStyle   = palette.voiceAccent;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(dotsX + i * 18, dotsY, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+ 
+  const tailLeft  = bx + 60;
+  const tailRight = bx + 118;
+  const tailBaseY = by + bh;         
+  const tailTipX  = bx + 82;
+  const tailTipY  = tailBaseY + 68;
+ 
+  ctx.fillStyle = palette.voiceBgEnd;
+  ctx.beginPath();
+  ctx.moveTo(tailLeft,  tailBaseY);
+  ctx.lineTo(tailRight, tailBaseY);
+  ctx.lineTo(tailTipX,  tailTipY);
+  ctx.closePath();
+  ctx.fill();
+ 
+  ctx.strokeStyle = palette.voiceGlowRing;
+  ctx.lineWidth   = 2;
+  ctx.lineJoin    = "round";
+  ctx.beginPath();
+  ctx.moveTo(tailLeft,  tailBaseY);
+  ctx.lineTo(tailTipX,  tailTipY);
+  ctx.lineTo(tailRight, tailBaseY);
+  ctx.stroke();
+ 
+  ctx.fillStyle = palette.voiceBgEnd;
+  ctx.fillRect(tailLeft - 1, tailBaseY - 3, tailRight - tailLeft + 2, 6);
+ 
   return new THREE.CanvasTexture(canvas);
 }
 

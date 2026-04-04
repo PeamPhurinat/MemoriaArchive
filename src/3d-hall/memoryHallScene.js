@@ -148,7 +148,7 @@ orbitControls.dampingFactor = 0.08;
 orbitControls.minDistance = 6;
 orbitControls.maxDistance = 150;
 orbitControls.maxPolarAngle = Math.PI / 2 - 0.08;
-orbitControls.target.set(0, 4, -12);
+orbitControls.target.set(0, 1.7, -12);
 orbitControls.update();
 
 const transformControls = new TransformControls(camera, renderer.domElement);

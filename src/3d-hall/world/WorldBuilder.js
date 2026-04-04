@@ -75,11 +75,11 @@ export class WorldBuilder {
 
   createSkyHalo() {
     const halo = new THREE.Mesh(
-      new THREE.TorusGeometry(44, 1.2, 32, 120),
+      new THREE.TorusGeometry(64, 1.2, 32, 120),
       new THREE.MeshBasicMaterial({
         color: 0xffd8ef,
         transparent: true,
-        opacity: 0.28,
+        opacity: 0.1,
       }),
     );
     halo.rotation.x = Math.PI / 2.25;
@@ -94,11 +94,11 @@ export class WorldBuilder {
     });
 
     const innerHalo = new THREE.Mesh(
-      new THREE.TorusGeometry(26, 0.55, 24, 96),
+      new THREE.TorusGeometry(46, 0.55, 24, 96),
       new THREE.MeshBasicMaterial({
         color: 0xffebf6,
         transparent: true,
-        opacity: 0.24,
+        opacity: 0.14,
       }),
     );
     innerHalo.rotation.x = Math.PI / 2.8;
@@ -164,10 +164,14 @@ export class WorldBuilder {
 
     positions.forEach((entry, index) => {
       const column = this.createRomanColumn(false);
+      const componentId = `broken-column-${index + 1}`;
       column.scale.setScalar(entry.scale);
       column.rotation.z = Math.PI / 2;
       column.rotation.y = entry.rotation;
       column.position.set(entry.x, 1.2, entry.z);
+      column.userData.componentId = componentId;
+      column.userData.componentLabel = `Roman Column ${index + 1}`;
+      column.userData.isCustomizable = true;
       this.scene.add(column);
 
       this.animatedObjects.push({
@@ -177,6 +181,12 @@ export class WorldBuilder {
         floatSpeed: 0.9 + index * 0.07,
         spinSpeed: 0.12,
         local: true,
+      });
+
+      this.registerCustomizableComponent(componentId, column, {
+        type: "broken-column",
+        index,
+        scale: entry.scale,
       });
     });
   }
@@ -191,18 +201,28 @@ export class WorldBuilder {
 
     placements.forEach((entry, index) => {
       const pillar = this.createRomanColumn(true);
+      const componentId = `standing-pillar-${index + 1}`;
       pillar.scale.setScalar(entry.height);
       pillar.position.set(entry.x, 0, entry.z);
+      pillar.userData.componentId = componentId;
+      pillar.userData.componentLabel = `Standing Pillar ${index + 1}`;
+      pillar.userData.isCustomizable = true;
       this.scene.add(pillar);
 
       const glow = new THREE.PointLight(index % 2 === 0 ? 0xffd9ee : 0xffeef8, 14, 18, 2);
-      glow.position.set(entry.x, 6.5 * entry.height, entry.z);
-      this.scene.add(glow);
+      glow.position.set(0, 6.5, 0);
+      pillar.add(glow);
       this.pulseLights.push({
         light: glow,
         base: 14,
         speed: 1.2 + index * 0.3,
         range: 3,
+      });
+
+      this.registerCustomizableComponent(componentId, pillar, {
+        type: "standing-pillar",
+        index,
+        height: entry.height,
       });
     });
   }
@@ -337,7 +357,8 @@ export class WorldBuilder {
           metalness: 0.1,
         }),
       );
-      photoFrame.position.set(0, 4.4, 0);
+      // CHANGED: Y raised from 4.4 → 5.2 to give portrait images vertical headroom
+      photoFrame.position.set(0, 5.2, 0);
       photoFrame.rotation.y = orientation;
       photoFrame.castShadow = true;
       photoFrame.receiveShadow = true;
@@ -356,13 +377,14 @@ export class WorldBuilder {
           metalness: 0.12,
         }),
       );
-      videoFrame.position.set(themedEntry.side * -3.15, 4.95, -1.2);
+      // CHANGED: position from (side * -3.15, 4.95, -1.2) → (side * -4.2, 5.6, -2.8)
+      // Further sideways so landscape expansion won't overlap photoFrame,
+      // deeper in Z so it layers behind, raised so portrait growth goes into clear sky
+      videoFrame.position.set(themedEntry.side * -4.2, 5.6, -2.8);
       videoFrame.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? -26 : 26);
       videoFrame.castShadow = true;
       videoFrame.receiveShadow = true;
 
-      // Keep panel slightly in front of a 0.24-depth frame (front face at z=0.12)
-      // so video texture is not hidden by z-fighting/occlusion.
       const videoPanel = createReadablePanel(3.18, 1.79, new THREE.Texture(), { offset: 0.13 });
       videoFrame.add(videoPanel);
       station.add(videoFrame);
@@ -430,7 +452,9 @@ export class WorldBuilder {
           metalness: 0.12,
         }),
       );
-      archiveCard.position.set(themedEntry.side * 3.5, 2.9, 0.8);
+      // CHANGED: position from (side * 3.5, 2.9, 0.8) → (side * 4.8, 3.2, 1.4)
+      // Pushed further sideways to avoid overlapping photoFrame when it grows wide
+      archiveCard.position.set(themedEntry.side * 4.8, 3.2, 1.4);
       archiveCard.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 24 : -24);
       archiveCard.castShadow = true;
       archiveCard.receiveShadow = true;
@@ -438,19 +462,23 @@ export class WorldBuilder {
       archiveCard.add(archivePanel);
       station.add(archiveCard);
 
+      // CHANGED: position from (side * 2.1, 1.95, -2.5) → (side * 3.2, 2.1, -4.2)
+      // Pushed further sideways and deeper back so it reads as a distinct background layer
       const descriptionPanel = createReadablePanel(3.9, 2.45, stationTextures.descriptionTexture, {
         offset: 0.03,
       });
-      descriptionPanel.position.set(themedEntry.side * 2.1, 1.95, -2.5);
+      descriptionPanel.position.set(themedEntry.side * 3.2, 2.1, -4.2);
       descriptionPanel.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 12 : -12);
       station.add(descriptionPanel);
 
+      // CHANGED: position from (side * 2.9, 6.7, 0.6) → (side * 3.8, 8.2, 1.2)
+      // Lifted higher so it floats clearly above all other panels with no overlap risk
       const voiceCloud = createReadablePanel(4.2, 2.3, stationTextures.voiceTexture, {
         offset: 0.03,
         depthWrite: false,
       });
-      voiceCloud.position.set(themedEntry.side * 2.9, 6.7, 0.6);
-      voiceCloud.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? -10 : 10);
+      voiceCloud.position.set(themedEntry.side * 3.8, 8.2, 1.2);
+      voiceCloud.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 15 : -15);
       station.add(voiceCloud);
 
       const beacon = new THREE.PointLight(index % 2 === 0 ? 0xf0f0f0 : 0xbcbcbc, 16, 16, 2);
@@ -480,40 +508,45 @@ export class WorldBuilder {
       cloudPedestal.receiveShadow = true;
       station.add(cloudPedestal);
 
+      // CHANGED: baseY updated from 4.4 → 5.2 to match new photoFrame Y position
       this.animatedObjects.push({
         object: photoFrame,
-        baseY: photoFrame.position.y,
+        baseY: 5.2,
         floatAmount: 0.16,
         floatSpeed: 0.55 + index * 0.08,
-        spinSpeed: 0.02 * themedEntry.side,
+        spinSpeed: 0,
       });
+      // CHANGED: baseY updated from 2.9 → 3.2 to match new archiveCard Y position
       this.animatedObjects.push({
         object: archiveCard,
-        baseY: archiveCard.position.y,
+        baseY: 3.2,
         floatAmount: 0.14,
         floatSpeed: 0.72 + index * 0.06,
-        spinSpeed: 0.03 * -themedEntry.side,
+        spinSpeed: 0,
       });
+      // CHANGED: baseY updated from 4.95 → 5.6 to match new videoFrame Y position
       this.animatedObjects.push({
         object: videoFrame,
-        baseY: videoFrame.position.y,
+        baseY: 5.6,
         floatAmount: 0.11,
         floatSpeed: 0.78 + index * 0.07,
-        spinSpeed: 0.024 * themedEntry.side,
+        spinSpeed: 0,
       });
+      // CHANGED: baseY updated from 1.95 → 2.1 to match new descriptionPanel Y position
       this.animatedObjects.push({
         object: descriptionPanel,
-        baseY: descriptionPanel.position.y,
+        baseY: 2.1,
         floatAmount: 0.12,
         floatSpeed: 0.9 + index * 0.08,
-        spinSpeed: 0.01 * themedEntry.side,
+        spinSpeed: 0,
       });
+      // CHANGED: baseY updated from 6.7 → 8.2 to match new voiceCloud Y position
       this.animatedObjects.push({
         object: voiceCloud,
-        baseY: voiceCloud.position.y,
+        baseY: 8.2,
         floatAmount: 0.2,
         floatSpeed: 0.8 + index * 0.12,
-        spinSpeed: 0.014 * -themedEntry.side,
+        spinSpeed: 0,
       });
 
       this.memoryStations.push({
@@ -878,9 +911,18 @@ export class WorldBuilder {
           metalness: 0.24,
         }),
       );
+      const componentId = `timeline-marker-${index + 1}`;
       marker.position.set(point.x, 0.65, point.z);
       marker.castShadow = true;
+      marker.userData.componentId = componentId;
+      marker.userData.componentLabel = `Timeline Marker ${index + 1}`;
+      marker.userData.isCustomizable = true;
       this.scene.add(marker);
+
+      this.registerCustomizableComponent(componentId, marker, {
+        type: "timeline-marker",
+        index,
+      });
 
       this.animatedObjects.push({
         object: marker,
