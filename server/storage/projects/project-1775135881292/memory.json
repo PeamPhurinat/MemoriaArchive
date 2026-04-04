@@ -1,0 +1,110 @@
+{
+  "id": "project-1775135881292",
+  "title": "",
+  "coupleNames": "",
+  "createdAt": "2026-04-02T13:18:12.853Z",
+  "updatedAt": "2026-04-02T13:18:36.779Z",
+  "photoSlots": [],
+  "textSlots": [
+    {
+      "id": "text-1",
+      "title": "First Match Goals",
+      "text": "Scored ten goals in my very first football match, a moment of pure joy and excitement. Emotion: joyful.",
+      "sourceQuote": "ยิงประตูเข้าสิบประตูแรกในนัดแรกของผมครับ"
+    }
+  ],
+  "audioSlots": [
+    {
+      "id": "audio-1775135892851",
+      "title": "voice.webm",
+      "transcript": "ก็ผมจะมาเล่าเกี่ยวกับเรื่องฟุตบอลของผมครับ",
+      "audioUrl": "/uploads/project-1775135881292/audio/1775135892850-3e5d4dec.webm",
+      "createdAt": "2026-04-02T13:18:12.854Z",
+      "visible": true,
+      "order": 1
+    },
+    {
+      "id": "audio-1775135906216",
+      "title": "voice.webm",
+      "transcript": "ผมก็ได้ยิงประตูเข้าสิบประตูแรกในนัดแรกของผมครับ",
+      "audioUrl": "/uploads/project-1775135881292/audio/1775135906216-a40a7eb6.webm",
+      "createdAt": "2026-04-02T13:18:26.217Z",
+      "visible": true,
+      "order": 2
+    }
+  ],
+  "interview": {
+    "completedAt": "2026-04-02T13:18:36.779Z",
+    "userName": "555",
+    "analysis": {
+      "themes": [
+        "football",
+        "personal achievement",
+        "memorable moments"
+      ],
+      "tone": "joyful",
+      "highlights": [
+        "Scored ten goals in my very first football match.",
+        "The thrill of achieving a personal milestone."
+      ]
+    },
+    "transcript": "AI: Hi 555! I am glad to help you preserve meaningful memories for your 3D room.\n\nTo start, what is one moment with your special person that still feels vivid to you? You can share any story, big or small.\n555: ก็ผมจะมาเล่าเกี่ยวกับเรื่องฟุตบอลของผมครับ\nAI: That sounds intriguing! Football holds so many memories and emotions. What specific moment in your football journey stands out the most to you?\n555: ผมก็ได้ยิงประตูเข้าสิบประตูแรกในนัดแรกของผมครับ\nAI: Wow, scoring your first ten goals in your very first match must have been such a thrilling experience! I can only imagine the rush of emotions you felt at that moment. Can you tell me more about how that match went and what it meant to you?",
+    "rawMessages": [
+      {
+        "id": "assistant-1775135885288-251zpm",
+        "role": "assistant",
+        "content": "Hi 555! I am glad to help you preserve meaningful memories for your 3D room.\n\nTo start, what is one moment with your special person that still feels vivid to you? You can share any story, big or small.",
+        "createdAt": "2026-04-02T13:18:05.288Z"
+      },
+      {
+        "id": "user-1775135892863-nqiqm1",
+        "role": "user",
+        "content": "ก็ผมจะมาเล่าเกี่ยวกับเรื่องฟุตบอลของผมครับ",
+        "createdAt": "2026-04-02T13:18:12.863Z"
+      },
+      {
+        "id": "assistant-1775135895226-hh3tqw",
+        "role": "assistant",
+        "content": "That sounds intriguing! Football holds so many memories and emotions. What specific moment in your football journey stands out the most to you?",
+        "createdAt": "2026-04-02T13:18:15.226Z"
+      },
+      {
+        "id": "user-1775135906225-59bf63",
+        "role": "user",
+        "content": "ผมก็ได้ยิงประตูเข้าสิบประตูแรกในนัดแรกของผมครับ",
+        "createdAt": "2026-04-02T13:18:26.225Z"
+      },
+      {
+        "id": "assistant-1775135910824-fxq36o",
+        "role": "assistant",
+        "content": "Wow, scoring your first ten goals in your very first match must have been such a thrilling experience! I can only imagine the rush of emotions you felt at that moment. Can you tell me more about how that match went and what it meant to you?",
+        "createdAt": "2026-04-02T13:18:30.824Z"
+      }
+    ]
+  },
+  "memories": [
+    {
+      "id": "text-1",
+      "title": "First Match Goals",
+      "description": "Scored ten goals in my very first football match, a moment of pure joy and excitement. Emotion: joyful."
+    }
+  ],
+  "roomPayload": {
+    "textSlots": [
+      {
+        "id": "text-1",
+        "title": "First Match Goals",
+        "text": "Scored ten goals in my very first football match, a moment of pure joy and excitement. Emotion: joyful.",
+        "sourceQuote": "ยิงประตูเข้าสิบประตูแรกในนัดแรกของผมครับ"
+      }
+    ],
+    "photoSlots": [],
+    "audioSlots": [],
+    "ordering": [
+      "text-1"
+    ],
+    "visibility": {
+      "text-1": true
+    }
+  }
+}

@@ -1,0 +1,133 @@
+/* ── Walkthrough Export UI ─────────────────────────────────────── */
+
+.wt-export-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 1100;
+  padding: 10px 20px;
+  background: rgba(18, 14, 36, 0.82);
+  color: #f0d8ff;
+  border: 1.5px solid rgba(220, 170, 255, 0.45);
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background 0.18s, transform 0.12s, border-color 0.18s;
+  user-select: none;
+}
+
+.wt-export-btn:hover {
+  background: rgba(50, 32, 90, 0.92);
+  border-color: rgba(220, 170, 255, 0.75);
+  transform: translateY(-2px);
+}
+
+.wt-export-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Recording overlay ──────────────────────────────────────────── */
+
+.wt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1099;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 44px;
+  gap: 14px;
+}
+
+/* REC badge */
+.wt-rec-badge {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #ff5555;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-family: monospace;
+}
+
+.wt-rec-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: #ff4444;
+  border-radius: 50%;
+  animation: wt-blink 1s step-start infinite;
+}
+
+@keyframes wt-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Current memory title */
+.wt-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
+  letter-spacing: 0.05em;
+  text-align: center;
+  max-width: 560px;
+  padding: 0 24px;
+  font-family: inherit;
+  min-height: 28px;
+  transition: opacity 0.4s ease;
+}
+
+/* Progress bar */
+.wt-progress-track {
+  width: 300px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.wt-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ffb3d9, #b388ff);
+  border-radius: 4px;
+  transition: width 0.35s ease;
+}
+
+/* Stop & Save button — appears after last station */
+.wt-stop-btn {
+  pointer-events: all;
+  padding: 10px 26px;
+  background: rgba(180, 30, 60, 0.82);
+  color: #fff;
+  border: 1.5px solid rgba(255, 120, 140, 0.6);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background 0.18s, transform 0.12s;
+  animation: wt-fade-in 0.4s ease;
+}
+
+.wt-stop-btn:hover {
+  background: rgba(200, 40, 70, 0.95);
+  transform: translateY(-2px);
+}
+
+@keyframes wt-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

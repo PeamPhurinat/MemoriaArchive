@@ -1,18 +1,39 @@
 {
-  "name": "memoria-memory-hall",
-  "private": true,
+  "name": "memoria-archive",
   "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
+  "private": true,
   "dependencies": {
     "@supabase/supabase-js": "^2.101.0",
-    "three": "^0.176.0"
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "multer": "^2.1.0",
+    "openai": "^6.25.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.3",
+    "react-scripts": "5.0.1",
+    "three": "^0.160.0"
   },
-  "devDependencies": {
-    "vite": "^7.1.0"
+  "scripts": {
+    "dev": "react-scripts start",
+    "start": "react-scripts start",
+    "server": "node server/src/index.js",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "proxy": "http://localhost:5000",
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

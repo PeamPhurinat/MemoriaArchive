@@ -1,0 +1,89 @@
+{
+  "id": "project-1773284718821",
+  "title": "",
+  "coupleNames": "",
+  "createdAt": "2026-03-12T03:05:37.578Z",
+  "updatedAt": "2026-03-12T03:06:16.641Z",
+  "photoSlots": [],
+  "textSlots": [
+    {
+      "id": "text-1",
+      "title": "Memory 1",
+      "text": "สวัสดีครับ ได้ยินไหม?",
+      "sourceQuote": "สวัสดีครับ ได้ยินไหม?"
+    }
+  ],
+  "audioSlots": [
+    {
+      "id": "audio-1773284737575",
+      "title": "voice.webm",
+      "transcript": "สวัสดีครับ ได้ยินไหม?",
+      "audioUrl": "/uploads/project-1773284718821/audio/1773284737572-06eaf265.webm",
+      "createdAt": "2026-03-12T03:05:37.584Z",
+      "visible": true,
+      "order": 1
+    }
+  ],
+  "interview": {
+    "completedAt": "2026-03-12T03:06:16.641Z",
+    "userName": "Parin",
+    "analysis": {
+      "themes": [
+        "nostalgia",
+        "connection",
+        "warmth"
+      ],
+      "tone": "positive",
+      "highlights": [
+        "Parin's warm greeting sets a friendly tone.",
+        "The invitation to share personal memories creates a safe space."
+      ]
+    },
+    "transcript": "AI: สวัสดีครับ Parin! ยินดีมากเลยที่ได้มาช่วยเก็บความทรงจำดีๆ ไว้ด้วยกัน 😊\n\nเริ่มเลยนะครับ — มีช่วงเวลาไหนกับคนพิเศษที่นึกถึงแล้วยังรู้สึกดีอยู่เลย? เล่าให้ฟังได้เลย ไม่ต้องเป็นเรื่องใหญ่โตก็ได้ครับ\nParin: สวัสดีครับ ได้ยินไหม?\nAI: สวัสดีครับ Parin! ได้ยินชัดเจนเลย 😊 มีอะไรที่อยากแชร์กันไหม? อาจจะเป็นความทรงจำที่ทำให้คุณรู้สึกดีหรืออบอุ่นใจ?",
+    "rawMessages": [
+      {
+        "id": "assistant-1773284721202-mhhewk",
+        "role": "assistant",
+        "content": "สวัสดีครับ Parin! ยินดีมากเลยที่ได้มาช่วยเก็บความทรงจำดีๆ ไว้ด้วยกัน 😊\n\nเริ่มเลยนะครับ — มีช่วงเวลาไหนกับคนพิเศษที่นึกถึงแล้วยังรู้สึกดีอยู่เลย? เล่าให้ฟังได้เลย ไม่ต้องเป็นเรื่องใหญ่โตก็ได้ครับ",
+        "createdAt": "2026-03-12T03:05:21.202Z"
+      },
+      {
+        "id": "user-1773284737605-gthh1j",
+        "role": "user",
+        "content": "สวัสดีครับ ได้ยินไหม?",
+        "createdAt": "2026-03-12T03:05:37.605Z"
+      },
+      {
+        "id": "assistant-1773284740729-xygmbp",
+        "role": "assistant",
+        "content": "สวัสดีครับ Parin! ได้ยินชัดเจนเลย 😊 มีอะไรที่อยากแชร์กันไหม? อาจจะเป็นความทรงจำที่ทำให้คุณรู้สึกดีหรืออบอุ่นใจ?",
+        "createdAt": "2026-03-12T03:05:40.729Z"
+      }
+    ]
+  },
+  "memories": [
+    {
+      "id": "text-1",
+      "title": "Memory 1",
+      "description": "สวัสดีครับ ได้ยินไหม?"
+    }
+  ],
+  "roomPayload": {
+    "textSlots": [
+      {
+        "id": "text-1",
+        "title": "Memory 1",
+        "text": "สวัสดีครับ ได้ยินไหม?",
+        "sourceQuote": "สวัสดีครับ ได้ยินไหม?"
+      }
+    ],
+    "photoSlots": [],
+    "audioSlots": [],
+    "ordering": [
+      "text-1"
+    ],
+    "visibility": {
+      "text-1": true
+    }
+  }
+}
