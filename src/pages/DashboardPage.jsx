@@ -6,17 +6,17 @@ const DashboardPage = ({ onSignOut }) => {
 
   return (
     <div className="ma-home">
-      <div className="ma-home-logo">✦</div>
+      <div className="ma-home-logo">M</div>
       <h1 className="ma-home-title">Memoria Archive</h1>
       <p className="ma-home-sub">
-        เก็บความทรงจำไว้ในโลก 3D ด้วยการสนทนากับ AI
+        Preserve your memories in a 3D world through AI conversation
       </p>
       <div className="ma-home-actions">
         <button
           className="ma-btn ma-btn-primary ma-btn-lg"
           onClick={() => navigate('/projects')}
         >
-          ✦ My Projects
+          My Projects
         </button>
         {typeof onSignOut === 'function' ? (
           <button

@@ -1,11 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const CARD_ICONS = ['🧠', '💫', '🌙', '✨', '🎞', '🌸', '🗝', '🪐'];
-
 const formatDate = (iso) => {
   try {
-    return new Date(iso).toLocaleDateString('th-TH', {
+    return new Date(iso).toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -49,7 +47,7 @@ const ProjectsPage = ({ projects, onCreateNew, onSelectProject, loading, syncErr
       {/* Header */}
       <header className="ma-header">
         <button className="ma-header-brand" onClick={() => navigate('/')}>
-          <div className="ma-header-logo">✦</div>
+          <div className="ma-header-logo">M</div>
           Memoria
         </button>
       </header>
@@ -73,16 +71,13 @@ const ProjectsPage = ({ projects, onCreateNew, onSelectProject, loading, syncErr
               <span>{syncError}</span>
             </div>
           ) : null}
-          {projects.map((p, i) => (
+          {projects.map((p) => (
             <div
               key={p.id}
               className="ma-project-card"
               onClick={() => openProject(p.id)}
             >
               <div className="ma-project-card-glow" />
-              <div className="ma-project-card-icon">
-                {CARD_ICONS[i % CARD_ICONS.length]}
-              </div>
               <div className="ma-project-card-title">
                 {p.title || 'Untitled Project'}
                 {p.id === 'demo-project' && (
@@ -92,10 +87,10 @@ const ProjectsPage = ({ projects, onCreateNew, onSelectProject, loading, syncErr
               <div className="ma-project-card-meta">{formatDate(p.createdAt)}</div>
               <div className="ma-project-card-stats">
                 <span className="ma-stat-pill">
-                  💬 {memoryCount(p)} memories
+                  {memoryCount(p)} memories
                 </span>
                 {p.interview && (
-                  <span className="ma-stat-pill">🎤 interviewed</span>
+                  <span className="ma-stat-pill">interviewed</span>
                 )}
               </div>
               <div className="ma-project-card-actions">
@@ -109,13 +104,13 @@ const ProjectsPage = ({ projects, onCreateNew, onSelectProject, loading, syncErr
                   className="ma-btn ma-btn-ghost ma-btn-sm"
                   onClick={(e) => goInterview(p.id, e)}
                 >
-                  🎤 Interview
+                  Interview
                 </button>
                 <button
                   className="ma-btn ma-btn-ghost ma-btn-sm"
                   onClick={(e) => go3D(p.id, e)}
                 >
-                  {p.reviewApprovedAt ? '🧊 Open 3D Room' : '🧊 Review → 3D'}
+                  {p.reviewApprovedAt ? 'Open 3D Room' : 'Review + 3D'}
                 </button>
               </div>
             </div>

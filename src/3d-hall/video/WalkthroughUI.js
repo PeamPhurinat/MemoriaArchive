@@ -24,7 +24,7 @@ export class WalkthroughUI {
     // ── Export button ─────────────────────────────────────────────
     this._button = document.createElement('button');
     this._button.className = 'wt-export-btn';
-    this._button.textContent = '🎬 Export Video';
+    this._button.textContent = 'Export Video';
     this._button.addEventListener('click', onExportClick);
     container.appendChild(this._button);
 

@@ -65,7 +65,7 @@ const AuthPage = () => {
       <div className="ma-auth-wrapper">
         {/* Branding */}
         <div className="ma-auth-brand">
-          <div className="ma-auth-brand-icon">✦</div>
+          <div className="ma-auth-brand-icon">M</div>
           <span className="ma-auth-brand-name">Memoria</span>
         </div>
 
