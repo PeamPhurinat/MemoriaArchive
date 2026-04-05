@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadMemoryVideo } from '../services/mediaApi';
+import { uploadMemoryVideo, uploadPhoto } from '../services/mediaApi';
+import { toggleShare } from '../services/projectApi';
 
 const formatDate = (iso) => {
   try {
@@ -18,8 +19,13 @@ const ProjectDetailPage = ({ project, setProject }) => {
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
   const [uploadingVideoById, setUploadingVideoById] = useState({});
+  const [uploadingPhotoById, setUploadingPhotoById] = useState({});
   const [videoUploadError, setVideoUploadError] = useState('');
+  const [isShared, setIsShared] = useState(Boolean(project?.isShared));
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const saveTimer = useRef(null);
+  const copyTimer = useRef(null);
 
   if (!project) {
     return (
@@ -32,8 +38,13 @@ const ProjectDetailPage = ({ project, setProject }) => {
   const memories = project.memories || [];
 
   useEffect(() => {
+    setIsShared(Boolean(project?.isShared));
+  }, [project?.isShared]);
+
+  useEffect(() => {
     return () => {
       clearTimeout(saveTimer.current);
+      clearTimeout(copyTimer.current);
     };
   }, []);
 
@@ -58,11 +69,22 @@ const ProjectDetailPage = ({ project, setProject }) => {
     showSaved();
   };
 
-  const addPhoto = (id, file) => {
+  const addPhoto = async (id, file) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => updateMemory(id, 'photo', e.target.result);
-    reader.readAsDataURL(file);
+    setUploadingPhotoById((prev) => ({ ...prev, [id]: true }));
+    try {
+      const payload = await uploadPhoto({
+        projectId: project?.id,
+        memoryId: id,
+        photoFile: file,
+      });
+      if (!payload?.photoUrl) throw new Error('Upload completed but server did not return photoUrl.');
+      updateMemory(id, 'photo', payload.photoUrl);
+    } catch (error) {
+      setVideoUploadError(error?.message || 'Photo upload failed.');
+    } finally {
+      setUploadingPhotoById((prev) => ({ ...prev, [id]: false }));
+    }
   };
 
   const addVideo = async (id, file) => {
@@ -116,6 +138,28 @@ const ProjectDetailPage = ({ project, setProject }) => {
       return { ...p, memories: current };
     });
     showSaved();
+  };
+
+  const shareUrl = `${window.location.origin}/view/${project.id}`;
+
+  const handleToggleShare = async () => {
+    setShareLoading(true);
+    try {
+      const result = await toggleShare(project.id, !isShared);
+      setIsShared(result.isShared);
+    } catch (err) {
+      setVideoUploadError(err?.message || 'Failed to update sharing.');
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setShareCopied(true);
+      clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setShareCopied(false), 2000);
+    });
   };
 
   const addMemory = () => {
@@ -179,7 +223,28 @@ const ProjectDetailPage = ({ project, setProject }) => {
             >
               {project.reviewApprovedAt ? '🧊 Open 3D Room' : '🧊 Review & Generate 3D'}
             </button>
+            <button
+              className={`ma-btn ${isShared ? 'ma-btn-accent' : 'ma-btn-ghost'}`}
+              onClick={handleToggleShare}
+              disabled={shareLoading}
+            >
+              {shareLoading ? '...' : isShared ? '🔗 Shared (click to stop)' : '🔗 Share'}
+            </button>
           </div>
+
+          {isShared && (
+            <div className="ma-share-row">
+              <input
+                className="ma-share-input"
+                readOnly
+                value={shareUrl}
+                onFocus={(e) => e.target.select()}
+              />
+              <button className="ma-btn ma-btn-ghost ma-btn-sm" onClick={handleCopyLink}>
+                {shareCopied ? 'Copied!' : 'Copy link'}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="ma-divider" />
@@ -207,7 +272,9 @@ const ProjectDetailPage = ({ project, setProject }) => {
                 <div key={mem.id} className="ma-memory-item">
                   {/* Photo slot */}
                   <label className="ma-memory-photo" title="คลิกเพื่อใส่รูป">
-                    {mem.photo ? (
+                    {uploadingPhotoById[mem.id] ? (
+                      <span className="ma-memory-photo-icon">⏳</span>
+                    ) : mem.photo ? (
                       <img src={mem.photo} alt="" />
                     ) : (
                       <span className="ma-memory-photo-icon">📸</span>
@@ -215,6 +282,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
                     <input
                       type="file"
                       accept="image/*"
+                      disabled={Boolean(uploadingPhotoById[mem.id])}
                       onChange={(e) => addPhoto(mem.id, e.target.files?.[0])}
                     />
                   </label>

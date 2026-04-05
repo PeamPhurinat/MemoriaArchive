@@ -7,6 +7,7 @@ const {
 const startInterview = async (req, res, next) => {
   try {
     const payload = await startInterviewSession({
+      userId: req.user.id,
       projectId: req.body?.projectId,
       userName: req.body?.userName,
       durationMinutes: req.body?.durationMinutes
@@ -20,6 +21,7 @@ const startInterview = async (req, res, next) => {
 const sendMessage = async (req, res, next) => {
   try {
     const payload = await sendInterviewMessage({
+      userId: req.user.id,
       sessionId: req.body?.sessionId,
       message: req.body?.message
     });
@@ -32,6 +34,7 @@ const sendMessage = async (req, res, next) => {
 const finishInterview = async (req, res, next) => {
   try {
     const payload = await finishInterviewSession({
+      userId: req.user.id,
       sessionId: req.body?.sessionId
     });
     res.status(200).json({ ok: true, ...payload });

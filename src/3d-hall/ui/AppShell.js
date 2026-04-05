@@ -44,7 +44,7 @@ export class AppShell {
           </div>
         </section>
         <section class="controls">
-          <p>View mode: move with W A S D and look with the mouse. Custom mode: click memory stations to move, resize, or delete them, then save each user layout. Press Esc to unlock. Use the VR button when WebXR is available.</p>
+          <p>View mode: move with W A S D and look with the mouse. Custom mode: click memory stations to move, resize, or delete them. Changes auto-save per user and project, and you can still use Save/Load manually. Press Esc to unlock. Use the VR button when WebXR is available.</p>
         </section>
         <section class="custom-panel" aria-live="polite">
           <p class="custom-title">Memory Layout Customizer</p>

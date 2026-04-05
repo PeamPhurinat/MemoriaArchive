@@ -37,6 +37,9 @@ module.exports = {
     process.env.SERVER_PUBLIC_ORIGIN,
     `http://localhost:${port}`
   ),
+  supabaseUrl: normalizeEnvValue(process.env.SUPABASE_URL, ""),
+  supabaseServiceRoleKey: normalizeEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY, ""),
+  authBypassUserId: normalizeEnvValue(process.env.AUTH_BYPASS_USER_ID, ""),
   clientOrigin: normalizeEnvValue(
     process.env.CLIENT_ORIGIN,
     "http://localhost:3000"

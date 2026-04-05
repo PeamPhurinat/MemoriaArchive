@@ -1,50 +1,36 @@
-import { createClient } from "@supabase/supabase-js";
+import { apiFetch } from "../services/apiClient";
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL?.trim();
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY?.trim();
-
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
-
-const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey) : null;
-
-export async function saveLayoutToCloud(userId, payload) {
-  if (!supabase) {
-    return { ok: false, reason: "not_configured" };
+export async function saveLayoutToCloud({ projectId, payload }) {
+  const safeProjectId = String(projectId || "").trim();
+  if (!safeProjectId) {
+    return { ok: false, reason: "missing_project" };
   }
 
-  const record = {
-    user_id: userId,
-    layout_data: payload,
-    updated_at: new Date().toISOString(),
-  };
-
-  const { error } = await supabase
-    .from("user_layouts")
-    .upsert(record, { onConflict: "user_id" });
-
-  if (error) {
-    console.error("Supabase save error:", error.message);
-    return { ok: false, reason: error.message };
+  try {
+    await apiFetch(`/api/layouts/${encodeURIComponent(safeProjectId)}`, {
+      method: "PUT",
+      body: JSON.stringify({ layout: payload })
+    });
+    return { ok: true };
+  } catch (error) {
+    console.error("Layout save API error:", error?.message || error);
+    return { ok: false, reason: error?.message || "save_failed" };
   }
-
-  return { ok: true };
 }
 
-export async function loadLayoutFromCloud(userId) {
-  if (!supabase) {
-    return { ok: false, payload: null, reason: "not_configured" };
+export async function loadLayoutFromCloud({ projectId }) {
+  const safeProjectId = String(projectId || "").trim();
+  if (!safeProjectId) {
+    return { ok: false, payload: null, reason: "missing_project" };
   }
 
-  const { data, error } = await supabase
-    .from("user_layouts")
-    .select("layout_data")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Supabase load error:", error.message);
-    return { ok: false, payload: null, reason: error.message };
+  try {
+    const response = await apiFetch(`/api/layouts/${encodeURIComponent(safeProjectId)}`, {
+      method: "GET"
+    });
+    return { ok: true, payload: response?.layout ?? null };
+  } catch (error) {
+    console.error("Layout load API error:", error?.message || error);
+    return { ok: false, payload: null, reason: error?.message || "load_failed" };
   }
-
-  return { ok: true, payload: data?.layout_data ?? null };
 }

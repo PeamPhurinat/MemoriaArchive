@@ -1,181 +1,398 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import DashboardPage from './pages/DashboardPage';
-import ProjectsPage from './pages/ProjectsPage';
-import ProjectDetailPage from './pages/ProjectDetailPage';
-import UploadPage from './pages/UploadPage';
-import ReviewPage from './pages/ReviewPage';
-import ViewerPage from './pages/ViewerPage';
-import InterviewPage from './pages/InterviewPage';
-import MemoryHallPage from './pages/MemoryHallPage';
-import { demoProject } from './data/mockProject';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import DashboardPage from "./pages/DashboardPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import ProjectDetailPage from "./pages/ProjectDetailPage";
+import UploadPage from "./pages/UploadPage";
+import ReviewPage from "./pages/ReviewPage";
+import ViewerPage from "./pages/ViewerPage";
+import InterviewPage from "./pages/InterviewPage";
+import MemoryHallPage from "./pages/MemoryHallPage";
+import SharedViewPage from "./pages/SharedViewPage";
+import AuthPage from "./pages/AuthPage";
+import { useAuth } from "./context/AuthContext";
+import {
+  createProject as createProjectApi,
+  listProjects as listProjectsApi,
+  saveProject as saveProjectApi
+} from "./services/projectApi";
 
-const STORAGE_KEY = 'memoria_projects';
-const ACTIVE_KEY  = 'memoria_active_project';
+const ACTIVE_KEY = "memoria_active_project";
 
-const isTransientVideoUrl = (value) =>
-  typeof value === 'string' && (value.startsWith('blob:') || /^data:video\//i.test(value));
-
-const storageReplacer = (key, value) => {
-  if (isTransientVideoUrl(value)) {
-    return null;
-  }
-  return value;
+const createProjectId = () => {
+  const hasRandomUuid =
+    typeof window !== "undefined" &&
+    window.crypto &&
+    typeof window.crypto.randomUUID === "function";
+  const randomPart = hasRandomUuid
+    ? window.crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10);
+  return `project-${Date.now()}-${randomPart}`;
 };
 
-const createEmptyProject = () => ({
-  id: `project-${Date.now()}`,
-  title: 'New Project',
-  coupleNames: '',
-  createdAt: new Date().toISOString(),
-  photos: [],
-  memories: [],
-  audioSlots: [],
-  textSlots: [],
-  roomPayload: null,
-  interview: null,
-  reviewApprovedAt: null,
-});
-
-const loadProjects = () => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const parsed = stored ? JSON.parse(stored) : [{ ...demoProject }];
-    return parsed.map((project) => ({
-      ...project,
-      reviewApprovedAt: project.reviewApprovedAt || null,
-    }));
-  } catch {
-    return [{ ...demoProject, reviewApprovedAt: null }];
-  }
+const createEmptyProject = () => {
+  const now = new Date().toISOString();
+  return {
+    id: createProjectId(),
+    title: "New Project",
+    coupleNames: "",
+    createdAt: now,
+    updatedAt: now,
+    photos: [],
+    memories: [],
+    audioSlots: [],
+    photoSlots: [],
+    textSlots: [],
+    roomPayload: null,
+    interview: null,
+    reviewApprovedAt: null
+  };
 };
 
-const App = () => {
-  const [projects, setProjects] = useState(loadProjects);
+const normalizeProject = (project) => {
+  const fallback = createEmptyProject();
+  const source = project && typeof project === "object" ? project : {};
+  return {
+    ...fallback,
+    ...source,
+    id: String(source.id || fallback.id),
+    title: typeof source.title === "string" ? source.title : fallback.title,
+    coupleNames: typeof source.coupleNames === "string" ? source.coupleNames : "",
+    createdAt: source.createdAt || fallback.createdAt,
+    updatedAt: source.updatedAt || source.createdAt || fallback.updatedAt,
+    photos: Array.isArray(source.photos) ? source.photos : [],
+    memories: Array.isArray(source.memories) ? source.memories : [],
+    audioSlots: Array.isArray(source.audioSlots) ? source.audioSlots : [],
+    photoSlots: Array.isArray(source.photoSlots) ? source.photoSlots : [],
+    textSlots: Array.isArray(source.textSlots) ? source.textSlots : [],
+    roomPayload: source.roomPayload && typeof source.roomPayload === "object"
+      ? source.roomPayload
+      : null,
+    interview: source.interview && typeof source.interview === "object"
+      ? source.interview
+      : null,
+    reviewApprovedAt: source.reviewApprovedAt || null,
+    isShared: Boolean(source.isShared),
+  };
+};
 
+const FullscreenMessage = ({ message }) => (
+  <div className="ma-auth-page">
+    <div className="ma-auth-card">{message}</div>
+  </div>
+);
+
+const RequireAuth = ({ children }) => {
+  const location = useLocation();
+  const { loading, isAuthenticated } = useAuth();
+
+  if (loading) {
+    return <FullscreenMessage message="Checking session..." />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
+
+const AppRoutes = () => {
+  const { loading, isAuthenticated, signOut } = useAuth();
+  const [projects, setProjects] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectSyncError, setProjectSyncError] = useState("");
+  const saveTimersRef = useRef(new Map());
   const [activeProjectId, setActiveProjectId] = useState(() => {
-    return localStorage.getItem(ACTIVE_KEY) || projects[0]?.id || null;
+    try {
+      return localStorage.getItem(ACTIVE_KEY) || null;
+    } catch {
+      return null;
+    }
   });
 
-  // Persist to localStorage whenever projects change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects, storageReplacer));
-    } catch (error) {
-      // Keep runtime state usable even when persistence fails.
-      // eslint-disable-next-line no-console
-      console.warn('Failed to persist projects to localStorage:', error);
-    }
-  }, [projects]);
+  useEffect(() => () => {
+    saveTimersRef.current.forEach((timerId) => clearTimeout(timerId));
+    saveTimersRef.current.clear();
+  }, []);
 
   useEffect(() => {
-    if (activeProjectId) {
-      localStorage.setItem(ACTIVE_KEY, activeProjectId);
+    if (!isAuthenticated) {
+      setProjects([]);
+      setActiveProjectId(null);
+      setProjectSyncError("");
+      saveTimersRef.current.forEach((timerId) => clearTimeout(timerId));
+      saveTimersRef.current.clear();
     }
-  }, [activeProjectId]);
+  }, [isAuthenticated]);
 
-  // Derive active project
-  const activeProject =
-    projects.find((p) => p.id === activeProjectId) ||
-    projects[0] ||
-    createEmptyProject();
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
-  // Update only the active project
-  const setProject = (updater) => {
-    setProjects((prev) => {
-      return prev.map((project) => {
-        if (project.id !== activeProject.id) return project;
+    let cancelled = false;
+    const loadProjects = async () => {
+      setProjectsLoading(true);
+      setProjectSyncError("");
 
-        const nextProject =
-          typeof updater === 'function' ? updater(project) : updater;
+      try {
+        const fetchedProjects = await listProjectsApi();
+        if (cancelled) return;
 
-        if (!nextProject || typeof nextProject !== 'object') return project;
+        const normalized = fetchedProjects.map(normalizeProject);
+        if (normalized.length > 0) {
+          setProjects(normalized);
 
+          const savedActiveId = localStorage.getItem(ACTIVE_KEY);
+          const targetActive = normalized.find((project) => project.id === savedActiveId)
+            ? savedActiveId
+            : normalized[0].id;
+          setActiveProjectId(targetActive);
+          return;
+        }
 
-        return nextProject;
+        const firstProject = normalizeProject(createEmptyProject());
+        setProjects([firstProject]);
+        setActiveProjectId(firstProject.id);
+
+        try {
+          const created = await createProjectApi(firstProject);
+          if (cancelled || !created) return;
+          const normalizedCreated = normalizeProject(created);
+          setProjects([normalizedCreated]);
+          setActiveProjectId(normalizedCreated.id);
+        } catch (createError) {
+          if (!cancelled) {
+            setProjectSyncError(createError.message || "Failed to create first project.");
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setProjectSyncError(error.message || "Failed to load projects from database.");
+        }
+      } finally {
+        if (!cancelled) {
+          setProjectsLoading(false);
+        }
+      }
+    };
+
+    loadProjects();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !activeProjectId) return;
+    localStorage.setItem(ACTIVE_KEY, activeProjectId);
+  }, [activeProjectId, isAuthenticated]);
+
+  const scheduleProjectSave = useCallback(
+    (project) => {
+      if (!isAuthenticated) return;
+
+      const normalized = normalizeProject(project);
+      const existing = saveTimersRef.current.get(normalized.id);
+      if (existing) {
+        clearTimeout(existing);
+      }
+
+      const timerId = setTimeout(async () => {
+        saveTimersRef.current.delete(normalized.id);
+        try {
+          const saved = await saveProjectApi(normalized);
+          if (!saved) return;
+          const normalizedSaved = normalizeProject(saved);
+          setProjects((prev) =>
+            prev.map((item) => (item.id === normalizedSaved.id ? normalizedSaved : item))
+          );
+        } catch (error) {
+          setProjectSyncError(error.message || "Failed to sync project to database.");
+        }
+      }, 450);
+
+      saveTimersRef.current.set(normalized.id, timerId);
+    },
+    [isAuthenticated]
+  );
+
+  const activeProject = useMemo(
+    () => projects.find((project) => project.id === activeProjectId) || projects[0] || null,
+    [activeProjectId, projects]
+  );
+
+  const setProject = useCallback(
+    (updater) => {
+      if (!activeProject) return;
+
+      setProjects((prev) =>
+        prev.map((project) => {
+          if (project.id !== activeProject.id) return project;
+
+          const candidate =
+            typeof updater === "function" ? updater(project) : updater;
+          if (!candidate || typeof candidate !== "object") return project;
+
+          const nextProject = normalizeProject({
+            ...candidate,
+            id: project.id,
+            createdAt: project.createdAt
+          });
+
+          scheduleProjectSave(nextProject);
+          return nextProject;
+        })
+      );
+    },
+    [activeProject, scheduleProjectSave]
+  );
+
+  const handleCreateNew = useCallback(() => {
+    const draft = normalizeProject(createEmptyProject());
+    setProjects((prev) => [...prev, draft]);
+    setActiveProjectId(draft.id);
+
+    createProjectApi(draft)
+      .then((saved) => {
+        if (!saved) return;
+        const normalizedSaved = normalizeProject(saved);
+        setProjects((prev) =>
+          prev.map((project) => (project.id === draft.id ? normalizedSaved : project))
+        );
+      })
+      .catch((error) => {
+        setProjectSyncError(error.message || "Failed to create project.");
       });
-    });
-  };
+  }, []);
 
-  const handleCreateNew = () => {
-    const newProject = createEmptyProject();
-    setProjects((prev) => [...prev, newProject]);
-    setActiveProjectId(newProject.id);
-  };
-
-  const handleSelectProject = (id) => {
+  const handleSelectProject = useCallback((id) => {
     setActiveProjectId(id);
+  }, []);
+
+  if (loading) {
+    return <FullscreenMessage message="Loading authentication..." />;
+  }
+
+  const renderActiveProjectPage = (page) => {
+    if (projectsLoading && !activeProject) {
+      return <FullscreenMessage message="Loading projects..." />;
+    }
+    if (!activeProject) {
+      return <Navigate to="/projects" replace />;
+    }
+    return page;
   };
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Home */}
-        <Route path="/" element={<DashboardPage />} />
+    <Routes>
+      <Route path="/auth" element={<AuthPage />} />
 
-        {/* Projects list */}
-        <Route
-          path="/projects"
-          element={
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <DashboardPage onSignOut={signOut} />
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/projects"
+        element={
+          <RequireAuth>
             <ProjectsPage
               projects={projects}
               onCreateNew={handleCreateNew}
               onSelectProject={handleSelectProject}
+              loading={projectsLoading}
+              syncError={projectSyncError}
             />
-          }
-        />
+          </RequireAuth>
+        }
+      />
 
-        {/* Project detail (edit memories, photos) */}
-        <Route
-          path="/project-detail"
-          element={
-            <ProjectDetailPage
-              project={activeProject}
-              setProject={setProject}
-            />
-          }
-        />
+      <Route
+        path="/project-detail"
+        element={
+          <RequireAuth>
+            {renderActiveProjectPage(
+              <ProjectDetailPage project={activeProject} setProject={setProject} />
+            )}
+          </RequireAuth>
+        }
+      />
 
-        {/* Interview */}
-        <Route
-          path="/interview"
-          element={
-            <InterviewPage project={activeProject} setProject={setProject} />
-          }
-        />
+      <Route
+        path="/interview"
+        element={
+          <RequireAuth>
+            {renderActiveProjectPage(
+              <InterviewPage project={activeProject} setProject={setProject} />
+            )}
+          </RequireAuth>
+        }
+      />
 
-        {/* 3D Memory Hall */}
-        <Route
-          path="/memory-hall"
-          element={
-            activeProject?.reviewApprovedAt
-              ? <MemoryHallPage project={activeProject} />
-              : <Navigate to="/review" replace />
-          }
-        />
+      <Route
+        path="/memory-hall"
+        element={
+          <RequireAuth>
+            {renderActiveProjectPage(
+              activeProject?.reviewApprovedAt
+                ? <MemoryHallPage project={activeProject} />
+                : <Navigate to="/review" replace />
+            )}
+          </RequireAuth>
+        }
+      />
 
-        {/* Legacy / secondary routes */}
-        <Route
-          path="/upload"
-          element={<UploadPage project={activeProject} setProject={setProject} />}
-        />
-        <Route
-          path="/review"
-          element={<ReviewPage project={activeProject} setProject={setProject} />}
-        />
-        <Route
-          path="/viewer"
-          element={
-            activeProject?.reviewApprovedAt
-              ? <ViewerPage project={activeProject} />
-              : <Navigate to="/review" replace />
-          }
-        />
+      <Route
+        path="/upload"
+        element={
+          <RequireAuth>
+            {renderActiveProjectPage(
+              <UploadPage project={activeProject} setProject={setProject} />
+            )}
+          </RequireAuth>
+        }
+      />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+      <Route
+        path="/review"
+        element={
+          <RequireAuth>
+            {renderActiveProjectPage(
+              <ReviewPage project={activeProject} setProject={setProject} />
+            )}
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/viewer"
+        element={
+          <RequireAuth>
+            {renderActiveProjectPage(
+              activeProject?.reviewApprovedAt
+                ? <ViewerPage project={activeProject} />
+                : <Navigate to="/review" replace />
+            )}
+          </RequireAuth>
+        }
+      />
+
+      <Route path="/view/:projectId" element={<SharedViewPage />} />
+
+      <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/auth"} replace />} />
+    </Routes>
   );
 };
+
+const App = () => (
+  <BrowserRouter>
+    <AppRoutes />
+  </BrowserRouter>
+);
 
 export default App;

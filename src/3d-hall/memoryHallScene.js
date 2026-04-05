@@ -3,11 +3,11 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { VRButton } from "three/examples/jsm/webxr/VRButton.js";
-import { isSupabaseConfigured, loadLayoutFromCloud, saveLayoutToCloud } from "./supabaseClient.js";
+import { loadLayoutFromCloud, saveLayoutToCloud } from "./supabaseClient.js";
 import { AppShell } from "../3d-hall/ui/AppShell.js";
 import { WorldBuilder } from "../3d-hall/world/WorldBuilder.js";
 
-export function initMemoryHall(container, memoriesData) {
+export function initMemoryHall(container, memoriesData, context = {}) {
 const app = container;
 const appShell = new AppShell(app);
 document.body.removeAttribute("data-world-theme");
@@ -58,9 +58,13 @@ const vrButton = VRButton.createButton(renderer);
 vrButton.classList.add("vr-button");
 document.body.append(vrButton);
 
-const LAYOUT_STORAGE_PREFIX = "memoria-layout-v1";
+const LAYOUT_STORAGE_PREFIX = "memoria-layout-v2";
 const ACTIVE_USER_STORAGE_KEY = "memoria-active-user";
 const THEME_STORAGE_KEY = "memoria-world-theme-v1";
+const AUTO_SAVE_DELAY_MS = 900;
+const AUTHENTICATED_USER_ID = normalizeUserId(context.userId || "");
+const ACTIVE_PROJECT_ID = normalizeProjectId(context.projectId || "");
+const READ_ONLY = Boolean(context.readOnly);
 
 const WORLD_THEMES = {
   dream: {
@@ -114,6 +118,10 @@ const customState = {
   mode: "view",
   selectedId: null,
   transformMode: "translate",
+};
+
+const autoSaveState = {
+  timerId: null,
 };
 
 const customizableComponents = new Map();
@@ -171,6 +179,7 @@ transformControls.addEventListener("objectChange", () => {
   }
   updateScaleUi();
   updateSelectionOutline();
+  scheduleAutoSave();
 });
 
 launchButton.addEventListener("click", () => {
@@ -419,11 +428,31 @@ captureThemeBaseline();
 initializeCustomizer();
 
 function initializeCustomizer() {
-  const savedUserId = localStorage.getItem(ACTIVE_USER_STORAGE_KEY) ?? "guest";
-  userIdInput.value = normalizeUserId(savedUserId);
+  // In read-only (shared view) mode hide all editing UI
+  if (READ_ONLY) {
+    if (modeToggleButton) modeToggleButton.style.display = "none";
+    if (saveButton) saveButton.style.display = "none";
+    if (loadButton) loadButton.style.display = "none";
+    if (resetButton) resetButton.style.display = "none";
+    if (customPanel) customPanel.style.display = "none";
+    if (userIdInput) userIdInput.closest && userIdInput.closest(".custom-label") && (userIdInput.closest(".custom-label").style.display = "none");
+  }
 
-  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-  applyTheme(storedTheme && WORLD_THEMES[storedTheme] ? storedTheme : "dream", { silent: true });
+  const savedUserId = AUTHENTICATED_USER_ID || localStorage.getItem(ACTIVE_USER_STORAGE_KEY) || "guest";
+  userIdInput.value = normalizeUserId(savedUserId);
+  userIdInput.disabled = Boolean(AUTHENTICATED_USER_ID);
+  userIdInput.title = AUTHENTICATED_USER_ID
+    ? "Authenticated account is used automatically."
+    : "";
+
+  const currentUserId = getCurrentUserId();
+  const storedTheme =
+    localStorage.getItem(getThemeStorageKey(currentUserId)) ||
+    localStorage.getItem(THEME_STORAGE_KEY);
+  applyTheme(storedTheme && WORLD_THEMES[storedTheme] ? storedTheme : "dream", {
+    silent: true,
+    persist: false
+  });
 
   menuToggleButton.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -477,6 +506,7 @@ function initializeCustomizer() {
     clampScale(selected);
     updateScaleUi();
     updateSelectionOutline();
+    scheduleAutoSave();
   });
 
   saveButton.addEventListener("click", async () => {
@@ -488,7 +518,8 @@ function initializeCustomizer() {
   resetButton.addEventListener("click", () => {
     restoreDefaultLayout();
     clearSelection();
-    setCustomStatus(`Layout reset to default for "${getCurrentUserId()}".`);
+    scheduleAutoSave();
+    setCustomStatus(`Layout reset for "${getCurrentUserId()}" in project "${getCurrentProjectId()}".`);
   });
 
   userIdInput.addEventListener("change", () => {
@@ -505,20 +536,41 @@ function initializeCustomizer() {
 function normalizeUserId(value) {
   const safeValue = String(value ?? "")
     .trim()
-    .replace(/\s+/g, "-")
-    .slice(0, 32);
+    .replace(/[^a-zA-Z0-9-_]/g, "")
+    .slice(0, 80);
   return safeValue || "guest";
 }
 
+function normalizeProjectId(value) {
+  const safeValue = String(value ?? "")
+    .trim()
+    .replace(/[^a-zA-Z0-9-_]/g, "")
+    .slice(0, 80);
+  return safeValue || "default-project";
+}
+
 function getCurrentUserId() {
+  if (AUTHENTICATED_USER_ID) {
+    userIdInput.value = AUTHENTICATED_USER_ID;
+    return AUTHENTICATED_USER_ID;
+  }
+
   const userId = normalizeUserId(userIdInput.value);
   userIdInput.value = userId;
   localStorage.setItem(ACTIVE_USER_STORAGE_KEY, userId);
   return userId;
 }
 
+function getCurrentProjectId() {
+  return ACTIVE_PROJECT_ID;
+}
+
 function getLayoutStorageKey(userId) {
-  return `${LAYOUT_STORAGE_PREFIX}:${userId}`;
+  return `${LAYOUT_STORAGE_PREFIX}:${userId}:${getCurrentProjectId()}`;
+}
+
+function getThemeStorageKey(userId) {
+  return `${THEME_STORAGE_KEY}:${userId}:${getCurrentProjectId()}`;
 }
 
 function setMenuOpen(isOpen) {
@@ -565,7 +617,7 @@ function captureThemeBaseline() {
 }
 
 function applyTheme(themeKey, options = {}) {
-  const { silent = false } = options;
+  const { silent = false, persist = true } = options;
   const selectedThemeKey = WORLD_THEMES[themeKey] ? themeKey : "dream";
   const theme = WORLD_THEMES[selectedThemeKey];
   themeState.active = selectedThemeKey;
@@ -606,10 +658,14 @@ function applyTheme(themeKey, options = {}) {
   });
 
   app.setAttribute("data-world-theme", selectedThemeKey);
-  localStorage.setItem(THEME_STORAGE_KEY, selectedThemeKey);
+  if (persist) {
+    localStorage.setItem(THEME_STORAGE_KEY, selectedThemeKey);
+    localStorage.setItem(getThemeStorageKey(getCurrentUserId()), selectedThemeKey);
+  }
 
   if (!silent) {
     setCustomStatus(`Theme changed to ${theme.label}.`);
+    scheduleAutoSave();
   }
 }
 
@@ -696,6 +752,11 @@ function applyLayoutPayload(payload) {
     return false;
   }
 
+  const savedThemeKey = String(payload.themeKey || "").trim();
+  if (savedThemeKey) {
+    applyTheme(savedThemeKey, { silent: true, persist: true });
+  }
+
   const componentStates = payload.components ?? {};
   restoreDefaultLayout();
   Object.entries(componentStates).forEach(([componentId, state]) => {
@@ -710,69 +771,101 @@ function applyLayoutPayload(payload) {
   return true;
 }
 
-async function saveLayoutForUser(userId) {
+async function saveLayoutForUser(userId, options = {}) {
+  const { silent = false } = options;
+  if (autoSaveState.timerId) {
+    clearTimeout(autoSaveState.timerId);
+    autoSaveState.timerId = null;
+  }
+  const projectId = getCurrentProjectId();
   const payload = {
-    version: 1,
+    version: 2,
     savedAt: new Date().toISOString(),
+    userId,
+    projectId,
+    themeKey: themeState.active,
     components: collectLayoutSnapshot(),
   };
 
   let cloudSaved = false;
   let cloudSaveFailed = false;
-  if (isSupabaseConfigured) {
-    const cloudResult = await saveLayoutToCloud(userId, payload);
-    cloudSaved = cloudResult.ok;
-    cloudSaveFailed = !cloudResult.ok;
+  const cloudResult = await saveLayoutToCloud({ projectId, payload });
+  cloudSaved = cloudResult.ok;
+  cloudSaveFailed = !cloudResult.ok;
+  if (cloudSaveFailed) {
+    const reason = String(cloudResult.reason || "").trim();
+    const detail = reason ? ` Reason: ${reason}` : "";
+    if (silent) {
+      setCustomStatus(
+        `Autosave stored layout locally for "${userId}" (${projectId}) because server failed.${detail}`,
+      );
+    } else {
+      setCustomStatus(
+        `Server save failed for "${userId}" (${projectId}). Saved locally only.${detail}`,
+      );
+    }
   }
 
   try {
     localStorage.setItem(getLayoutStorageKey(userId), JSON.stringify(payload));
+    localStorage.setItem(getThemeStorageKey(userId), themeState.active);
+    if (silent) {
+      if (cloudSaved) {
+        setCustomStatus(
+          `Autosaved layout + theme for "${userId}" in project "${projectId}" to Supabase.`,
+        );
+      }
+      return;
+    }
     if (cloudSaved) {
-      setCustomStatus(`Saved layout for "${userId}" to Supabase (local backup also saved).`);
-    } else if (cloudSaveFailed) {
       setCustomStatus(
-        `Supabase save failed for "${userId}". Saved locally only. Check your table/policies.`,
+        `Saved layout + theme for "${userId}" in project "${projectId}" to Supabase.`,
       );
     } else {
-      setCustomStatus(`Saved layout for "${userId}" locally.`);
+      setCustomStatus(`Saved layout + theme for "${userId}" locally.`);
     }
   } catch {
-    setCustomStatus("Could not save layout. Browser storage may be unavailable.");
+    if (!silent) {
+      setCustomStatus("Could not save layout. Browser storage may be unavailable.");
+    }
   }
 }
 
 async function loadLayoutForUser(userId, options = {}) {
+  const projectId = getCurrentProjectId();
   const { silent = false } = options;
-  if (isSupabaseConfigured) {
-    const cloudResult = await loadLayoutFromCloud(userId);
-    if (cloudResult.ok && cloudResult.payload) {
-      const didApply = applyLayoutPayload(cloudResult.payload);
-      if (didApply) {
-        try {
-          localStorage.setItem(getLayoutStorageKey(userId), JSON.stringify(cloudResult.payload));
-        } catch {
-          // Ignore local backup failure and keep cloud-loaded scene.
+  const cloudResult = await loadLayoutFromCloud({ projectId });
+  if (cloudResult.ok && cloudResult.payload) {
+    const didApply = applyLayoutPayload(cloudResult.payload);
+    if (didApply) {
+      try {
+        localStorage.setItem(getLayoutStorageKey(userId), JSON.stringify(cloudResult.payload));
+        if (cloudResult.payload?.themeKey) {
+          localStorage.setItem(getThemeStorageKey(userId), String(cloudResult.payload.themeKey));
         }
-        if (!silent) {
-          setCustomStatus(`Loaded layout for "${userId}" from Supabase.`);
-        }
-        return true;
+      } catch {
+        // Ignore local backup failure and keep cloud-loaded scene.
       }
       if (!silent) {
-        setCustomStatus(`Supabase layout for "${userId}" is invalid.`);
+        setCustomStatus(`Loaded layout + theme for "${userId}" from server.`);
       }
-      return false;
+      return true;
     }
+    if (!silent) {
+      setCustomStatus(`Server layout for "${userId}" is invalid.`);
+    }
+    return false;
   }
 
   const raw = localStorage.getItem(getLayoutStorageKey(userId));
   if (!raw) {
+    const localThemeKey = localStorage.getItem(getThemeStorageKey(userId));
+    if (localThemeKey && WORLD_THEMES[localThemeKey]) {
+      applyTheme(localThemeKey, { silent: true, persist: false });
+    }
+
     if (!silent) {
-      setCustomStatus(
-        isSupabaseConfigured
-          ? `No Supabase/local layout found for "${userId}".`
-          : `No saved layout found for "${userId}".`,
-      );
+      setCustomStatus(`No saved layout found for "${userId}" in project "${projectId}".`);
     }
     return false;
   }
@@ -855,7 +948,8 @@ function deleteSelectedComponent() {
   const label = selected.userData.componentLabel ?? selected.userData.componentId;
   selected.visible = false;
   clearSelection();
-  setCustomStatus(`Deleted "${label}" from this layout. Save to keep this change.`);
+  setCustomStatus(`Deleted "${label}" from this layout. Changes auto-save shortly.`);
+  scheduleAutoSave();
   updateScaleUi();
 }
 
@@ -897,6 +991,7 @@ function syncTransformControls() {
 }
 
 function setMode(mode) {
+  const previousMode = customState.mode;
   const nextMode = mode === "custom" ? "custom" : "view";
   customState.mode = nextMode;
   const isCustomMode = nextMode === "custom";
@@ -924,6 +1019,9 @@ function setMode(mode) {
     clearSelection();
     syncTransformControls();
     setCustomStatus("View mode enabled.");
+    if (previousMode === "custom") {
+      scheduleAutoSave();
+    }
   }
 
   setMenuOpen(false);
@@ -1051,10 +1149,28 @@ function handleCanvasPointerUp() {
 
   if (customDrag.component && customDrag.isDragging) {
     const label = customDrag.component.userData.componentLabel ?? customDrag.component.userData.componentId;
-    setCustomStatus(`Moved "${label}". Save layout to keep this change.`);
+    setCustomStatus(`Moved "${label}". Changes auto-save shortly.`);
+    scheduleAutoSave();
   }
 
   stopCustomDrag();
+}
+
+function scheduleAutoSave() {
+  if (READ_ONLY) return;
+
+  if (autoSaveState.timerId) {
+    clearTimeout(autoSaveState.timerId);
+  }
+
+  autoSaveState.timerId = window.setTimeout(() => {
+    autoSaveState.timerId = null;
+    const userId = getCurrentUserId();
+    if (!userId) {
+      return;
+    }
+    void saveLayoutForUser(userId, { silent: true });
+  }, AUTO_SAVE_DELAY_MS);
 }
 
 function updateCustomModeMovement(delta) {
@@ -1208,6 +1324,10 @@ window.addEventListener("resize", () => {
 app.__memoriaWalkthroughContext = { scene, camera, renderer, worldBuilder, controls, orbitControls, animate };
 
 return function cleanup() {
+  if (autoSaveState.timerId) {
+    clearTimeout(autoSaveState.timerId);
+    autoSaveState.timerId = null;
+  }
   window.removeEventListener("keydown", suppressLockedMovementShortcuts, true);
   window.removeEventListener("keyup", suppressLockedMovementShortcuts, true);
   renderer.setAnimationLoop(null);

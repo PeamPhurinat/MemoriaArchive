@@ -4,6 +4,11 @@ const cors = require("cors");
 const sttRoutes = require("./routes/sttRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
+const projectRoutes = require("./routes/projectRoutes");
+const layoutRoutes = require("./routes/layoutRoutes");
+const publicRoutes = require("./routes/publicRoutes");
+const { toggleProjectShare } = require("./controllers/publicController");
+const { requireAuth } = require("./middleware/authMiddleware");
 const {
   clientOrigin,
   projectsRootDir,
@@ -13,6 +18,7 @@ const {
   chatModel,
   interviewDurationMinutes
 } = require("./config/env");
+const { isSupabaseConfigured } = require("./services/supabaseAdminClient");
 
 const app = express();
 
@@ -36,13 +42,18 @@ app.get("/api/health", (req, res) => {
     chatModel,
     interviewDurationMinutes,
     keyConfigured: Boolean(openaiApiKey),
+    supabaseConfigured: isSupabaseConfigured,
     serverTime: new Date().toISOString()
   });
 });
 
-app.use("/api/stt", sttRoutes);
-app.use("/api/interview", interviewRoutes);
-app.use("/api/media", mediaRoutes);
+app.use("/api/public", publicRoutes);
+app.use("/api/projects", requireAuth, projectRoutes);
+app.patch("/api/projects/:projectId/share", requireAuth, toggleProjectShare);
+app.use("/api/layouts", requireAuth, layoutRoutes);
+app.use("/api/stt", requireAuth, sttRoutes);
+app.use("/api/interview", requireAuth, interviewRoutes);
+app.use("/api/media", requireAuth, mediaRoutes);
 
 app.use((error, req, res, next) => {
   if (error.name === "MulterError" && error.code === "LIMIT_FILE_SIZE") {
@@ -67,7 +78,7 @@ app.use((error, req, res, next) => {
     Number(error.statusCode) ||
     500;
   const isProd = process.env.NODE_ENV === "production";
-  const fallbackMessage = "Failed to transcribe audio.";
+  const fallbackMessage = "Request failed.";
   const detailMessage = error?.message || error?.error?.message || fallbackMessage;
   const message =
     statusCode >= 500

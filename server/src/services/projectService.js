@@ -1,44 +1,24 @@
-const fs = require("fs/promises");
-const path = require("path");
 const { randomUUID } = require("crypto");
-const { uploadsRootDir } = require("../config/env");
-const { appendAudioSlot, sanitizeProjectId } = require("../repositories/projectRepository");
+const { uploadFile } = require("./storageService");
+const {
+  appendAudioSlot,
+  appendProjectPhoto,
+  sanitizeProjectId,
+  setMemoryPhoto,
+  setMemoryVideo
+} = require("../repositories/projectRepository");
 
-const getAudioExtension = (originalName, mimeType) => {
-  const fromName = path.extname(originalName || "").toLowerCase();
-  if (fromName) return fromName;
-
-  if (mimeType === "audio/mpeg") return ".mp3";
-  if (mimeType === "audio/wav" || mimeType === "audio/x-wav") return ".wav";
-  if (mimeType === "audio/mp4") return ".m4a";
-  return ".webm";
-};
-
-const getVideoExtension = (originalName, mimeType) => {
-  const fromName = path.extname(originalName || "").toLowerCase();
-  if (fromName) return fromName;
-
-  if (mimeType === "video/mp4") return ".mp4";
-  if (mimeType === "video/webm") return ".webm";
-  if (mimeType === "video/quicktime") return ".mov";
-  if (mimeType === "video/x-msvideo") return ".avi";
-  if (mimeType === "video/x-matroska") return ".mkv";
-  return ".mp4";
-};
-
-const saveAudioAndTranscript = async ({ projectId, file, transcript }) => {
+const saveAudioAndTranscript = async ({ userId, projectId, file, transcript }) => {
   const cleanProjectId = sanitizeProjectId(projectId);
-  const audioDirectory = path.join(uploadsRootDir, cleanProjectId, "audio");
-  await fs.mkdir(audioDirectory, { recursive: true });
+  const { url: audioUrl, storedName } = await uploadFile({
+    userId,
+    projectId: cleanProjectId,
+    type: "audio",
+    file,
+  });
 
-  const extension = getAudioExtension(file.originalname, file.mimetype);
-  const storedName = `${Date.now()}-${randomUUID().slice(0, 8)}${extension}`;
-  const absoluteAudioPath = path.join(audioDirectory, storedName);
-  await fs.writeFile(absoluteAudioPath, file.buffer);
-
-  const audioUrl = `/uploads/${cleanProjectId}/audio/${storedName}`;
-  const slot = await appendAudioSlot(cleanProjectId, {
-    id: `audio-${Date.now()}`,
+  const slot = await appendAudioSlot(userId, cleanProjectId, {
+    id: `audio-${Date.now()}-${randomUUID().slice(0, 6)}`,
     title: file.originalname || "Recorded Audio",
     transcript,
     audioUrl,
@@ -48,23 +28,43 @@ const saveAudioAndTranscript = async ({ projectId, file, transcript }) => {
   return slot;
 };
 
-const saveMemoryVideo = async ({ projectId, file }) => {
+const saveMemoryVideo = async ({ userId, projectId, memoryId, file }) => {
   const cleanProjectId = sanitizeProjectId(projectId);
-  const videoDirectory = path.join(uploadsRootDir, cleanProjectId, "video");
-  await fs.mkdir(videoDirectory, { recursive: true });
+  const { url: videoUrl, storedName } = await uploadFile({
+    userId,
+    projectId: cleanProjectId,
+    type: "video",
+    file,
+  });
 
-  const extension = getVideoExtension(file.originalname, file.mimetype);
-  const storedName = `${Date.now()}-${randomUUID().slice(0, 8)}${extension}`;
-  const absoluteVideoPath = path.join(videoDirectory, storedName);
-  await fs.writeFile(absoluteVideoPath, file.buffer);
+  await setMemoryVideo(userId, cleanProjectId, memoryId, videoUrl);
+  return { videoUrl, storedName };
+};
 
-  return {
-    videoUrl: `/uploads/${cleanProjectId}/video/${storedName}`,
-    storedName,
-  };
+const saveMemoryPhoto = async ({ userId, projectId, memoryId, file }) => {
+  const cleanProjectId = sanitizeProjectId(projectId);
+  const { url: photoUrl, storedName } = await uploadFile({
+    userId,
+    projectId: cleanProjectId,
+    type: "photo",
+    file,
+  });
+
+  if (memoryId) {
+    await setMemoryPhoto(userId, cleanProjectId, memoryId, photoUrl);
+  } else {
+    await appendProjectPhoto(userId, cleanProjectId, {
+      id: `photo-${Date.now()}-${randomUUID().slice(0, 6)}`,
+      url: photoUrl,
+      name: file.originalname || "photo",
+    });
+  }
+
+  return { photoUrl, storedName };
 };
 
 module.exports = {
   saveAudioAndTranscript,
+  saveMemoryPhoto,
   saveMemoryVideo,
 };
