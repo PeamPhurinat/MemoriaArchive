@@ -1,5 +1,8 @@
+import { apiFetch } from "./apiClient";
+
 const VIDEO_UPLOAD_ENDPOINT =
   process.env.REACT_APP_MEDIA_VIDEO_ENDPOINT || "/api/media/video";
+const PHOTO_UPLOAD_ENDPOINT = "/api/media/photo";
 
 const toAbsoluteMediaUrl = (pathOrUrl) => {
   if (typeof pathOrUrl !== "string" || pathOrUrl.trim().length === 0) {
@@ -32,27 +35,34 @@ export const uploadMemoryVideo = async ({ projectId, memoryId, videoFile }) => {
   formData.append("memoryId", memoryId || "");
   formData.append("video", videoFile, videoFile.name || "memory-video.mp4");
 
-  const response = await fetch(VIDEO_UPLOAD_ENDPOINT, {
+  const payload = await apiFetch(VIDEO_UPLOAD_ENDPOINT, {
     method: "POST",
     body: formData,
   });
 
-  const rawBody = await response.text();
-  let payload = {};
-  try {
-    payload = rawBody ? JSON.parse(rawBody) : {};
-  } catch {
-    payload = {};
-  }
-
-  if (!response.ok) {
-    const message =
-      payload.error || rawBody || `Failed to upload video (HTTP ${response.status}).`;
-    throw new Error(message);
-  }
-
   return {
     ...payload,
     videoUrl: toAbsoluteMediaUrl(payload.videoUrl),
+  };
+};
+
+export const uploadPhoto = async ({ projectId, memoryId, photoFile }) => {
+  if (!photoFile) {
+    throw new Error("Missing photo file.");
+  }
+
+  const formData = new FormData();
+  formData.append("projectId", projectId || "default-project");
+  formData.append("memoryId", memoryId || "");
+  formData.append("photo", photoFile, photoFile.name || "photo.jpg");
+
+  const payload = await apiFetch(PHOTO_UPLOAD_ENDPOINT, {
+    method: "POST",
+    body: formData,
+  });
+
+  return {
+    ...payload,
+    photoUrl: toAbsoluteMediaUrl(payload.photoUrl),
   };
 };

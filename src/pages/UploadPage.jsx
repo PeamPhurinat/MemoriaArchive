@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { transcribeAudio } from '../services/sttApi';
+import { uploadPhoto } from '../services/mediaApi';
 
 const UploadPage = ({ project, setProject }) => {
   const navigate = useNavigate();
@@ -10,6 +11,8 @@ const UploadPage = ({ project, setProject }) => {
   const [recordedAudio, setRecordedAudio] = useState(null);
   const [selectedAudioFile, setSelectedAudioFile] = useState(null);
   const [selectedAudioPreviewUrl, setSelectedAudioPreviewUrl] = useState('');
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState('');
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcriptionError, setTranscriptionError] = useState('');
   const [lastTranscript, setLastTranscript] = useState('');
@@ -23,38 +26,43 @@ const UploadPage = ({ project, setProject }) => {
     }));
   };
 
-  const handlePhotoUpload = (event) => {
+  const handlePhotoUpload = async (event) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    Promise.all(
-      files.map(
-        (file, index) =>
-          new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () =>
-              resolve({
-                id: `${Date.now()}-${index}`,
-                url: typeof reader.result === 'string' ? reader.result : '',
-                name: file.name,
-                source: 'upload'
-              });
-            reader.onerror = () =>
-              resolve({
-                id: `${Date.now()}-${index}`,
-                url: '',
-                name: file.name,
-                source: 'upload'
-              });
-            reader.readAsDataURL(file);
-          })
+    setIsUploadingPhotos(true);
+    setPhotoUploadError('');
+
+    const results = await Promise.allSettled(
+      files.map((file) =>
+        uploadPhoto({ projectId: project.id, photoFile: file })
+          .then((payload) => ({
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            url: payload.photoUrl,
+            name: file.name,
+            source: 'upload',
+          }))
       )
-    ).then((newPhotos) => {
+    );
+
+    const uploaded = results
+      .filter((r) => r.status === 'fulfilled')
+      .map((r) => r.value);
+
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    if (failed > 0) {
+      setPhotoUploadError(`${failed} photo(s) failed to upload.`);
+    }
+
+    if (uploaded.length > 0) {
       setProject((prev) => ({
         ...prev,
-        photos: [...prev.photos, ...newPhotos]
+        photos: [...prev.photos, ...uploaded],
       }));
-    });
+    }
+
+    setIsUploadingPhotos(false);
+    event.target.value = '';
   };
 
   const handleAddMemory = () => {
@@ -243,8 +251,11 @@ const UploadPage = ({ project, setProject }) => {
           type="file"
           accept="image/*"
           multiple
+          disabled={isUploadingPhotos}
           onChange={handlePhotoUpload}
         />
+        {isUploadingPhotos && <p className="helper">Uploading photos...</p>}
+        {photoUploadError && <p className="error-text">{photoUploadError}</p>}
         <div className="photo-grid" style={{ marginTop: '16px' }}>
           {project.photos.map((photo) => (
             <div className="photo-thumb" key={photo.id}>

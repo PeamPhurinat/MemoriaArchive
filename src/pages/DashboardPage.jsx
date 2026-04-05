@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const DashboardPage = () => {
+const DashboardPage = ({ onSignOut }) => {
   const navigate = useNavigate();
 
   return (
@@ -18,6 +18,14 @@ const DashboardPage = () => {
         >
           ✦ My Projects
         </button>
+        {typeof onSignOut === 'function' ? (
+          <button
+            className="ma-btn ma-btn-ghost ma-btn-lg"
+            onClick={onSignOut}
+          >
+            Sign Out
+          </button>
+        ) : null}
       </div>
     </div>
   );

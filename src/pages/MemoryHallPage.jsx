@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { initMemoryHall } from '../3d-hall/memoryHallScene';
 import { initWalkthroughExport } from '../3d-hall/video/walkthroughExport';
+import { useAuth } from '../context/AuthContext';
 import '../3d-hall/style.css';
 
 const buildMemoryHallSlots = (project) => {
@@ -147,13 +148,17 @@ const buildMemoryHallSlots = (project) => {
 
 const MemoryHallPage = ({ project }) => {
   const containerRef = useRef(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const memoriesData = buildMemoryHallSlots(project);
-    const cleanup = initMemoryHall(container, memoriesData);
+    const cleanup = initMemoryHall(container, memoriesData, {
+      projectId: project?.id || '',
+      userId: user?.id || '',
+    });
 
     const walkthroughCtx = container.__memoriaWalkthroughContext;
     if (walkthroughCtx) {
@@ -168,7 +173,7 @@ const MemoryHallPage = ({ project }) => {
     return () => {
       if (typeof cleanup === 'function') cleanup();
     };
-  }, [project]);
+  }, [project, user?.id]);
 
   return <div ref={containerRef} className="memory-hall-root" />;
 };

@@ -182,7 +182,7 @@ const callChat = async (messages, options = {}) => {
   }
 };
 
-const assertSessionReady = (sessionId) => {
+const assertSessionReady = (userId, sessionId) => {
   const session = getSession(sessionId);
   if (!session) {
     const error = new Error("Interview session not found.");
@@ -193,6 +193,12 @@ const assertSessionReady = (sessionId) => {
   if (session.status === "finished") {
     const error = new Error("Interview session already finished.");
     error.status = 400;
+    throw error;
+  }
+
+  if (String(session.userId || "") !== String(userId || "")) {
+    const error = new Error("Interview session not found.");
+    error.status = 404;
     throw error;
   }
 
@@ -291,14 +297,22 @@ const runInterviewerStep = async ({ userName, latestUserMessage, recentMessages,
     updatedState
   };
 };
-const startInterviewSession = async ({ projectId, userName, durationMinutes }) => {
+const startInterviewSession = async ({ userId, projectId, userName, durationMinutes }) => {
   assertOpenAiKey();
 
-  const cleanProjectId = sanitizeProjectId(projectId);
+  const requestedProjectId = asText(projectId);
+  if (!requestedProjectId) {
+    const error = new Error("Missing projectId.");
+    error.status = 400;
+    throw error;
+  }
+
+  const cleanProjectId = sanitizeProjectId(requestedProjectId);
   const duration = Number(durationMinutes) > 0 ? Number(durationMinutes) : interviewDurationMinutes;
   const safeUserName = asText(userName) || "User";
 
   const session = createSession({
+    userId,
     projectId: cleanProjectId,
     userName: safeUserName,
     durationMinutes: duration,
@@ -323,8 +337,8 @@ const startInterviewSession = async ({ projectId, userName, durationMinutes }) =
   };
 };
 
-const sendInterviewMessage = async ({ sessionId, message }) => {
-  const session = assertSessionReady(sessionId);
+const sendInterviewMessage = async ({ userId, sessionId, message }) => {
+  const session = assertSessionReady(userId, sessionId);
   const cleanText = asText(message);
   if (!cleanText) {
     const error = new Error("Message cannot be empty.");
@@ -391,9 +405,15 @@ const sendInterviewMessage = async ({ sessionId, message }) => {
   };
 };
 
-const finishInterviewSession = async ({ sessionId }) => {
+const finishInterviewSession = async ({ userId, sessionId }) => {
   const session = getSession(sessionId);
   if (!session) {
+    const error = new Error("Interview session not found.");
+    error.status = 404;
+    throw error;
+  }
+
+  if (String(session.userId || "") !== String(userId || "")) {
     const error = new Error("Interview session not found.");
     error.status = 404;
     throw error;
@@ -476,7 +496,7 @@ const finishInterviewSession = async ({ sessionId }) => {
     messages: conversation.map(toPublicMessage)
   };
 
-  await saveInterviewOutcome(session.projectId, result);
+  await saveInterviewOutcome(userId, session.projectId, result);
 
   updateSession(session.id, (draft) => ({
     ...draft,
@@ -492,5 +512,3 @@ module.exports = {
   sendInterviewMessage,
   finishInterviewSession
 };
-
-

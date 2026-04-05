@@ -18,7 +18,7 @@ const formatDate = (iso) => {
 const memoryCount = (p) =>
   p.memories?.length || p.textSlots?.length || 0;
 
-const ProjectsPage = ({ projects, onCreateNew, onSelectProject }) => {
+const ProjectsPage = ({ projects, onCreateNew, onSelectProject, loading, syncError }) => {
   const navigate = useNavigate();
 
   const openProject = (id) => {
@@ -63,6 +63,16 @@ const ProjectsPage = ({ projects, onCreateNew, onSelectProject }) => {
         </div>
 
         <div className="ma-projects-grid">
+          {loading ? (
+            <div className="ma-project-card-new" style={{ minHeight: '160px' }}>
+              <span>Loading projects...</span>
+            </div>
+          ) : null}
+          {syncError ? (
+            <div className="ma-project-card-new" style={{ minHeight: '160px', color: '#7a1f1f' }}>
+              <span>{syncError}</span>
+            </div>
+          ) : null}
           {projects.map((p, i) => (
             <div
               key={p.id}

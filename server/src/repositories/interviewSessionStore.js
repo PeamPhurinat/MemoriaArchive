@@ -2,13 +2,14 @@ const { randomUUID } = require("crypto");
 
 const sessions = new Map();
 
-const createSession = ({ projectId, userName, durationMinutes, meta = {} }) => {
+const createSession = ({ userId, projectId, userName, durationMinutes, meta = {} }) => {
   const id = `session-${randomUUID()}`;
   const now = Date.now();
   const expiresAt = now + durationMinutes * 60 * 1000;
 
   const session = {
     id,
+    userId,
     projectId,
     userName,
     status: "active",

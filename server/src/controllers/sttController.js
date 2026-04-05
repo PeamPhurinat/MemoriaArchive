@@ -22,7 +22,15 @@ const createTranscription = async (req, res, next) => {
       });
     }
 
-    const projectId = sanitizeProjectId(req.body.projectId);
+    const requestedProjectId = String(req.body.projectId || "").trim();
+    if (!requestedProjectId) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing projectId."
+      });
+    }
+
+    const projectId = sanitizeProjectId(requestedProjectId);
     const language = req.body.language ? String(req.body.language).trim() : undefined;
 
     const transcript = await transcribeAudio({
@@ -33,6 +41,7 @@ const createTranscription = async (req, res, next) => {
     });
 
     const slot = await saveAudioAndTranscript({
+      userId: req.user.id,
       projectId,
       file: req.file,
       transcript
