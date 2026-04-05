@@ -8,6 +8,7 @@ const AuthPage = () => {
   const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -30,6 +31,12 @@ const AuthPage = () => {
     setSubmitting(true);
     setError("");
     setMessage("");
+
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setSubmitting(false);
+      return;
+    }
 
     try {
       if (mode === "signin") {
@@ -78,14 +85,14 @@ const AuthPage = () => {
             <button
               type="button"
               className={`ma-auth-mode ${mode === "signin" ? "active" : ""}`}
-              onClick={() => setMode("signin")}
+              onClick={() => { setMode("signin"); setConfirmPassword(""); setError(""); }}
             >
               Sign In
             </button>
             <button
               type="button"
               className={`ma-auth-mode ${mode === "signup" ? "active" : ""}`}
-              onClick={() => setMode("signup")}
+              onClick={() => { setMode("signup"); setConfirmPassword(""); setError(""); }}
             >
               Sign Up
             </button>
@@ -120,6 +127,23 @@ const AuthPage = () => {
                 placeholder="At least 6 characters"
               />
             </div>
+
+            {mode === "signup" && (
+              <div className="ma-auth-field">
+                <label className="ma-auth-label" htmlFor="auth-confirm-password">Confirm Password</label>
+                <input
+                  id="auth-confirm-password"
+                  className="ma-auth-input"
+                  type="password"
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Re-enter your password"
+                />
+              </div>
+            )}
           </div>
 
           {(error || authError) ? <p className="ma-auth-error">{error || authError}</p> : null}
@@ -142,7 +166,7 @@ const AuthPage = () => {
           <button
             type="button"
             className="ma-auth-footer-link"
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setConfirmPassword(""); setError(""); }}
           >
             {mode === "signin" ? "Sign up" : "Sign in"}
           </button>
