@@ -38,16 +38,333 @@ export class WorldBuilder {
 
   buildAll(memoriesData = this.memoriesData) {
     this.memoriesData = memoriesData;
+    this.createMuseumHall();
     this.createGround();
     this.createSkyHalo();
     this.createSkyMist();
-    this.createBrokenColumns();
-    this.createStandingPillars();
+    // this.createBrokenColumns();
+    // this.createStandingPillars();
     this.createTimelineTrail();
     this.createMemoryMonoliths(memoriesData);
     this.createFloatingRuinFragments();
     this.createDreamParticles();
     this.createGlitterStars();
+  }
+
+  createMuseumHall() {
+    // --- Dimensions ---
+    const HW       = 20;          // interior half-width  (total 40 units wide)
+    const HH       = 17;          // ceiling height
+    const FRONT_Z  = 26;          // entrance wall z
+    const BACK_Z   = -66;         // back wall z
+    const HALL_LEN = FRONT_Z - BACK_Z;   // 92
+    const CZ       = (FRONT_Z + BACK_Z) / 2; // -20  (hall centre z)
+
+    // --- Materials ---
+    const wallMat  = new THREE.MeshStandardMaterial({ color: 0xbec5ca, roughness: 0.92 });
+    const ceilMat  = new THREE.MeshStandardMaterial({ color: 0xf0eeeb, roughness: 0.88 });
+    const marbMat  = new THREE.MeshStandardMaterial({ color: 0xf4f2ef, roughness: 0.66, metalness: 0.03 });
+    const stonMat  = new THREE.MeshStandardMaterial({ color: 0x747e88, roughness: 0.94 });
+    const doorMat  = new THREE.MeshStandardMaterial({ color: 0x3e2410, roughness: 0.74, metalness: 0.08 });
+    const moldMat  = new THREE.MeshStandardMaterial({ color: 0xfafaf8, roughness: 0.62, metalness: 0.04 });
+    const ropeMat  = new THREE.MeshStandardMaterial({ color: 0x8a7860, roughness: 0.88 });
+    const postMat  = new THREE.MeshStandardMaterial({ color: 0xc0a860, roughness: 0.40, metalness: 0.60 });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x8ec8ff, transparent: true, opacity: 0.20,
+      roughness: 0.05, metalness: 0.10, side: THREE.DoubleSide,
+    });
+    const gridMat  = new THREE.MeshStandardMaterial({ color: 0xa0a090, roughness: 0.50, metalness: 0.30 });
+    const trackMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.40, metalness: 0.50 });
+
+    // ================================================================
+    // 1. WOOD-PLANK FLOOR  (canvas texture, laid over existing ground)
+    // ================================================================
+    const woodCanvas = document.createElement("canvas");
+    woodCanvas.width  = 512;
+    woodCanvas.height = 512;
+    const ctx = woodCanvas.getContext("2d");
+    const PLANK_W = 128;
+    const plankColors = ["#c89858", "#d0a565", "#c49050", "#cfa070"];
+    for (let p = 0; p < 4; p++) {
+      ctx.fillStyle = plankColors[p];
+      ctx.fillRect(p * PLANK_W, 0, PLANK_W, 512);
+      // grain lines
+      ctx.strokeStyle = "rgba(110,65,15,0.10)";
+      ctx.lineWidth = 1;
+      for (let g = 0; g < 10; g++) {
+        const gy = g * 52;
+        ctx.beginPath();
+        ctx.moveTo(p * PLANK_W + 4, gy);
+        ctx.bezierCurveTo(
+          p * PLANK_W + PLANK_W * 0.3, gy + 9,
+          p * PLANK_W + PLANK_W * 0.7, gy - 7,
+          p * PLANK_W + PLANK_W - 4, gy + 4,
+        );
+        ctx.stroke();
+      }
+      // plank edge
+      ctx.strokeStyle = "rgba(90,50,10,0.28)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(p * PLANK_W, 0);
+      ctx.lineTo(p * PLANK_W, 512);
+      ctx.stroke();
+    }
+    const woodTex = new THREE.CanvasTexture(woodCanvas);
+    woodTex.wrapS = THREE.RepeatWrapping;
+    woodTex.wrapT = THREE.RepeatWrapping;
+    woodTex.repeat.set(6, 20);
+    woodTex.colorSpace = THREE.SRGBColorSpace;
+    const woodMat = new THREE.MeshStandardMaterial({
+      map: woodTex, color: 0xd4a96a, roughness: 0.76, metalness: 0.02,
+    });
+
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2, HALL_LEN), woodMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0.01, CZ);
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+
+    // ================================================================
+    // 2. WALLS
+    // ================================================================
+    const addBox = (w, h, d, mat, x, y, z, castShadow = true) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(x, y, z);
+      m.castShadow = castShadow;
+      m.receiveShadow = true;
+      this.scene.add(m);
+      return m;
+    };
+
+    // Side walls
+    addBox(0.5, HH, HALL_LEN, wallMat, -HW,      HH / 2, CZ);
+    addBox(0.5, HH, HALL_LEN, wallMat,  HW,      HH / 2, CZ);
+
+    // Back wall — left, right, and top sections (centre has arch door opening)
+    const DOOR_W  = 5.2;
+    const DOOR_H  = 8.5;
+    const ARCH_R  = DOOR_W * 0.50;
+    const bwSideW = HW - DOOR_W / 2;
+    addBox(bwSideW, HH, 0.5, wallMat, -(DOOR_W / 2 + bwSideW / 2), HH / 2, BACK_Z);
+    addBox(bwSideW, HH, 0.5, wallMat,  (DOOR_W / 2 + bwSideW / 2), HH / 2, BACK_Z);
+    const aboveH = HH - DOOR_H - ARCH_R;
+    addBox(HW * 2, aboveH, 0.5, wallMat, 0, DOOR_H + ARCH_R + aboveH / 2, BACK_Z);
+
+    // Front entrance wall — wider/taller arch opening matching the back door style
+    const ENTRY_W      = 12;           // wider than back door
+    const ENTRY_ARCH_R = ENTRY_W / 2;  // 6  — full semicircle matches back-door proportions
+    const ENTRY_H      = 11;           // rectangular height before arch crown
+    const fwSideW = HW - ENTRY_W / 2;
+    const entryAboveH = HH - ENTRY_H - ENTRY_ARCH_R;  // thin solid strip above arch crown
+    addBox(fwSideW, HH, 0.5, wallMat, -(ENTRY_W / 2 + fwSideW / 2), HH / 2, FRONT_Z);
+    addBox(fwSideW, HH, 0.5, wallMat,  (ENTRY_W / 2 + fwSideW / 2), HH / 2, FRONT_Z);
+    if (entryAboveH > 0) {
+      addBox(HW * 2, entryAboveH, 0.5, wallMat, 0, ENTRY_H + ENTRY_ARCH_R + entryAboveH / 2, FRONT_Z);
+    }
+
+    // Entrance arch decoration — identical style to back door
+    const EFW = 0.36; // entrance frame width
+    // Vertical jambs
+    addBox(EFW, ENTRY_H, EFW, moldMat, -ENTRY_W / 2 + EFW / 2, ENTRY_H / 2, FRONT_Z - 0.28);
+    addBox(EFW, ENTRY_H, EFW, moldMat,  ENTRY_W / 2 - EFW / 2, ENTRY_H / 2, FRONT_Z - 0.28);
+    // Arch frame (half-torus)
+    const entryArchFrame = new THREE.Mesh(
+      new THREE.TorusGeometry(ENTRY_ARCH_R, EFW / 2, 8, 36, Math.PI), moldMat,
+    );
+    entryArchFrame.rotation.z = Math.PI;
+    entryArchFrame.position.set(0, ENTRY_H, FRONT_Z - 0.28);
+    this.scene.add(entryArchFrame);
+    // Keystone
+    addBox(0.44, 0.44, EFW, moldMat, 0, ENTRY_H + ENTRY_ARCH_R - 0.22, FRONT_Z - 0.28, false);
+    // Fan/lunette window
+    const entryFanMesh = new THREE.Mesh(
+      new THREE.CircleGeometry(ENTRY_ARCH_R * 0.88, 32, 0, Math.PI),
+      glassMat,
+    );
+    entryFanMesh.position.set(0, ENTRY_H + 0.06, FRONT_Z - 0.28);
+    this.scene.add(entryFanMesh);
+    const entryFanBarMat = new THREE.MeshStandardMaterial({ color: 0xb0a080, roughness: 0.50, metalness: 0.30 });
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 4) * Math.PI;
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, ENTRY_ARCH_R * 0.88, 6), entryFanBarMat);
+      bar.rotation.z = angle - Math.PI / 2;
+      bar.position.set(0, ENTRY_H + ENTRY_ARCH_R * 0.44, FRONT_Z - 0.30);
+      this.scene.add(bar);
+    }
+
+    // ================================================================
+    // 3. CEILING
+    // ================================================================
+    addBox(HW * 2 + 1, 0.6, HALL_LEN + 0.5, ceilMat, 0, HH + 0.3, CZ, false);
+
+    // ================================================================
+    // 4. CROWN MOLDING (at wall–ceiling junction)
+    // ================================================================
+    const moldH = 0.36, moldD = 0.28;
+    [[-HW + 0.22 + moldD / 2, CZ], [HW - 0.22 - moldD / 2, CZ]].forEach(([mx, mz]) => {
+      addBox(moldD, moldH, HALL_LEN, moldMat, mx, HH - moldH / 2, mz, false);
+      addBox(moldD * 0.6, moldH * 0.55, HALL_LEN, moldMat, mx, HH - moldH * 1.6, mz, false);
+    });
+
+    // ================================================================
+    // 5. WHITE MARBLE COLUMNS (pairs inside hall, x = ±COL_X)
+    // ================================================================
+    const COL_X  = 10;
+    const colZs  = [20, 2, -16, -34, -52];   // 5 pairs, 18-unit spacing
+    colZs.forEach((cz2) => {
+      [-COL_X, COL_X].forEach((cx) => {
+        // Plinth
+        addBox(1.5, 0.18, 1.5, marbMat, cx, 0.09, cz2, false);
+        // Base
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.80, 0.90, 0.52, 24), marbMat);
+        base.position.set(cx, 0.44, cz2); base.castShadow = true; this.scene.add(base);
+        // Shaft — spans from base top (y=0.70) to echinus bottom (y=16.12), height=15.42
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.62, 15.42, 24), marbMat);
+        shaft.position.set(cx, 8.41, cz2); shaft.castShadow = true; this.scene.add(shaft);
+        // Echinus (flaring capital)
+        const echinus = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.64, 0.60, 24), marbMat);
+        echinus.position.set(cx, 16.42, cz2); this.scene.add(echinus);
+        // Abacus slab — top flush with ceiling at HH=17
+        addBox(1.75, 0.28, 1.75, marbMat, cx, 16.86, cz2, false);
+      });
+    });
+
+    // ================================================================
+    // 7. STONE PILASTERS (against walls, dark gray brick)
+    // ================================================================
+    const PIL_X = HW - 1.15;
+    colZs.forEach((cz2) => {
+      [-PIL_X, PIL_X].forEach((px) => {
+        addBox(1.55, HH - 0.45, 1.35, stonMat, px, (HH - 0.45) / 2, cz2);
+        addBox(1.90, 0.42, 1.60, stonMat, px, HH - 0.45 + 0.21, cz2, false);
+      });
+    });
+
+    // ================================================================
+    // 8. GRAND ARCH DOOR (in back wall)
+    // ================================================================
+    const FW = 0.36; // frame width
+    // Vertical jambs
+    addBox(FW, DOOR_H, FW, moldMat, -DOOR_W / 2 + FW / 2, DOOR_H / 2, BACK_Z + 0.28);
+    addBox(FW, DOOR_H, FW, moldMat,  DOOR_W / 2 - FW / 2, DOOR_H / 2, BACK_Z + 0.28);
+    // Arch frame (half-torus)
+    const archFrame = new THREE.Mesh(
+      new THREE.TorusGeometry(ARCH_R, FW / 2, 8, 36, Math.PI), moldMat,
+    );
+    archFrame.rotation.z = Math.PI;
+    archFrame.position.set(0, DOOR_H, BACK_Z + 0.28);
+    this.scene.add(archFrame);
+    // Arch keystone
+    addBox(0.44, 0.44, FW, moldMat, 0, DOOR_H + ARCH_R - 0.22, BACK_Z + 0.28, false);
+
+    // Door leaves
+    const leafW = (DOOR_W / 2 - FW) * 0.95;
+    const leafH = DOOR_H - 0.38;
+    [-1, 1].forEach((side) => {
+      addBox(leafW, leafH, 0.18, doorMat, side * leafW / 2, leafH / 2 + 0.19, BACK_Z + 0.28);
+      // Raised panel details
+      const panH = leafH * 0.32;
+      [0.28, -0.22].forEach((dy) => {
+        addBox(leafW * 0.68, panH, 0.05,
+          new THREE.MeshStandardMaterial({ color: 0x2e1a0c, roughness: 0.70 }),
+          side * leafW / 2, leafH / 2 + 0.19 + dy * leafH, BACK_Z + 0.36,
+        );
+      });
+    });
+
+    // Fan/lunette window above door
+    const fanMesh = new THREE.Mesh(
+      new THREE.CircleGeometry(ARCH_R * 0.86, 32, 0, Math.PI),
+      glassMat,
+    );
+    fanMesh.position.set(0, DOOR_H + 0.06, BACK_Z + 0.28);
+    this.scene.add(fanMesh);
+    // Fan bars
+    const fanBarMat = new THREE.MeshStandardMaterial({ color: 0xb0a080, roughness: 0.50, metalness: 0.30 });
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 4) * Math.PI;
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, ARCH_R * 0.86, 6), fanBarMat);
+      bar.rotation.z = angle - Math.PI / 2;
+      bar.position.set(0, DOOR_H + ARCH_R * 0.43, BACK_Z + 0.30);
+      this.scene.add(bar);
+    }
+
+    // ================================================================
+    // 9. SKYLIGHT WINDOWS (in ceiling, with grid frames)
+    // ================================================================
+    const skylightCenters = [-4, -30];
+    const SKYW = 10, SKYL = 16;
+    skylightCenters.forEach((sz) => {
+      // Glass
+      const sky = new THREE.Mesh(new THREE.PlaneGeometry(SKYW, SKYL), glassMat);
+      sky.rotation.x = -Math.PI / 2;
+      sky.position.set(0, HH + 0.01, sz);
+      this.scene.add(sky);
+      // Outer frame
+      addBox(SKYW + 0.28, 0.10, SKYL + 0.28, gridMat, 0, HH + 0.08, sz, false);
+      // Grid lines along X
+      [-1, 0, 1].forEach((i) => {
+        addBox(0.07, 0.10, SKYL, gridMat, i * SKYW / 3, HH + 0.08, sz, false);
+      });
+      // Grid lines along Z
+      [-2, -1, 0, 1, 2].forEach((i) => {
+        addBox(SKYW, 0.10, 0.07, gridMat, 0, HH + 0.08, sz + i * SKYL / 4, false);
+      });
+    });
+
+    // ================================================================
+    // 10. GALLERY CEILING LIGHT TRACKS + SPOTLIGHTS
+    // ================================================================
+    const galleryLightZs = [11, -7, -25, -43];   // centred in each bay between columns
+    galleryLightZs.forEach((lz) => {
+      addBox(13, 0.12, 0.22, trackMat, 0, HH - 0.05, lz, false);
+      [-4.5, 0, 4.5].forEach((lx) => {
+        const spot = new THREE.SpotLight(0xfff5e4, 16, 22, Math.PI / 6.5, 0.40, 1.4);
+        spot.position.set(lx, HH - 0.18, lz);
+        spot.target.position.set(lx, 0, lz);
+        this.scene.add(spot);
+        this.scene.add(spot.target);
+        // Housing
+        addBox(0.22, 0.22, 0.22, trackMat, lx, HH - 0.22, lz, false);
+      });
+    });
+
+    // ================================================================
+    // 11. ROPE BARRIERS (gold posts + rope along both sides)
+    // ================================================================
+    const ROPE_X = 8;          // rope at x=±8 — leaves 12-unit display alcove between rope and wall
+    const POST_STEP = 9.0;   // one post per bay gap — less cluttered
+    [-ROPE_X, ROPE_X].forEach((px) => {
+      const postZList = [];
+      for (let pz = FRONT_Z - 3; pz >= BACK_Z + 3; pz -= POST_STEP) {
+        postZList.push(pz);
+        // Post cylinder
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.12, 8), postMat);
+        post.position.set(px, 0.56, pz);
+        this.scene.add(post);
+        // Post finial
+        const finial = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), postMat);
+        finial.position.set(px, 1.16, pz);
+        this.scene.add(finial);
+      }
+      // Rope between posts (horizontal cylinder along Z)
+      for (let i = 0; i < postZList.length - 1; i++) {
+        const z1 = postZList[i], z2 = postZList[i + 1];
+        const ropeLen = Math.abs(z2 - z1);
+        const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, ropeLen, 6), ropeMat);
+        rope.rotation.x = Math.PI / 2;
+        rope.position.set(px, 0.92, (z1 + z2) / 2);
+        this.scene.add(rope);
+      }
+    });
+
+    // ================================================================
+    // 12. BASEBOARD + WAINSCOTING (low wall accent)
+    // ================================================================
+    [[-HW + 0.07, CZ], [HW - 0.07, CZ]].forEach(([bx, bz]) => {
+      addBox(0.16, 0.48, HALL_LEN, moldMat, bx, 0.24, bz, false);
+    });
   }
 
   createGround() {
@@ -75,7 +392,7 @@ export class WorldBuilder {
 
   createSkyHalo() {
     const halo = new THREE.Mesh(
-      new THREE.TorusGeometry(64, 1.2, 32, 120),
+      new THREE.TorusGeometry(84, 1.2, 32, 120),
       new THREE.MeshBasicMaterial({
         color: 0xffd8ef,
         transparent: true,
@@ -94,7 +411,7 @@ export class WorldBuilder {
     });
 
     const innerHalo = new THREE.Mesh(
-      new THREE.TorusGeometry(46, 0.55, 24, 96),
+      new THREE.TorusGeometry(66, 0.55, 24, 96),
       new THREE.MeshBasicMaterial({
         color: 0xffebf6,
         transparent: true,
@@ -284,12 +601,26 @@ export class WorldBuilder {
 
   createMemoryMonoliths(memoriesData = this.memoriesData) {
     const dreamThemeColors = this.getMemoryThemeColors("dream");
+    // Monoliths sit BEHIND the rope barriers (x=±8), in the 12-unit wide display alcoves.
+    // Station centre at x=±13 (7 units from wall, 5 units behind rope line).
+    // Panels extend up to ±4.8 from centre:
+    //   inner edge (toward walkway): ±(13−4.8) = ±8.2 — just behind the rope at ±8  ✓
+    //   outer edge (toward wall):    ±(13+4.8) = ±17.8 — clear of wall at ±20       ✓
+    //   marble columns at x=±10: photo frame right edge at ±(13−2.2)=±10.8, 0.8 gap  ✓
+    //   Roman standing pillars at x=±12–16: all at different z, no spatial overlap    ✓
+    //
+    // side=-1 on LEFT  (x=-13): video offset = +4.2 → x=−8.8 (near rope, facing walkway) ✓
+    // side= 1 on RIGHT (x=+13): archive offset = +4.8 → x=+17.8 (toward wall, OK)
+    //   archive on right side: side= 1 → archive at +13+4.8=+17.8 (wall side)
+    //   We flip the convention: use side=1 on left and side=-1 on right so the
+    //   "outward-leaning" panel is always toward the wall, keeping the photo+video
+    //   facing the central walkway.
     const slotPositions = [
-      { x: -11, z: 18, side: -1 },
-      { x: 10, z: 4, side: 1 },
-      { x: -9, z: -11, side: -1 },
-      { x: 11, z: -28, side: 1 },
-      { x: -10, z: -45, side: -1 },
+      { x: -13, z: 11,  side: 1  },  // left alcove  — bay z=20  to z=2
+      { x:  13, z: -7,  side: -1 },  // right alcove — bay z=2   to z=-16
+      { x: -13, z: -25, side: 1  },  // left alcove  — bay z=-16 to z=-34
+      { x:  13, z: -43, side: -1 },  // right alcove — bay z=-34 to z=-52
+      { x: -13, z: -59, side: 1  },  // left alcove  — bay z=-52 to back wall
     ];
 
     const entries = Array.isArray(memoriesData)
@@ -343,9 +674,16 @@ export class WorldBuilder {
       station.userData.componentLabel = `${themedEntry.year} - ${themedEntry.title}`;
       station.userData.isCustomizable = true;
       station.position.set(themedEntry.x, 0, themedEntry.z);
+      // Rotate whole station 45° diagonally toward the front entrance:
+      //   left alcove (side=1,  x=-13): +45° → panel normal faces +X +Z (right & toward door)
+      //   right alcove (side=-1, x=+13): -45° → panel normal faces -X +Z (left  & toward door)
+      station.rotation.y = themedEntry.side === 1
+        ? THREE.MathUtils.degToRad(45)
+        : THREE.MathUtils.degToRad(-45);
       this.scene.add(station);
 
-      const orientation = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 18 : -18);
+      // Small additional tilt on individual frames (relative to station group, so still diagonal)
+      const orientation = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 12 : -12);
 
       const photoFrame = new THREE.Mesh(
         new THREE.BoxGeometry(4.4, 3.4, 0.24),
@@ -551,6 +889,7 @@ export class WorldBuilder {
 
       this.memoryStations.push({
         index,
+        station,
         entry: {
           year: themedEntry.year,
           title: themedEntry.title,

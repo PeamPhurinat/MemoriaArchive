@@ -35,8 +35,8 @@ const {
 } = appShell;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xc88ab8);
-scene.fog = new THREE.FogExp2(0xe8b1c7, 0.012);
+scene.background = new THREE.Color(0xc4c8cc);
+scene.fog = new THREE.FogExp2(0xcdd1d4, 0.018);
 
 const camera = new THREE.PerspectiveCamera(
   65,
@@ -58,7 +58,8 @@ const vrButton = VRButton.createButton(renderer);
 vrButton.classList.add("vr-button");
 document.body.append(vrButton);
 
-const LAYOUT_STORAGE_PREFIX = "memoria-layout-v2";
+const LAYOUT_STORAGE_PREFIX = "memoria-layout-v3";
+const LAYOUT_SCHEMA_VERSION = 3;
 const ACTIVE_USER_STORAGE_KEY = "memoria-active-user";
 const THEME_STORAGE_KEY = "memoria-world-theme-v1";
 const AUTO_SAVE_DELAY_MS = 900;
@@ -752,6 +753,11 @@ function applyLayoutPayload(payload) {
     return false;
   }
 
+  // Reject saves from an older schema — default positions will be used instead.
+  if ((payload.version ?? 0) < LAYOUT_SCHEMA_VERSION) {
+    return false;
+  }
+
   const savedThemeKey = String(payload.themeKey || "").trim();
   if (savedThemeKey) {
     applyTheme(savedThemeKey, { silent: true, persist: true });
@@ -779,7 +785,7 @@ async function saveLayoutForUser(userId, options = {}) {
   }
   const projectId = getCurrentProjectId();
   const payload = {
-    version: 2,
+    version: LAYOUT_SCHEMA_VERSION,
     savedAt: new Date().toISOString(),
     userId,
     projectId,
@@ -1283,6 +1289,8 @@ function updateMovement(delta) {
   );
 }
 
+const _stationLookTarget = new THREE.Vector3();
+
 function animate() {
   const delta = Math.min(clock.getDelta(), 0.1);
   const elapsed = clock.elapsedTime;
@@ -1306,6 +1314,14 @@ function animate() {
 
   pulseLights.forEach((entry, index) => {
     entry.light.intensity = entry.base + Math.sin(elapsed * entry.speed + index) * entry.range;
+  });
+
+  // Rotate each memory station on the Y axis to face the user.
+  // We only update the horizontal angle so displays never tilt up/down.
+  worldBuilder.memoryStations.forEach(({ station }) => {
+    if (!station) return;
+    _stationLookTarget.set(camera.position.x, station.position.y, camera.position.z);
+    station.lookAt(_stationLookTarget);
   });
 
   renderer.render(scene, camera);
