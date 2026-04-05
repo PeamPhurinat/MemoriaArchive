@@ -6,7 +6,12 @@ export class AppShell {
   }
 
   render() {
-    this.rootElement.innerHTML = `
+    // Inject into a dedicated child div so React's ownership of rootElement
+    // is never broken — avoids "removeChild: not a child" on unmount.
+    this.mountNode = document.createElement("div");
+    this.mountNode.className = "appshell-mount";
+    this.rootElement.appendChild(this.mountNode);
+    this.mountNode.innerHTML = `
       <div class="overlay">
         <section class="title-card">
           <p class="eyebrow">Memoria Prototype</p>
@@ -17,6 +22,7 @@ export class AppShell {
             clouds step by step through the archive.
           </p>
         </section>
+        <button class="back-to-project" type="button">← Back to Project</button>
         <button class="launch" type="button">Enter the realm</button>
         <button class="menu-toggle" type="button" aria-expanded="false">☰ Menu</button>
         <section class="menu-panel" aria-label="World menu">
@@ -74,24 +80,26 @@ export class AppShell {
   }
 
   cacheElements() {
-    this.launchButton = this.rootElement.querySelector(".launch");
-    this.menuToggleButton = this.rootElement.querySelector(".menu-toggle");
-    this.menuPanel = this.rootElement.querySelector(".menu-panel");
-    this.modeToggleButton = this.rootElement.querySelector(".mode-toggle");
-    this.themeToggleButton = this.rootElement.querySelector(".theme-toggle");
-    this.themePicker = this.rootElement.querySelector(".theme-picker");
-    this.themeOptionButtons = this.rootElement.querySelectorAll(".theme-option");
-    this.customPanel = this.rootElement.querySelector(".custom-panel");
-    this.customStatus = this.rootElement.querySelector(".custom-status");
-    this.userIdInput = this.rootElement.querySelector(".custom-user-input");
-    this.moveButton = this.rootElement.querySelector(".tool-move");
-    this.resizeButton = this.rootElement.querySelector(".tool-resize");
-    this.deleteButton = this.rootElement.querySelector(".tool-delete");
-    this.scaleSlider = this.rootElement.querySelector(".custom-scale");
-    this.scaleValue = this.rootElement.querySelector(".custom-scale-value");
-    this.saveButton = this.rootElement.querySelector(".tool-save");
-    this.loadButton = this.rootElement.querySelector(".tool-load");
-    this.resetButton = this.rootElement.querySelector(".tool-reset");
-    this.reticle = this.rootElement.querySelector(".reticle");
+    const q = (sel) => this.mountNode.querySelector(sel);
+    this.backButton        = q(".back-to-project");
+    this.launchButton      = q(".launch");
+    this.menuToggleButton  = q(".menu-toggle");
+    this.menuPanel         = q(".menu-panel");
+    this.modeToggleButton  = q(".mode-toggle");
+    this.themeToggleButton = q(".theme-toggle");
+    this.themePicker       = q(".theme-picker");
+    this.themeOptionButtons = this.mountNode.querySelectorAll(".theme-option");
+    this.customPanel       = q(".custom-panel");
+    this.customStatus      = q(".custom-status");
+    this.userIdInput       = q(".custom-user-input");
+    this.moveButton        = q(".tool-move");
+    this.resizeButton      = q(".tool-resize");
+    this.deleteButton      = q(".tool-delete");
+    this.scaleSlider       = q(".custom-scale");
+    this.scaleValue        = q(".custom-scale-value");
+    this.saveButton        = q(".tool-save");
+    this.loadButton        = q(".tool-load");
+    this.resetButton       = q(".tool-reset");
+    this.reticle           = q(".reticle");
   }
 }

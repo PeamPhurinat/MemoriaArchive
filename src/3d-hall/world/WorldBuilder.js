@@ -52,13 +52,13 @@ export class WorldBuilder {
   }
 
   createMuseumHall() {
-    // --- Dimensions ---
-    const HW       = 20;          // interior half-width  (total 40 units wide)
-    const HH       = 17;          // ceiling height
-    const FRONT_Z  = 26;          // entrance wall z
-    const BACK_Z   = -66;         // back wall z
-    const HALL_LEN = FRONT_Z - BACK_Z;   // 92
-    const CZ       = (FRONT_Z + BACK_Z) / 2; // -20  (hall centre z)
+    // --- Default dimensions ---
+    const HW       = 20;
+    const HH       = 17;
+    const FRONT_Z  = 26;
+    const BACK_Z   = -66;
+    const HALL_LEN = FRONT_Z - BACK_Z;
+    const CZ       = (FRONT_Z + BACK_Z) / 2;
 
     // --- Materials ---
     const wallMat  = new THREE.MeshStandardMaterial({ color: 0xbec5ca, roughness: 0.92 });
@@ -75,296 +75,398 @@ export class WorldBuilder {
     });
     const gridMat  = new THREE.MeshStandardMaterial({ color: 0xa0a090, roughness: 0.50, metalness: 0.30 });
     const trackMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.40, metalness: 0.50 });
+    const darkDoorMat = new THREE.MeshStandardMaterial({ color: 0x2e1a0c, roughness: 0.70 });
+    const fanBarMat   = new THREE.MeshStandardMaterial({ color: 0xb0a080, roughness: 0.50, metalness: 0.30 });
+
+    // --- Helpers ---
+    // Creates a Group, adds it to scene, positions it
+    const makeGroup = (x, y, z) => {
+      const g = new THREE.Group();
+      g.position.set(x, y, z);
+      this.scene.add(g);
+      return g;
+    };
+    // Adds a BoxGeometry mesh at a LOCAL position inside a group
+    const boxIn = (group, w, h, d, mat, lx = 0, ly = 0, lz = 0, cast = true) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(lx, ly, lz);
+      m.castShadow = cast;
+      m.receiveShadow = true;
+      group.add(m);
+      return m;
+    };
+    // Registers a group as a customizable component
+    const reg = (id, group, label, meta = {}) => {
+      group.userData.componentLabel = label;
+      group.userData.isCustomizable = true;
+      this.registerCustomizableComponent(id, group, { ...meta, label });
+    };
+
+    // Spotlight targets are added to the scene (world-space), not to their track group,
+    // so we can update them independently in updateMuseumConstraints.
+    const spotTargets = [];
 
     // ================================================================
-    // 1. WOOD-PLANK FLOOR  (canvas texture, laid over existing ground)
+    // 1. WOOD-PLANK FLOOR
+    //    Group pivot at (0,0,CZ). Scales X/Z to fill between walls.
     // ================================================================
     const woodCanvas = document.createElement("canvas");
-    woodCanvas.width  = 512;
-    woodCanvas.height = 512;
+    woodCanvas.width = 512; woodCanvas.height = 512;
     const ctx = woodCanvas.getContext("2d");
     const PLANK_W = 128;
-    const plankColors = ["#c89858", "#d0a565", "#c49050", "#cfa070"];
-    for (let p = 0; p < 4; p++) {
-      ctx.fillStyle = plankColors[p];
+    ["#c89858", "#d0a565", "#c49050", "#cfa070"].forEach((col, p) => {
+      ctx.fillStyle = col;
       ctx.fillRect(p * PLANK_W, 0, PLANK_W, 512);
-      // grain lines
       ctx.strokeStyle = "rgba(110,65,15,0.10)";
       ctx.lineWidth = 1;
-      for (let g = 0; g < 10; g++) {
-        const gy = g * 52;
+      for (let gi = 0; gi < 10; gi++) {
+        const gy = gi * 52;
         ctx.beginPath();
         ctx.moveTo(p * PLANK_W + 4, gy);
-        ctx.bezierCurveTo(
-          p * PLANK_W + PLANK_W * 0.3, gy + 9,
-          p * PLANK_W + PLANK_W * 0.7, gy - 7,
-          p * PLANK_W + PLANK_W - 4, gy + 4,
-        );
+        ctx.bezierCurveTo(p * PLANK_W + PLANK_W * 0.3, gy + 9, p * PLANK_W + PLANK_W * 0.7, gy - 7, p * PLANK_W + PLANK_W - 4, gy + 4);
         ctx.stroke();
       }
-      // plank edge
       ctx.strokeStyle = "rgba(90,50,10,0.28)";
       ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(p * PLANK_W, 0);
-      ctx.lineTo(p * PLANK_W, 512);
-      ctx.stroke();
-    }
+      ctx.beginPath(); ctx.moveTo(p * PLANK_W, 0); ctx.lineTo(p * PLANK_W, 512); ctx.stroke();
+    });
     const woodTex = new THREE.CanvasTexture(woodCanvas);
     woodTex.wrapS = THREE.RepeatWrapping;
     woodTex.wrapT = THREE.RepeatWrapping;
     woodTex.repeat.set(6, 20);
     woodTex.colorSpace = THREE.SRGBColorSpace;
-    const woodMat = new THREE.MeshStandardMaterial({
-      map: woodTex, color: 0xd4a96a, roughness: 0.76, metalness: 0.02,
-    });
+    const woodMat = new THREE.MeshStandardMaterial({ map: woodTex, color: 0xd4a96a, roughness: 0.76, metalness: 0.02 });
 
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2, HALL_LEN), woodMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.set(0, 0.01, CZ);
-    floor.receiveShadow = true;
-    this.scene.add(floor);
+    const floorGroup = makeGroup(0, 0, CZ);
+    const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2, HALL_LEN), woodMat);
+    floorMesh.rotation.x = -Math.PI / 2;
+    floorMesh.position.y = 0.01;
+    floorMesh.receiveShadow = true;
+    floorGroup.add(floorMesh);
 
     // ================================================================
     // 2. WALLS
+    //    Each wall is a Group positioned at the wall's world centre.
+    //    The mesh sits at (0,0,0) inside the group, so group.position.*
+    //    is the authoritative wall position read by updateMuseumConstraints.
+    //
+    //    Left / Right walls:  group.position.x  = wall X  (default ±HW)
+    //    Back / Front walls:  group.position.z  = wall Z  (default BACK_Z / FRONT_Z)
     // ================================================================
-    const addBox = (w, h, d, mat, x, y, z, castShadow = true) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-      m.position.set(x, y, z);
-      m.castShadow = castShadow;
-      m.receiveShadow = true;
-      this.scene.add(m);
-      return m;
-    };
+    const wallLeftGroup = makeGroup(-HW, HH / 2, CZ);
+    (() => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, HH, HALL_LEN), wallMat); m.castShadow = true; m.receiveShadow = true; wallLeftGroup.add(m); })();
 
-    // Side walls
-    addBox(0.5, HH, HALL_LEN, wallMat, -HW,      HH / 2, CZ);
-    addBox(0.5, HH, HALL_LEN, wallMat,  HW,      HH / 2, CZ);
+    const wallRightGroup = makeGroup(HW, HH / 2, CZ);
+    (() => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, HH, HALL_LEN), wallMat); m.castShadow = true; m.receiveShadow = true; wallRightGroup.add(m); })();
 
-    // Back wall — left, right, and top sections (centre has arch door opening)
-    const DOOR_W  = 5.2;
-    const DOOR_H  = 8.5;
-    const ARCH_R  = DOOR_W * 0.50;
+    // Back wall — group at (0, 0, BACK_Z); door opening left/right/top pieces at local positions
+    const DOOR_W = 5.2, DOOR_H = 8.5, ARCH_R = DOOR_W * 0.50;
     const bwSideW = HW - DOOR_W / 2;
-    addBox(bwSideW, HH, 0.5, wallMat, -(DOOR_W / 2 + bwSideW / 2), HH / 2, BACK_Z);
-    addBox(bwSideW, HH, 0.5, wallMat,  (DOOR_W / 2 + bwSideW / 2), HH / 2, BACK_Z);
-    const aboveH = HH - DOOR_H - ARCH_R;
-    addBox(HW * 2, aboveH, 0.5, wallMat, 0, DOOR_H + ARCH_R + aboveH / 2, BACK_Z);
+    const aboveH  = HH - DOOR_H - ARCH_R;
+    const wallBackGroup = makeGroup(0, 0, BACK_Z);
+    boxIn(wallBackGroup, bwSideW, HH, 0.5, wallMat, -(DOOR_W / 2 + bwSideW / 2), HH / 2, 0);
+    boxIn(wallBackGroup, bwSideW, HH, 0.5, wallMat,  (DOOR_W / 2 + bwSideW / 2), HH / 2, 0);
+    if (aboveH > 0) boxIn(wallBackGroup, HW * 2, aboveH, 0.5, wallMat, 0, DOOR_H + ARCH_R + aboveH / 2, 0);
 
-    // Front entrance wall — wider/taller arch opening matching the back door style
-    const ENTRY_W      = 12;           // wider than back door
-    const ENTRY_ARCH_R = ENTRY_W / 2;  // 6  — full semicircle matches back-door proportions
-    const ENTRY_H      = 11;           // rectangular height before arch crown
-    const fwSideW = HW - ENTRY_W / 2;
-    const entryAboveH = HH - ENTRY_H - ENTRY_ARCH_R;  // thin solid strip above arch crown
-    addBox(fwSideW, HH, 0.5, wallMat, -(ENTRY_W / 2 + fwSideW / 2), HH / 2, FRONT_Z);
-    addBox(fwSideW, HH, 0.5, wallMat,  (ENTRY_W / 2 + fwSideW / 2), HH / 2, FRONT_Z);
-    if (entryAboveH > 0) {
-      addBox(HW * 2, entryAboveH, 0.5, wallMat, 0, ENTRY_H + ENTRY_ARCH_R + entryAboveH / 2, FRONT_Z);
-    }
-
-    // Entrance arch decoration — identical style to back door
-    const EFW = 0.36; // entrance frame width
-    // Vertical jambs
-    addBox(EFW, ENTRY_H, EFW, moldMat, -ENTRY_W / 2 + EFW / 2, ENTRY_H / 2, FRONT_Z - 0.28);
-    addBox(EFW, ENTRY_H, EFW, moldMat,  ENTRY_W / 2 - EFW / 2, ENTRY_H / 2, FRONT_Z - 0.28);
-    // Arch frame (half-torus)
-    const entryArchFrame = new THREE.Mesh(
-      new THREE.TorusGeometry(ENTRY_ARCH_R, EFW / 2, 8, 36, Math.PI), moldMat,
-    );
-    entryArchFrame.rotation.z = Math.PI;
-    entryArchFrame.position.set(0, ENTRY_H, FRONT_Z - 0.28);
-    this.scene.add(entryArchFrame);
-    // Keystone
-    addBox(0.44, 0.44, EFW, moldMat, 0, ENTRY_H + ENTRY_ARCH_R - 0.22, FRONT_Z - 0.28, false);
-    // Fan/lunette window
-    const entryFanMesh = new THREE.Mesh(
-      new THREE.CircleGeometry(ENTRY_ARCH_R * 0.88, 32, 0, Math.PI),
-      glassMat,
-    );
-    entryFanMesh.position.set(0, ENTRY_H + 0.06, FRONT_Z - 0.28);
-    this.scene.add(entryFanMesh);
-    const entryFanBarMat = new THREE.MeshStandardMaterial({ color: 0xb0a080, roughness: 0.50, metalness: 0.30 });
-    for (let i = 0; i < 5; i++) {
-      const angle = (i / 4) * Math.PI;
-      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, ENTRY_ARCH_R * 0.88, 6), entryFanBarMat);
-      bar.rotation.z = angle - Math.PI / 2;
-      bar.position.set(0, ENTRY_H + ENTRY_ARCH_R * 0.44, FRONT_Z - 0.30);
-      this.scene.add(bar);
-    }
+    // Front wall — group at (0, 0, FRONT_Z)
+    const ENTRY_W = 12, ENTRY_ARCH_R = 6, ENTRY_H = 11;
+    const fwSideW    = HW - ENTRY_W / 2;
+    const entryAboveH = HH - ENTRY_H - ENTRY_ARCH_R;
+    const wallFrontGroup = makeGroup(0, 0, FRONT_Z);
+    boxIn(wallFrontGroup, fwSideW, HH, 0.5, wallMat, -(ENTRY_W / 2 + fwSideW / 2), HH / 2, 0);
+    boxIn(wallFrontGroup, fwSideW, HH, 0.5, wallMat,  (ENTRY_W / 2 + fwSideW / 2), HH / 2, 0);
+    if (entryAboveH > 0) boxIn(wallFrontGroup, HW * 2, entryAboveH, 0.5, wallMat, 0, ENTRY_H + ENTRY_ARCH_R + entryAboveH / 2, 0);
 
     // ================================================================
     // 3. CEILING
+    //    Group position.y = HH + 0.3 (mesh centre).
+    //    Ceiling underside = group.position.y - 0.3.
+    //    Only Y movement is meaningful; X/Z are enforced in constraints.
     // ================================================================
-    addBox(HW * 2 + 1, 0.6, HALL_LEN + 0.5, ceilMat, 0, HH + 0.3, CZ, false);
+    const ceilGroup = makeGroup(0, HH + 0.3, CZ);
+    (() => { const m = new THREE.Mesh(new THREE.BoxGeometry(HW * 2 + 1, 0.6, HALL_LEN + 0.5), ceilMat); m.receiveShadow = true; ceilGroup.add(m); })();
 
     // ================================================================
-    // 4. CROWN MOLDING (at wall–ceiling junction)
+    // 4. CROWN MOLDING
+    //    Constrained: Y locked to ceiling underside, X locked to side walls.
+    //    User can slide Z (along the hall length).
     // ================================================================
     const moldH = 0.36, moldD = 0.28;
-    [[-HW + 0.22 + moldD / 2, CZ], [HW - 0.22 - moldD / 2, CZ]].forEach(([mx, mz]) => {
-      addBox(moldD, moldH, HALL_LEN, moldMat, mx, HH - moldH / 2, mz, false);
-      addBox(moldD * 0.6, moldH * 0.55, HALL_LEN, moldMat, mx, HH - moldH * 1.6, mz, false);
-    });
+    const crownLeftGroup = makeGroup(-HW + 0.22 + moldD / 2, HH - moldH / 2, CZ);
+    boxIn(crownLeftGroup, moldD, moldH, HALL_LEN, moldMat, 0, 0, 0, false);
+    boxIn(crownLeftGroup, moldD * 0.6, moldH * 0.55, HALL_LEN, moldMat, 0, -moldH * 1.1, 0, false);
+    reg("museum-crown-left", crownLeftGroup, "Crown Molding Left", { type: "museum-crown", side: "left" });
+
+    const crownRightGroup = makeGroup(HW - 0.22 - moldD / 2, HH - moldH / 2, CZ);
+    boxIn(crownRightGroup, moldD, moldH, HALL_LEN, moldMat, 0, 0, 0, false);
+    boxIn(crownRightGroup, moldD * 0.6, moldH * 0.55, HALL_LEN, moldMat, 0, -moldH * 1.1, 0, false);
+    reg("museum-crown-right", crownRightGroup, "Crown Molding Right", { type: "museum-crown", side: "right" });
 
     // ================================================================
-    // 5. WHITE MARBLE COLUMNS (pairs inside hall, x = ±COL_X)
+    // 5. WHITE MARBLE COLUMNS
+    //    Group pivot at floor (y=0). scale.y auto-tracks ceiling height.
+    //    User can move X/Z freely.
     // ================================================================
-    const COL_X  = 10;
-    const colZs  = [20, 2, -16, -34, -52];   // 5 pairs, 18-unit spacing
-    colZs.forEach((cz2) => {
-      [-COL_X, COL_X].forEach((cx) => {
-        // Plinth
-        addBox(1.5, 0.18, 1.5, marbMat, cx, 0.09, cz2, false);
-        // Base
+    const COL_X = 10;
+    const colZs = [20, 2, -16, -34, -52];
+    const columnGroups = [];
+
+    colZs.forEach((cz2, zi) => {
+      [-COL_X, COL_X].forEach((cx, ci) => {
+        const colGroup = makeGroup(cx, 0, cz2);
+        boxIn(colGroup, 1.5, 0.18, 1.5, marbMat, 0, 0.09, 0, false);
         const base = new THREE.Mesh(new THREE.CylinderGeometry(0.80, 0.90, 0.52, 24), marbMat);
-        base.position.set(cx, 0.44, cz2); base.castShadow = true; this.scene.add(base);
-        // Shaft — spans from base top (y=0.70) to echinus bottom (y=16.12), height=15.42
+        base.position.set(0, 0.44, 0); base.castShadow = true; colGroup.add(base);
         const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.62, 15.42, 24), marbMat);
-        shaft.position.set(cx, 8.41, cz2); shaft.castShadow = true; this.scene.add(shaft);
-        // Echinus (flaring capital)
+        shaft.position.set(0, 8.41, 0); shaft.castShadow = true; colGroup.add(shaft);
         const echinus = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.64, 0.60, 24), marbMat);
-        echinus.position.set(cx, 16.42, cz2); this.scene.add(echinus);
-        // Abacus slab — top flush with ceiling at HH=17
-        addBox(1.75, 0.28, 1.75, marbMat, cx, 16.86, cz2, false);
+        echinus.position.set(0, 16.42, 0); colGroup.add(echinus);
+        boxIn(colGroup, 1.75, 0.28, 1.75, marbMat, 0, 16.86, 0, false);
+
+        const side = ci === 0 ? "L" : "R";
+        reg(`museum-column-${side}${zi + 1}`, colGroup, `Marble Column ${side}${zi + 1}`, { type: "museum-column" });
+        columnGroups.push(colGroup);
       });
     });
 
     // ================================================================
-    // 7. STONE PILASTERS (against walls, dark gray brick)
+    // 6. STONE PILASTERS  (NOT user-movable — auto-follow side walls)
+    //    X locked to wall X ± PIL_OFFSET, scale.y tracks ceiling.
     // ================================================================
-    const PIL_X = HW - 1.15;
+    const PIL_OFFSET = 1.15;
+    const pilastersLeft = [], pilastersRight = [];
     colZs.forEach((cz2) => {
-      [-PIL_X, PIL_X].forEach((px) => {
-        addBox(1.55, HH - 0.45, 1.35, stonMat, px, (HH - 0.45) / 2, cz2);
-        addBox(1.90, 0.42, 1.60, stonMat, px, HH - 0.45 + 0.21, cz2, false);
-      });
+      const plg = makeGroup(-HW + PIL_OFFSET, 0, cz2);
+      boxIn(plg, 1.55, HH - 0.45, 1.35, stonMat, 0, (HH - 0.45) / 2, 0);
+      boxIn(plg, 1.90, 0.42, 1.60, stonMat, 0, HH - 0.45 + 0.21, 0, false);
+      pilastersLeft.push(plg);
+
+      const prg = makeGroup(HW - PIL_OFFSET, 0, cz2);
+      boxIn(prg, 1.55, HH - 0.45, 1.35, stonMat, 0, (HH - 0.45) / 2, 0);
+      boxIn(prg, 1.90, 0.42, 1.60, stonMat, 0, HH - 0.45 + 0.21, 0, false);
+      pilastersRight.push(prg);
     });
 
     // ================================================================
-    // 8. GRAND ARCH DOOR (in back wall)
+    // 7. GRAND ARCH DOOR — back wall  (user scales as whole)
+    //    Group at (0, 0, BACK_Z + 0.28); all door pieces at local positions.
     // ================================================================
-    const FW = 0.36; // frame width
-    // Vertical jambs
-    addBox(FW, DOOR_H, FW, moldMat, -DOOR_W / 2 + FW / 2, DOOR_H / 2, BACK_Z + 0.28);
-    addBox(FW, DOOR_H, FW, moldMat,  DOOR_W / 2 - FW / 2, DOOR_H / 2, BACK_Z + 0.28);
-    // Arch frame (half-torus)
-    const archFrame = new THREE.Mesh(
-      new THREE.TorusGeometry(ARCH_R, FW / 2, 8, 36, Math.PI), moldMat,
-    );
-    archFrame.rotation.z = Math.PI;
-    archFrame.position.set(0, DOOR_H, BACK_Z + 0.28);
-    this.scene.add(archFrame);
-    // Arch keystone
-    addBox(0.44, 0.44, FW, moldMat, 0, DOOR_H + ARCH_R - 0.22, BACK_Z + 0.28, false);
-
-    // Door leaves
-    const leafW = (DOOR_W / 2 - FW) * 0.95;
-    const leafH = DOOR_H - 0.38;
+    const FW = 0.36;
+    const doorGroup = makeGroup(0, 0, BACK_Z + 0.28);
+    boxIn(doorGroup, FW, DOOR_H, FW, moldMat, -DOOR_W / 2 + FW / 2, DOOR_H / 2, 0);
+    boxIn(doorGroup, FW, DOOR_H, FW, moldMat,  DOOR_W / 2 - FW / 2, DOOR_H / 2, 0);
+    const archFrame = new THREE.Mesh(new THREE.TorusGeometry(ARCH_R, FW / 2, 8, 36, Math.PI), moldMat);
+    archFrame.rotation.z = Math.PI; archFrame.position.set(0, DOOR_H, 0); doorGroup.add(archFrame);
+    boxIn(doorGroup, 0.44, 0.44, FW, moldMat, 0, DOOR_H + ARCH_R - 0.22, 0, false);
+    const leafW = (DOOR_W / 2 - FW) * 0.95, leafH = DOOR_H - 0.38;
     [-1, 1].forEach((side) => {
-      addBox(leafW, leafH, 0.18, doorMat, side * leafW / 2, leafH / 2 + 0.19, BACK_Z + 0.28);
-      // Raised panel details
+      boxIn(doorGroup, leafW, leafH, 0.18, doorMat, side * leafW / 2, leafH / 2 + 0.19, 0);
       const panH = leafH * 0.32;
       [0.28, -0.22].forEach((dy) => {
-        addBox(leafW * 0.68, panH, 0.05,
-          new THREE.MeshStandardMaterial({ color: 0x2e1a0c, roughness: 0.70 }),
-          side * leafW / 2, leafH / 2 + 0.19 + dy * leafH, BACK_Z + 0.36,
-        );
+        boxIn(doorGroup, leafW * 0.68, panH, 0.05, darkDoorMat, side * leafW / 2, leafH / 2 + 0.19 + dy * leafH, 0.08);
       });
     });
-
-    // Fan/lunette window above door
-    const fanMesh = new THREE.Mesh(
-      new THREE.CircleGeometry(ARCH_R * 0.86, 32, 0, Math.PI),
-      glassMat,
-    );
-    fanMesh.position.set(0, DOOR_H + 0.06, BACK_Z + 0.28);
-    this.scene.add(fanMesh);
-    // Fan bars
-    const fanBarMat = new THREE.MeshStandardMaterial({ color: 0xb0a080, roughness: 0.50, metalness: 0.30 });
+    const fanMesh = new THREE.Mesh(new THREE.CircleGeometry(ARCH_R * 0.86, 32, 0, Math.PI), glassMat);
+    fanMesh.position.set(0, DOOR_H + 0.06, 0); doorGroup.add(fanMesh);
     for (let i = 0; i < 5; i++) {
       const angle = (i / 4) * Math.PI;
       const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, ARCH_R * 0.86, 6), fanBarMat);
-      bar.rotation.z = angle - Math.PI / 2;
-      bar.position.set(0, DOOR_H + ARCH_R * 0.43, BACK_Z + 0.30);
-      this.scene.add(bar);
+      bar.rotation.z = angle - Math.PI / 2; bar.position.set(0, DOOR_H + ARCH_R * 0.43, 0.02);
+      doorGroup.add(bar);
     }
+    reg("museum-door-back", doorGroup, "Arch Door (Back)", { type: "museum-door", side: "back" });
 
     // ================================================================
-    // 9. SKYLIGHT WINDOWS (in ceiling, with grid frames)
+    // 8. ENTRANCE ARCH — front wall  (user scales as whole)
+    //    Group at (0, 0, FRONT_Z - 0.28).
+    // ================================================================
+    const EFW = 0.36;
+    const entryGroup = makeGroup(0, 0, FRONT_Z - 0.28);
+    boxIn(entryGroup, EFW, ENTRY_H, EFW, moldMat, -ENTRY_W / 2 + EFW / 2, ENTRY_H / 2, 0);
+    boxIn(entryGroup, EFW, ENTRY_H, EFW, moldMat,  ENTRY_W / 2 - EFW / 2, ENTRY_H / 2, 0);
+    const entryArchFrame = new THREE.Mesh(new THREE.TorusGeometry(ENTRY_ARCH_R, EFW / 2, 8, 36, Math.PI), moldMat);
+    entryArchFrame.rotation.z = Math.PI; entryArchFrame.position.set(0, ENTRY_H, 0); entryGroup.add(entryArchFrame);
+    boxIn(entryGroup, 0.44, 0.44, EFW, moldMat, 0, ENTRY_H + ENTRY_ARCH_R - 0.22, 0, false);
+    const entryFanMesh = new THREE.Mesh(new THREE.CircleGeometry(ENTRY_ARCH_R * 0.88, 32, 0, Math.PI), glassMat);
+    entryFanMesh.position.set(0, ENTRY_H + 0.06, 0); entryGroup.add(entryFanMesh);
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 4) * Math.PI;
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, ENTRY_ARCH_R * 0.88, 6), fanBarMat);
+      bar.rotation.z = angle - Math.PI / 2; bar.position.set(0, ENTRY_H + ENTRY_ARCH_R * 0.44, 0.02);
+      entryGroup.add(bar);
+    }
+    reg("museum-door-front", entryGroup, "Arch Door (Front)", { type: "museum-door", side: "front" });
+
+    // ================================================================
+    // 9. SKYLIGHT WINDOWS
+    //    Group Y is pinned to ceiling underside each frame (user moves X/Z).
     // ================================================================
     const skylightCenters = [-4, -30];
     const SKYW = 10, SKYL = 16;
-    skylightCenters.forEach((sz) => {
-      // Glass
+    const skylightGroups = [];
+    skylightCenters.forEach((sz, si) => {
+      const skyGroup = makeGroup(0, HH, sz);
       const sky = new THREE.Mesh(new THREE.PlaneGeometry(SKYW, SKYL), glassMat);
-      sky.rotation.x = -Math.PI / 2;
-      sky.position.set(0, HH + 0.01, sz);
-      this.scene.add(sky);
-      // Outer frame
-      addBox(SKYW + 0.28, 0.10, SKYL + 0.28, gridMat, 0, HH + 0.08, sz, false);
-      // Grid lines along X
-      [-1, 0, 1].forEach((i) => {
-        addBox(0.07, 0.10, SKYL, gridMat, i * SKYW / 3, HH + 0.08, sz, false);
-      });
-      // Grid lines along Z
-      [-2, -1, 0, 1, 2].forEach((i) => {
-        addBox(SKYW, 0.10, 0.07, gridMat, 0, HH + 0.08, sz + i * SKYL / 4, false);
-      });
+      sky.rotation.x = -Math.PI / 2; sky.position.y = 0.01; skyGroup.add(sky);
+      boxIn(skyGroup, SKYW + 0.28, 0.10, SKYL + 0.28, gridMat, 0, 0.08, 0, false);
+      [-1, 0, 1].forEach((ii) => boxIn(skyGroup, 0.07, 0.10, SKYL, gridMat, ii * SKYW / 3, 0.08, 0, false));
+      [-2, -1, 0, 1, 2].forEach((ii) => boxIn(skyGroup, SKYW, 0.10, 0.07, gridMat, 0, 0.08, ii * SKYL / 4, false));
+      reg(`museum-skylight-${si + 1}`, skyGroup, `Skylight ${si + 1}`, { type: "museum-skylight" });
+      skylightGroups.push(skyGroup);
     });
 
     // ================================================================
     // 10. GALLERY CEILING LIGHT TRACKS + SPOTLIGHTS
+    //     Group Y is pinned to ceiling underside each frame (user moves X/Z).
+    //     SpotLight targets are scene children (world space) so they always
+    //     point to the floor regardless of ceiling height.
     // ================================================================
-    const galleryLightZs = [11, -7, -25, -43];   // centred in each bay between columns
-    galleryLightZs.forEach((lz) => {
-      addBox(13, 0.12, 0.22, trackMat, 0, HH - 0.05, lz, false);
+    const galleryLightZs = [11, -7, -25, -43];
+    const lightTrackGroups = [];
+    galleryLightZs.forEach((lz, li) => {
+      const trackGroup = makeGroup(0, HH, lz);
+      boxIn(trackGroup, 13, 0.12, 0.22, trackMat, 0, -0.05, 0, false);
       [-4.5, 0, 4.5].forEach((lx) => {
         const spot = new THREE.SpotLight(0xfff5e4, 16, 22, Math.PI / 6.5, 0.40, 1.4);
-        spot.position.set(lx, HH - 0.18, lz);
+        spot.position.set(lx, -0.18, 0);   // local to trackGroup
+        trackGroup.add(spot);
+        // Target lives in scene world-space; updated each frame in updateMuseumConstraints
         spot.target.position.set(lx, 0, lz);
-        this.scene.add(spot);
         this.scene.add(spot.target);
-        // Housing
-        addBox(0.22, 0.22, 0.22, trackMat, lx, HH - 0.22, lz, false);
+        spotTargets.push({ target: spot.target, localX: lx, trackGroup });
+        boxIn(trackGroup, 0.22, 0.22, 0.22, trackMat, lx, -0.22, 0, false);
       });
+      reg(`museum-light-track-${li + 1}`, trackGroup, `Light Track ${li + 1}`, { type: "museum-light-track" });
+      lightTrackGroups.push(trackGroup);
     });
 
     // ================================================================
-    // 11. ROPE BARRIERS (gold posts + rope along both sides)
+    // 11. ROPE BARRIERS  (fully customizable — user moves as whole group)
+    //     Group at world origin; post/rope meshes store their absolute X
+    //     so the barrier translates as a rigid unit when the group moves.
     // ================================================================
-    const ROPE_X = 8;          // rope at x=±8 — leaves 12-unit display alcove between rope and wall
-    const POST_STEP = 9.0;   // one post per bay gap — less cluttered
-    [-ROPE_X, ROPE_X].forEach((px) => {
+    const ROPE_X = 8, POST_STEP = 9.0;
+    const makeRopeGroup = (px) => {
+      const rg = makeGroup(0, 0, 0);
       const postZList = [];
       for (let pz = FRONT_Z - 3; pz >= BACK_Z + 3; pz -= POST_STEP) {
         postZList.push(pz);
-        // Post cylinder
         const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.12, 8), postMat);
-        post.position.set(px, 0.56, pz);
-        this.scene.add(post);
-        // Post finial
+        post.position.set(px, 0.56, pz); rg.add(post);
         const finial = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), postMat);
-        finial.position.set(px, 1.16, pz);
-        this.scene.add(finial);
+        finial.position.set(px, 1.16, pz); rg.add(finial);
       }
-      // Rope between posts (horizontal cylinder along Z)
       for (let i = 0; i < postZList.length - 1; i++) {
         const z1 = postZList[i], z2 = postZList[i + 1];
         const ropeLen = Math.abs(z2 - z1);
         const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, ropeLen, 6), ropeMat);
-        rope.rotation.x = Math.PI / 2;
-        rope.position.set(px, 0.92, (z1 + z2) / 2);
-        this.scene.add(rope);
+        rope.rotation.x = Math.PI / 2; rope.position.set(px, 0.92, (z1 + z2) / 2); rg.add(rope);
       }
-    });
+      return rg;
+    };
+    const ropeLeftGroup  = makeRopeGroup(-ROPE_X);
+    reg("museum-rope-left",  ropeLeftGroup,  "Rope Barrier (Left)",  { type: "museum-rope", side: "left" });
+    const ropeRightGroup = makeRopeGroup(ROPE_X);
+    reg("museum-rope-right", ropeRightGroup, "Rope Barrier (Right)", { type: "museum-rope", side: "right" });
 
     // ================================================================
-    // 12. BASEBOARD + WAINSCOTING (low wall accent)
+    // 12. BASEBOARD + WAINSCOTING  (NOT user-movable — auto-follow walls)
     // ================================================================
-    [[-HW + 0.07, CZ], [HW - 0.07, CZ]].forEach(([bx, bz]) => {
-      addBox(0.16, 0.48, HALL_LEN, moldMat, bx, 0.24, bz, false);
+    const baseboardLeftGroup  = makeGroup(-HW + 0.07, 0.24, CZ);
+    boxIn(baseboardLeftGroup,  0.16, 0.48, HALL_LEN, moldMat, 0, 0, 0, false);
+    const baseboardRightGroup = makeGroup( HW - 0.07, 0.24, CZ);
+    boxIn(baseboardRightGroup, 0.16, 0.48, HALL_LEN, moldMat, 0, 0, 0, false);
+
+    // ================================================================
+    // Store all refs so updateMuseumConstraints() can read/write them
+    // ================================================================
+    this.museumHall = {
+      // defaults used for relative scaling
+      defaultHW: HW, defaultHH: HH, defaultCZ: CZ, defaultHallLen: HALL_LEN,
+      // user-controlled (their .position.* is authoritative)
+      wallLeft:  wallLeftGroup,  wallRight: wallRightGroup,
+      wallBack:  wallBackGroup,  wallFront: wallFrontGroup,
+      ceiling:   ceilGroup,
+      // auto-constrained each frame
+      crownLeft: crownLeftGroup, crownRight: crownRightGroup,
+      floor:     floorGroup,
+      columns:   columnGroups,
+      pilastersLeft, pilastersRight,
+      skylights: skylightGroups,
+      lightTracks: lightTrackGroups,
+      spotTargets,
+      baseboardLeft: baseboardLeftGroup, baseboardRight: baseboardRightGroup,
+      // constraint constants
+      moldH, moldD, PIL_OFFSET,
+    };
+  }
+
+  // Called every frame from the animation loop.
+  // Enforces all pinning rules so dependent elements automatically
+  // follow whatever the user has moved.
+  updateMuseumConstraints() {
+    const hall = this.museumHall;
+    if (!hall) return;
+
+    // ---------- Read user-controlled positions ----------
+    // ceiling group.position.y = mesh centre = HH + 0.3 by default
+    const ceilBottomY = hall.ceiling.position.y - 0.3;   // underside of slab
+    const leftX   = hall.wallLeft.position.x;             // default  -HW
+    const rightX  = hall.wallRight.position.x;            // default  +HW
+    const frontZ  = hall.wallFront.position.z;            // default  FRONT_Z
+    const backZ   = hall.wallBack.position.z;             // default  BACK_Z
+    const hallWidth = rightX - leftX;
+    const hallLen   = frontZ - backZ;
+    const CZ        = (frontZ + backZ) / 2;
+    // Y scale factor to stretch floor-pivot objects up to ceiling
+    const colScale  = ceilBottomY / hall.defaultHH;
+
+    // ---------- Ceiling: lock X=0, Z=hall centre ----------
+    hall.ceiling.position.x = 0;
+    hall.ceiling.position.z = CZ;
+
+    // ---------- Floor: scale to fill between all four walls ----------
+    hall.floor.scale.set(
+      hallWidth  / (hall.defaultHW * 2),
+      1,
+      hallLen    / hall.defaultHallLen,
+    );
+    hall.floor.position.z = CZ;
+
+    // ---------- Crown molding: Y = ceiling underside, X = wall ----------
+    hall.crownLeft.position.x  = leftX  + hall.moldD / 2 + 0.22;
+    hall.crownLeft.position.y  = ceilBottomY - hall.moldH / 2;
+    hall.crownRight.position.x = rightX - hall.moldD / 2 - 0.22;
+    hall.crownRight.position.y = ceilBottomY - hall.moldH / 2;
+
+    // ---------- Marble columns: scale.y so tops reach ceiling ----------
+    hall.columns.forEach((col) => { col.scale.y = colScale; });
+
+    // ---------- Stone pilasters: X = wall, scale.y tracks ceiling ----------
+    hall.pilastersLeft.forEach((g) => {
+      g.position.x = leftX  + hall.PIL_OFFSET;
+      g.scale.y    = colScale;
     });
+    hall.pilastersRight.forEach((g) => {
+      g.position.x = rightX - hall.PIL_OFFSET;
+      g.scale.y    = colScale;
+    });
+
+    // ---------- Skylights: Y = ceiling underside (X/Z free for user) ----------
+    hall.skylights.forEach((g) => { g.position.y = ceilBottomY; });
+
+    // ---------- Light tracks: Y = ceiling underside (X/Z free for user) ----------
+    hall.lightTracks.forEach((g) => { g.position.y = ceilBottomY; });
+
+    // ---------- Spotlight targets: world floor-level, follows track X/Z ----------
+    hall.spotTargets.forEach(({ target, localX, trackGroup }) => {
+      target.position.set(trackGroup.position.x + localX, 0, trackGroup.position.z);
+      target.updateMatrixWorld(true);
+    });
+
+    // ---------- Baseboard: X = wall (Y/Z fixed) ----------
+    hall.baseboardLeft.position.x  = leftX  + 0.07;
+    hall.baseboardRight.position.x = rightX - 0.07;
   }
 
   createGround() {

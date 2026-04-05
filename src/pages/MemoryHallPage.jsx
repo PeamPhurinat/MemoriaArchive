@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { initMemoryHall } from '../3d-hall/memoryHallScene';
 import { initWalkthroughExport } from '../3d-hall/video/walkthroughExport';
 import { useAuth } from '../context/AuthContext';
@@ -149,6 +150,7 @@ const buildMemoryHallSlots = (project) => {
 const MemoryHallPage = ({ project }) => {
   const containerRef = useRef(null);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -158,6 +160,7 @@ const MemoryHallPage = ({ project }) => {
     const cleanup = initMemoryHall(container, memoriesData, {
       projectId: project?.id || '',
       userId: user?.id || '',
+      onBack: () => navigate('/project-detail'),
     });
 
     const walkthroughCtx = container.__memoriaWalkthroughContext;

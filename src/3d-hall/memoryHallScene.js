@@ -13,6 +13,7 @@ const appShell = new AppShell(app);
 document.body.removeAttribute("data-world-theme");
 
 const {
+  backButton,
   launchButton,
   menuToggleButton,
   menuPanel,
@@ -57,6 +58,10 @@ app.append(renderer.domElement);
 const vrButton = VRButton.createButton(renderer);
 vrButton.classList.add("vr-button");
 document.body.append(vrButton);
+
+if (backButton && typeof context.onBack === "function") {
+  backButton.addEventListener("click", context.onBack);
+}
 
 const LAYOUT_STORAGE_PREFIX = "memoria-layout-v3";
 const LAYOUT_SCHEMA_VERSION = 3;
@@ -1316,6 +1321,9 @@ function animate() {
     entry.light.intensity = entry.base + Math.sin(elapsed * entry.speed + index) * entry.range;
   });
 
+  // Keep museum hall elements pinned to their constraints (ceiling, walls, etc.)
+  worldBuilder.updateMuseumConstraints();
+
   // Rotate each memory station on the Y axis to face the user.
   // We only update the horizontal angle so displays never tilt up/down.
   worldBuilder.memoryStations.forEach(({ station }) => {
@@ -1358,6 +1366,9 @@ return function cleanup() {
   }
   if (vrButton && vrButton.parentNode) {
     vrButton.parentNode.removeChild(vrButton);
+  }
+  if (appShell.mountNode && app.contains(appShell.mountNode)) {
+    app.removeChild(appShell.mountNode);
   }
   app.removeAttribute("data-world-theme");
 };
