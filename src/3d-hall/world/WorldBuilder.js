@@ -256,7 +256,7 @@ export class WorldBuilder {
     boxIn(doorGroup, FW, DOOR_H, FW, moldMat, -DOOR_W / 2 + FW / 2, DOOR_H / 2, 0);
     boxIn(doorGroup, FW, DOOR_H, FW, moldMat,  DOOR_W / 2 - FW / 2, DOOR_H / 2, 0);
     const archFrame = new THREE.Mesh(new THREE.TorusGeometry(ARCH_R, FW / 2, 8, 36, Math.PI), moldMat);
-    archFrame.rotation.z = Math.PI; archFrame.position.set(0, DOOR_H, 0); doorGroup.add(archFrame);
+    archFrame.position.set(0, DOOR_H, 0); doorGroup.add(archFrame);
     boxIn(doorGroup, 0.44, 0.44, FW, moldMat, 0, DOOR_H + ARCH_R - 0.22, 0, false);
     const leafW = (DOOR_W / 2 - FW) * 0.95, leafH = DOOR_H - 0.38;
     [-1, 1].forEach((side) => {
@@ -271,7 +271,8 @@ export class WorldBuilder {
     for (let i = 0; i < 5; i++) {
       const angle = (i / 4) * Math.PI;
       const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, ARCH_R * 0.86, 6), fanBarMat);
-      bar.rotation.z = angle - Math.PI / 2; bar.position.set(0, DOOR_H + ARCH_R * 0.43, 0.02);
+      bar.rotation.z = angle - Math.PI / 2;
+      bar.position.set(Math.cos(angle) * ARCH_R * 0.43, DOOR_H + Math.sin(angle) * ARCH_R * 0.43, 0.02);
       doorGroup.add(bar);
     }
     reg("museum-door-back", doorGroup, "Arch Door (Back)", { type: "museum-door", side: "back" });
@@ -285,14 +286,15 @@ export class WorldBuilder {
     boxIn(entryGroup, EFW, ENTRY_H, EFW, moldMat, -ENTRY_W / 2 + EFW / 2, ENTRY_H / 2, 0);
     boxIn(entryGroup, EFW, ENTRY_H, EFW, moldMat,  ENTRY_W / 2 - EFW / 2, ENTRY_H / 2, 0);
     const entryArchFrame = new THREE.Mesh(new THREE.TorusGeometry(ENTRY_ARCH_R, EFW / 2, 8, 36, Math.PI), moldMat);
-    entryArchFrame.rotation.z = Math.PI; entryArchFrame.position.set(0, ENTRY_H, 0); entryGroup.add(entryArchFrame);
+    entryArchFrame.position.set(0, ENTRY_H, 0); entryGroup.add(entryArchFrame);
     boxIn(entryGroup, 0.44, 0.44, EFW, moldMat, 0, ENTRY_H + ENTRY_ARCH_R - 0.22, 0, false);
     const entryFanMesh = new THREE.Mesh(new THREE.CircleGeometry(ENTRY_ARCH_R * 0.88, 32, 0, Math.PI), glassMat);
     entryFanMesh.position.set(0, ENTRY_H + 0.06, 0); entryGroup.add(entryFanMesh);
     for (let i = 0; i < 5; i++) {
       const angle = (i / 4) * Math.PI;
       const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, ENTRY_ARCH_R * 0.88, 6), fanBarMat);
-      bar.rotation.z = angle - Math.PI / 2; bar.position.set(0, ENTRY_H + ENTRY_ARCH_R * 0.44, 0.02);
+      bar.rotation.z = angle - Math.PI / 2;
+      bar.position.set(Math.cos(angle) * ENTRY_ARCH_R * 0.44, ENTRY_H + Math.sin(angle) * ENTRY_ARCH_R * 0.44, 0.02);
       entryGroup.add(bar);
     }
     reg("museum-door-front", entryGroup, "Arch Door (Front)", { type: "museum-door", side: "front" });
@@ -494,7 +496,7 @@ export class WorldBuilder {
 
   createSkyHalo() {
     const halo = new THREE.Mesh(
-      new THREE.TorusGeometry(84, 1.2, 32, 120),
+      new THREE.TorusGeometry(104, 1.2, 32, 120),
       new THREE.MeshBasicMaterial({
         color: 0xffd8ef,
         transparent: true,
@@ -513,7 +515,7 @@ export class WorldBuilder {
     });
 
     const innerHalo = new THREE.Mesh(
-      new THREE.TorusGeometry(66, 0.55, 24, 96),
+      new THREE.TorusGeometry(86, 0.55, 24, 96),
       new THREE.MeshBasicMaterial({
         color: 0xffebf6,
         transparent: true,
@@ -521,7 +523,7 @@ export class WorldBuilder {
       }),
     );
     innerHalo.rotation.x = Math.PI / 2.8;
-    innerHalo.position.set(0, 18, 12);
+    innerHalo.position.set(0, 28, 12);
     this.scene.add(innerHalo);
     this.animatedObjects.push({
       object: innerHalo,

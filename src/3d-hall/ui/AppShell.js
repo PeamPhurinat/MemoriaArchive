@@ -22,7 +22,7 @@ export class AppShell {
             clouds step by step through the archive.
           </p>
         </section>
-        <button class="back-to-project" type="button">← Back to Project</button>
+        <button class="back-to-project" type="button">Back to Project</button>
         <button class="launch" type="button">Enter the realm</button>
         <button class="menu-toggle" type="button" aria-expanded="false">☰ Menu</button>
         <section class="menu-panel" aria-label="World menu">

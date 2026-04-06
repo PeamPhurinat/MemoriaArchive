@@ -2,7 +2,7 @@
 
 .wt-export-btn {
   position: fixed;
-  bottom: 188px;
+  bottom: 308px;
   right: 28px;
   z-index: 1100;
   padding: 10px 20px;
@@ -130,7 +130,7 @@
 @media (max-width: 720px) {
   .wt-export-btn {
     right: 16px;
-    bottom: 184px;
+    bottom: 234px;
   }
 }
 
