@@ -15,15 +15,20 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
   const dreamThemeColors = this.getMemoryThemeColors("dream");
 
   const slotPositions = [
-    { x: -13, z: 11,  side: 1  },
-    { x:  13, z: -7,  side: -1 },
-    { x: -13, z: -25, side: 1  },
+    { x: -13, z:  11, side:  1 },
+    { x:  13, z:  -7, side: -1 },
+    { x: -13, z: -25, side:  1 },
     { x:  13, z: -43, side: -1 },
-    { x: -13, z: -59, side: 1  },
+    { x: -13, z: -61, side:  1 },
+    { x:  13, z: -79, side: -1 },
+    { x: -13, z: -97, side:  1 },
+    { x:  13, z:-113, side: -1 },
   ];
 
+  const MAX_MONOLITHS = 8;
+
   const entries = Array.isArray(memoriesData)
-    ? memoriesData.slice(0, 5).map((memory, index) => ({
+    ? memoriesData.slice(0, MAX_MONOLITHS).map((memory, index) => ({
         year: memory?.year || `#${index + 1}`,
         title: memory?.title || `Memory ${index + 1}`,
         note: memory?.note || "Interview Memory",

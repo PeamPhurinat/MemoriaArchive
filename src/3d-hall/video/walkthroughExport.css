@@ -105,6 +105,33 @@
   transition: width 0.35s ease;
 }
 
+/* Cancel button — always visible during recording */
+.wt-cancel-btn {
+  pointer-events: all;
+  padding: 8px 20px;
+  background: rgba(60, 60, 60, 0.75);
+  color: rgba(255, 255, 255, 0.75);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background 0.18s, transform 0.12s, border-color 0.18s;
+}
+
+.wt-cancel-btn:hover {
+  background: rgba(100, 30, 30, 0.88);
+  border-color: rgba(255, 120, 120, 0.5);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.wt-cancel-btn:active {
+  transform: translateY(0);
+}
+
 /* Stop & Save button — appears after last station */
 .wt-stop-btn {
   pointer-events: all;

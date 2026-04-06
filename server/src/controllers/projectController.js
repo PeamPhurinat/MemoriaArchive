@@ -1,5 +1,6 @@
 const {
   createDefaultProjectData,
+  deleteProject,
   listProjects,
   readProject,
   sanitizeProjectId,
@@ -80,8 +81,19 @@ const upsertProject = async (req, res, next) => {
   }
 };
 
+const deleteUserProject = async (req, res, next) => {
+  try {
+    const projectId = sanitizeProjectId(req.params.projectId);
+    await deleteProject(req.user.id, projectId);
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProject,
+  deleteUserProject,
   getProject,
   listUserProjects,
   upsertProject

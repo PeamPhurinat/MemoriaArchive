@@ -50,7 +50,7 @@ const {
 // ================================================================
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xc4c8cc);
-scene.fog = new THREE.FogExp2(0xcdd1d4, 0.018);
+scene.fog = new THREE.FogExp2(0xcdd1d4, 0.006);
 
 const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 400);
 
@@ -77,6 +77,7 @@ if (backButton && typeof context.onBack === "function") {
 const AUTHENTICATED_USER_ID = normalizeUserId(context.userId || "");
 const ACTIVE_PROJECT_ID     = normalizeProjectId(context.projectId || "");
 const READ_ONLY             = Boolean(context.readOnly);
+const PROFILE_PHOTO         = context.profilePhoto || null;
 
 // ================================================================
 // Shared state
@@ -148,7 +149,7 @@ scene.add(transformControls);
 // ================================================================
 const animatedObjects = [];
 const pulseLights = [];
-const world = { size: 120, minY: 1.7, maxY: 42 };
+const world = { size: 160, minY: 1.7, maxY: 42 };
 const clock = new THREE.Clock();
 
 // ================================================================
@@ -226,6 +227,7 @@ function setObjectPaletteOpen(isOpen) {
 // ================================================================
 const worldBuilder = new WorldBuilder({
   scene, animatedObjects, pulseLights, world, registerCustomizableComponent, memoriesData,
+  profilePhoto: PROFILE_PHOTO,
 });
 
 // ================================================================
@@ -654,7 +656,7 @@ function updateCustomModeMovement(delta) {
 
 function updateMovement(delta) {
   if (!controls.isLocked || customState.mode !== "view") return;
-  const step = delta * 7 * (movement.sprint ? 1.25 : 1);
+  const step = delta * 7 * (movement.sprint ? 2.0 : 1);
 
   if (movement.forward)  controls.moveForward(step);
   if (movement.backward) controls.moveForward(-step);

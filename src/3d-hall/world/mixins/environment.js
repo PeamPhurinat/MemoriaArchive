@@ -29,7 +29,7 @@ export function createGround() {
 
 export function createSkyHalo() {
   const halo = new THREE.Mesh(
-    new THREE.TorusGeometry(104, 1.2, 32, 120),
+    new THREE.TorusGeometry(244, 1.2, 32, 120),
     new THREE.MeshBasicMaterial({
       color: 0xffd8ef,
       transparent: true,
@@ -48,7 +48,7 @@ export function createSkyHalo() {
   });
 
   const innerHalo = new THREE.Mesh(
-    new THREE.TorusGeometry(86, 0.55, 24, 96),
+    new THREE.TorusGeometry(226, 0.55, 24, 96),
     new THREE.MeshBasicMaterial({
       color: 0xffebf6,
       transparent: true,

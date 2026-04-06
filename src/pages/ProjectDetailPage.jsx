@@ -20,6 +20,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
   const [saved, setSaved] = useState(false);
   const [uploadingVideoById, setUploadingVideoById] = useState({});
   const [uploadingPhotoById, setUploadingPhotoById] = useState({});
+  const [uploadingHallPhoto, setUploadingHallPhoto] = useState(false);
   const [videoUploadError, setVideoUploadError] = useState('');
   const [isShared, setIsShared] = useState(Boolean(project?.isShared));
   const [shareLoading, setShareLoading] = useState(false);
@@ -162,7 +163,30 @@ const ProjectDetailPage = ({ project, setProject }) => {
     });
   };
 
+  const uploadHallProfilePhoto = async (file) => {
+    if (!file) return;
+    setUploadingHallPhoto(true);
+    setVideoUploadError('');
+    try {
+      const payload = await uploadPhoto({
+        projectId: project?.id,
+        memoryId: 'hall-profile',
+        photoFile: file,
+      });
+      if (!payload?.photoUrl) throw new Error('Upload completed but server did not return photoUrl.');
+      setProject((p) => ({ ...p, hallProfilePhoto: payload.photoUrl }));
+      showSaved();
+    } catch (err) {
+      setVideoUploadError(err?.message || 'Hall photo upload failed.');
+    } finally {
+      setUploadingHallPhoto(false);
+    }
+  };
+
+  const MAX_MEMORIES = 8;
+
   const addMemory = () => {
+    if ((project.memories || []).length >= MAX_MEMORIES) return;
     const newMem = {
       id: `mem-${Date.now()}`,
       title: '',
@@ -249,11 +273,76 @@ const ProjectDetailPage = ({ project, setProject }) => {
 
         <div className="ma-divider" />
 
+        {/* Hall Profile Photo */}
+        <div className="ma-memories-section" style={{ paddingBottom: '8px' }}>
+          <div className="ma-memories-header">
+            <span className="ma-memories-label">Hall Cover Photo</span>
+            <label
+              className="ma-btn ma-btn-ghost ma-btn-sm"
+              style={{ cursor: uploadingHallPhoto ? 'wait' : 'pointer' }}
+              title="Displayed as a large framed photo on the back wall of the 3D hall"
+            >
+              {uploadingHallPhoto ? 'Uploading…' : project.hallProfilePhoto ? 'Replace' : '+ Upload'}
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingHallPhoto}
+                onChange={(e) => uploadHallProfilePhoto(e.target.files?.[0])}
+                style={{ display: 'none' }}
+              />
+            </label>
+          </div>
+
+          {project.hallProfilePhoto ? (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginTop: '10px' }}>
+              <img
+                src={project.hallProfilePhoto}
+                alt="Hall cover"
+                style={{
+                  maxWidth: '180px',
+                  maxHeight: '120px',
+                  borderRadius: '8px',
+                  objectFit: 'cover',
+                  border: '2px solid rgba(220,170,255,0.3)',
+                }}
+              />
+              <div style={{ color: '#9a88bb', fontSize: '12px', lineHeight: 1.6 }}>
+                <p style={{ margin: 0 }}>Shown as an embossed gold frame on the back wall of the 3D hall.</p>
+                <button
+                  className="ma-btn ma-btn-ghost ma-btn-sm"
+                  style={{ marginTop: '8px', color: '#b06060' }}
+                  onClick={() => { setProject((p) => ({ ...p, hallProfilePhoto: null })); showSaved(); }}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p style={{ color: '#7a6a99', fontSize: '13px', margin: '8px 0 0' }}>
+              No cover photo yet. Upload one to display it in the 3D hall.
+            </p>
+          )}
+        </div>
+
+        <div className="ma-divider" />
+
         {/* Memories */}
         <div className="ma-memories-section">
           <div className="ma-memories-header">
-            <span className="ma-memories-label">Memories</span>
-            <button className="ma-btn ma-btn-ghost ma-btn-sm" onClick={addMemory}>
+            <span className="ma-memories-label">
+              Memories
+              {memories.length >= MAX_MEMORIES && (
+                <span style={{ fontSize: '12px', color: '#a08080', marginLeft: '8px', fontWeight: 400 }}>
+                  (max {MAX_MEMORIES})
+                </span>
+              )}
+            </span>
+            <button
+              className="ma-btn ma-btn-ghost ma-btn-sm"
+              onClick={addMemory}
+              disabled={memories.length >= MAX_MEMORIES}
+              title={memories.length >= MAX_MEMORIES ? `Maximum ${MAX_MEMORIES} memories allowed` : undefined}
+            >
               + Add
             </button>
           </div>

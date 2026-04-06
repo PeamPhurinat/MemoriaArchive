@@ -14,7 +14,8 @@ import { useAuth } from "./context/AuthContext";
 import {
   createProject as createProjectApi,
   listProjects as listProjectsApi,
-  saveProject as saveProjectApi
+  saveProject as saveProjectApi,
+  deleteProject as deleteProjectApi,
 } from "./services/projectApi";
 
 const ACTIVE_KEY = "memoria_active_project";
@@ -270,6 +271,18 @@ const AppRoutes = () => {
     setActiveProjectId(id);
   }, []);
 
+  const handleDeleteProject = useCallback((id) => {
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    setActiveProjectId((prev) => {
+      if (prev !== id) return prev;
+      const remaining = projects.filter((p) => p.id !== id);
+      return remaining[0]?.id || null;
+    });
+    deleteProjectApi(id).catch((err) => {
+      setProjectSyncError(err.message || "Failed to delete project.");
+    });
+  }, [projects]);
+
   if (loading) {
     return <FullscreenMessage message="Loading authentication..." />;
   }
@@ -305,6 +318,7 @@ const AppRoutes = () => {
               projects={projects}
               onCreateNew={handleCreateNew}
               onSelectProject={handleSelectProject}
+              onDeleteProject={handleDeleteProject}
               loading={projectsLoading}
               syncError={projectSyncError}
             />

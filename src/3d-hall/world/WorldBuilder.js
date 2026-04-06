@@ -1,4 +1,4 @@
-// Mixin imports — each file exports plain functions that are assigned
+﻿// Mixin imports — each file exports plain functions that are assigned
 // to WorldBuilder.prototype below, keeping the class shell small.
 import { createMuseumHall, updateMuseumConstraints } from "./mixins/museumHall.js";
 import {
@@ -18,6 +18,7 @@ import {
   getMemoryThemeColors, getReadablePanelTint,
   refreshGroundTexture, refreshMistTexture, applyThemeVisuals,
 } from "./mixins/themeVisuals.js";
+import { createBackWallFrame } from "./mixins/backWallFrame.js";
 
 export class WorldBuilder {
   constructor({
@@ -27,6 +28,7 @@ export class WorldBuilder {
     world,
     registerCustomizableComponent,
     memoriesData = null,
+    profilePhoto = null,
   }) {
     this.scene = scene;
     this.animatedObjects = animatedObjects;
@@ -34,6 +36,7 @@ export class WorldBuilder {
     this.world = world;
     this.registerCustomizableComponent = registerCustomizableComponent;
     this.memoriesData = memoriesData;
+    this.profilePhoto = profilePhoto;
     this.memoryStations = [];
     this.activeThemeKey = "dream";
     this.groundMesh = null;
@@ -52,9 +55,10 @@ export class WorldBuilder {
     // this.createStandingPillars();
     this.createTimelineTrail();
     this.createMemoryMonoliths(memoriesData);
-    this.createFloatingRuinFragments();
+    // this.createFloatingRuinFragments();
     this.createDreamParticles();
     this.createGlitterStars();
+    this.createBackWallFrame(this.profilePhoto);
   }
 }
 
@@ -86,6 +90,8 @@ Object.assign(WorldBuilder.prototype, {
   applyVideoFrameAspect,
   updatePanelTint,
   disposeStationTextures,
+  // Back wall frame
+  createBackWallFrame,
   // Theme visuals
   getMemoryThemeColors,
   getReadablePanelTint,

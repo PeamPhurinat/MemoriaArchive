@@ -8,7 +8,7 @@ export function createMuseumHall() {
   const HW       = 20;
   const HH       = 17;
   const FRONT_Z  = 26;
-  const BACK_Z   = -66;
+  const BACK_Z   = -120;
   const HALL_LEN = FRONT_Z - BACK_Z;
   const CZ       = (FRONT_Z + BACK_Z) / 2;
 
@@ -17,7 +17,6 @@ export function createMuseumHall() {
   const ceilMat  = new THREE.MeshStandardMaterial({ color: 0xf0eeeb, roughness: 0.88 });
   const marbMat  = new THREE.MeshStandardMaterial({ color: 0xf4f2ef, roughness: 0.66, metalness: 0.03 });
   const stonMat  = new THREE.MeshStandardMaterial({ color: 0x747e88, roughness: 0.94 });
-  const doorMat  = new THREE.MeshStandardMaterial({ color: 0x3e2410, roughness: 0.74, metalness: 0.08 });
   const moldMat  = new THREE.MeshStandardMaterial({ color: 0xfafaf8, roughness: 0.62, metalness: 0.04 });
   const ropeMat  = new THREE.MeshStandardMaterial({ color: 0x8a7860, roughness: 0.88 });
   const postMat  = new THREE.MeshStandardMaterial({ color: 0xc0a860, roughness: 0.40, metalness: 0.60 });
@@ -27,7 +26,6 @@ export function createMuseumHall() {
   });
   const gridMat  = new THREE.MeshStandardMaterial({ color: 0xa0a090, roughness: 0.50, metalness: 0.30 });
   const trackMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.40, metalness: 0.50 });
-  const darkDoorMat = new THREE.MeshStandardMaterial({ color: 0x2e1a0c, roughness: 0.70 });
   const fanBarMat   = new THREE.MeshStandardMaterial({ color: 0xb0a080, roughness: 0.50, metalness: 0.30 });
 
   // --- Helpers ---
@@ -101,13 +99,8 @@ export function createMuseumHall() {
   const wallRightGroup = makeGroup(HW, HH / 2, CZ);
   (() => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, HH, HALL_LEN), wallMat); m.castShadow = true; m.receiveShadow = true; wallRightGroup.add(m); })();
 
-  const DOOR_W = 5.2, DOOR_H = 8.5, ARCH_R = DOOR_W * 0.50;
-  const bwSideW = HW - DOOR_W / 2;
-  const aboveH  = HH - DOOR_H - ARCH_R;
   const wallBackGroup = makeGroup(0, 0, BACK_Z);
-  boxIn(wallBackGroup, bwSideW, HH, 0.5, wallMat, -(DOOR_W / 2 + bwSideW / 2), HH / 2, 0);
-  boxIn(wallBackGroup, bwSideW, HH, 0.5, wallMat,  (DOOR_W / 2 + bwSideW / 2), HH / 2, 0);
-  if (aboveH > 0) boxIn(wallBackGroup, HW * 2, aboveH, 0.5, wallMat, 0, DOOR_H + ARCH_R + aboveH / 2, 0);
+  boxIn(wallBackGroup, HW * 2, HH, 0.5, wallMat, 0, HH / 2, 0);
 
   const ENTRY_W = 12, ENTRY_ARCH_R = 6, ENTRY_H = 11;
   const fwSideW    = HW - ENTRY_W / 2;
@@ -141,7 +134,7 @@ export function createMuseumHall() {
   // 5. WHITE MARBLE COLUMNS
   // ================================================================
   const COL_X = 10;
-  const colZs = [20, 2, -16, -34, -52];
+  const colZs = [20, 2, -16, -34, -52, -70, -88, -106];
   const columnGroups = [];
 
   colZs.forEach((cz2, zi) => {
@@ -179,34 +172,7 @@ export function createMuseumHall() {
     pilastersRight.push(prg);
   });
 
-  // ================================================================
-  // 7. GRAND ARCH DOOR — back wall
-  // ================================================================
-  const FW = 0.36;
-  const doorGroup = makeGroup(0, 0, BACK_Z + 0.28);
-  boxIn(doorGroup, FW, DOOR_H, FW, moldMat, -DOOR_W / 2 + FW / 2, DOOR_H / 2, 0);
-  boxIn(doorGroup, FW, DOOR_H, FW, moldMat,  DOOR_W / 2 - FW / 2, DOOR_H / 2, 0);
-  const archFrame = new THREE.Mesh(new THREE.TorusGeometry(ARCH_R, FW / 2, 8, 36, Math.PI), moldMat);
-  archFrame.position.set(0, DOOR_H, 0); doorGroup.add(archFrame);
-  boxIn(doorGroup, 0.44, 0.44, FW, moldMat, 0, DOOR_H + ARCH_R - 0.22, 0, false);
-  const leafW = (DOOR_W / 2 - FW) * 0.95, leafH = DOOR_H - 0.38;
-  [-1, 1].forEach((side) => {
-    boxIn(doorGroup, leafW, leafH, 0.18, doorMat, side * leafW / 2, leafH / 2 + 0.19, 0);
-    const panH = leafH * 0.32;
-    [0.28, -0.22].forEach((dy) => {
-      boxIn(doorGroup, leafW * 0.68, panH, 0.05, darkDoorMat, side * leafW / 2, leafH / 2 + 0.19 + dy * leafH, 0.08);
-    });
-  });
-  const fanMesh = new THREE.Mesh(new THREE.CircleGeometry(ARCH_R * 0.86, 32, 0, Math.PI), glassMat);
-  fanMesh.position.set(0, DOOR_H + 0.06, 0); doorGroup.add(fanMesh);
-  for (let i = 0; i < 5; i++) {
-    const angle = (i / 4) * Math.PI;
-    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, ARCH_R * 0.86, 6), fanBarMat);
-    bar.rotation.z = angle - Math.PI / 2;
-    bar.position.set(Math.cos(angle) * ARCH_R * 0.43, DOOR_H + Math.sin(angle) * ARCH_R * 0.43, 0.02);
-    doorGroup.add(bar);
-  }
-  reg("museum-door-back", doorGroup, "Arch Door (Back)", { type: "museum-door", side: "back" });
+  // (back door removed)
 
   // ================================================================
   // 8. ENTRANCE ARCH — front wall
@@ -232,7 +198,7 @@ export function createMuseumHall() {
   // ================================================================
   // 9. SKYLIGHT WINDOWS
   // ================================================================
-  const skylightCenters = [-4, -30];
+  const skylightCenters = [-4, -30, -66, -102];
   const SKYW = 10, SKYL = 16;
   const skylightGroups = [];
   skylightCenters.forEach((sz, si) => {
@@ -249,7 +215,7 @@ export function createMuseumHall() {
   // ================================================================
   // 10. GALLERY CEILING LIGHT TRACKS + SPOTLIGHTS
   // ================================================================
-  const galleryLightZs = [11, -7, -25, -43];
+  const galleryLightZs = [11, -7, -25, -43, -61, -79, -97];
   const lightTrackGroups = [];
   galleryLightZs.forEach((lz, li) => {
     const trackGroup = makeGroup(0, HH, lz);

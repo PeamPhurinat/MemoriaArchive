@@ -61,7 +61,7 @@ const buildMemoryHallSlots = (project) => {
     return null;
   };
 
-  return Array.from({ length: Math.min(slotCount, 5) }, (_, index) => {
+  return Array.from({ length: Math.min(slotCount, 8) }, (_, index) => {
     const memory = memories[index] || {};
     const textSlot = textSlots[index] || {};
     const photo = photos[index] || {};
@@ -160,6 +160,7 @@ const MemoryHallPage = ({ project }) => {
     const cleanup = initMemoryHall(container, memoriesData, {
       projectId: project?.id || '',
       userId: user?.id || '',
+      profilePhoto: project?.hallProfilePhoto || null,
       onBack: () => navigate('/project-detail'),
     });
 

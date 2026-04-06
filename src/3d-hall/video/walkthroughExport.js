@@ -2,13 +2,16 @@ import { CameraPath } from './CameraPath.js';
 import { WalkthroughRecorder } from './WalkthroughRecorder.js';
 import { WalkthroughUI } from './WalkthroughUI.js';
 
-/** Default memory station positions — matches WorldBuilder.js slot order */
+/** Default memory station positions — matches WorldBuilder.js slot order (max 8) */
 const DEFAULT_SLOT_POSITIONS = [
-  { x: -11, z: 18 },
-  { x: 10, z: 4 },
-  { x: -9, z: -11 },
-  { x: 11, z: -28 },
-  { x: -10, z: -45 },
+  { x: -13, z:  11 },
+  { x:  13, z:  -7 },
+  { x: -13, z: -25 },
+  { x:  13, z: -43 },
+  { x: -13, z: -61 },
+  { x:  13, z: -79 },
+  { x: -13, z: -97 },
+  { x:  13, z:-113 },
 ];
 
 /**
@@ -45,9 +48,31 @@ export function initWalkthroughExport({
   let savedPos = null;
   let savedQuat = null;
 
-  ui.mount(container, startWalkthrough);
+  ui.mount(container, startWalkthrough, cancelWalkthrough);
 
   // ── Helpers ──────────────────────────────────────────────────────
+
+  /** Z of the hall entrance — must match museumHall.js FRONT_Z */
+  const ENTRANCE_Z = 26;
+
+  /**
+   * Snap every memory station to face the entrance so they don't
+   * track the camera during the recorded walkthrough.
+   */
+  function orientStationsToEntrance() {
+    if (!scene) return;
+    scene.children
+      .filter(
+        (obj) =>
+          obj.userData?.isCustomizable &&
+          typeof obj.userData?.componentId === 'string' &&
+          obj.userData.componentId.startsWith('memory-'),
+      )
+      .forEach((station) => {
+        // lookAt a point directly in front of the entrance at the station's own height
+        station.lookAt(station.position.x, station.position.y, ENTRANCE_Z);
+      });
+  }
 
   function getStationPositions() {
     // Find actual station groups in the scene (supports user-moved stations).
@@ -87,6 +112,9 @@ export function initWalkthroughExport({
     // Disable all user controls
     try { controls?.unlock?.(); } catch (_) { /* ignore */ }
     if (orbitControls) orbitControls.enabled = false;
+
+    // Fix stations to face the entrance before the main loop is paused
+    orientStationsToEntrance();
 
     // Stop the scene's own animation loop — we take over rendering completely.
     // This prevents orbitControls.update() and other interference.
@@ -165,5 +193,31 @@ export function initWalkthroughExport({
     ui.setRecording(false);
   }
 
-  return { start: startWalkthrough, stop: finishWalkthrough };
+  function cancelWalkthrough() {
+    if (!isActive) return;
+    isActive = false;
+
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    recorder.cancel();
+
+    // Restore camera
+    if (savedPos) camera.position.copy(savedPos);
+    if (savedQuat) camera.quaternion.copy(savedQuat);
+
+    // Restore controls
+    if (orbitControls) orbitControls.enabled = false;
+
+    // Restore the scene's animation loop
+    if (typeof animate === 'function') {
+      renderer.setAnimationLoop(animate);
+    }
+
+    ui.setRecording(false);
+  }
+
+  return { start: startWalkthrough, stop: finishWalkthrough, cancel: cancelWalkthrough };
 }
