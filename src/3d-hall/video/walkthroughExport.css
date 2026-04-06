@@ -130,7 +130,8 @@
 @media (max-width: 720px) {
   .wt-export-btn {
     right: 16px;
-    bottom: 234px;
+    bottom: auto;
+    top: 112px;
   }
 }
 

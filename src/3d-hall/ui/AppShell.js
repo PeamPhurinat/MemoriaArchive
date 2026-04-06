@@ -81,61 +81,61 @@ export class AppShell {
           <p class="custom-status">View mode enabled.</p>
         </section>
         <div class="reticle" aria-hidden="true"></div>
-
-        <section class="object-palette" aria-label="Object palette" aria-hidden="true">
-          <div class="palette-header">
-            <span class="palette-title">Object Palette</span>
-            <span class="palette-hint">Click to add · Drag onto scene to place</span>
-            <button class="palette-close" type="button" aria-label="Close palette">✕</button>
-          </div>
-          <div class="palette-grid">
-            <button class="palette-item" draggable="true" data-object-type="pillar" type="button">
-              <span class="palette-icon">🏛️</span>
-              <span class="palette-label">Pillar</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="orb" type="button">
-              <span class="palette-icon">🔮</span>
-              <span class="palette-label">Orb</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="pedestal" type="button">
-              <span class="palette-icon">🗿</span>
-              <span class="palette-label">Pedestal</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="bench" type="button">
-              <span class="palette-icon">🪑</span>
-              <span class="palette-label">Bench</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="arch" type="button">
-              <span class="palette-icon">🌉</span>
-              <span class="palette-label">Arch</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="shard" type="button">
-              <span class="palette-icon">💎</span>
-              <span class="palette-label">Shard</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="lantern" type="button">
-              <span class="palette-icon">🏮</span>
-              <span class="palette-label">Lantern</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="barrier" type="button">
-              <span class="palette-icon">🚧</span>
-              <span class="palette-label">Barrier</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="cat" type="button">
-              <span class="palette-icon">🐱</span>
-              <span class="palette-label">Cat Statue</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="dog" type="button">
-              <span class="palette-icon">🐶</span>
-              <span class="palette-label">Dog Statue</span>
-            </button>
-            <button class="palette-item" draggable="true" data-object-type="knight" type="button">
-              <span class="palette-icon">⚔️</span>
-              <span class="palette-label">Knight</span>
-            </button>
-          </div>
-        </section>
       </div>
+
+      <section class="object-palette" aria-label="Object palette" aria-hidden="true">
+        <div class="palette-header">
+          <span class="palette-title">Object Palette</span>
+          <span class="palette-hint">Click to add · Drag onto scene to place</span>
+          <button class="palette-close" type="button" aria-label="Close palette">✕</button>
+        </div>
+        <div class="palette-grid">
+          <button class="palette-item" draggable="true" data-object-type="pillar" type="button">
+            <span class="palette-icon">🏛️</span>
+            <span class="palette-label">Pillar</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="orb" type="button">
+            <span class="palette-icon">🔮</span>
+            <span class="palette-label">Orb</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="pedestal" type="button">
+            <span class="palette-icon">🗿</span>
+            <span class="palette-label">Pedestal</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="bench" type="button">
+            <span class="palette-icon">🪑</span>
+            <span class="palette-label">Bench</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="arch" type="button">
+            <span class="palette-icon">🌉</span>
+            <span class="palette-label">Arch</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="shard" type="button">
+            <span class="palette-icon">💎</span>
+            <span class="palette-label">Shard</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="lantern" type="button">
+            <span class="palette-icon">🏮</span>
+            <span class="palette-label">Lantern</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="barrier" type="button">
+            <span class="palette-icon">🚧</span>
+            <span class="palette-label">Barrier</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="cat" type="button">
+            <span class="palette-icon">🐱</span>
+            <span class="palette-label">Cat Statue</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="dog" type="button">
+            <span class="palette-icon">🐶</span>
+            <span class="palette-label">Dog Statue</span>
+          </button>
+          <button class="palette-item" draggable="true" data-object-type="knight" type="button">
+            <span class="palette-icon">⚔️</span>
+            <span class="palette-label">Knight</span>
+          </button>
+        </div>
+      </section>
     `;
   }
 

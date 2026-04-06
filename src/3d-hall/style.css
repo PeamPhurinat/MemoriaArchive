@@ -489,9 +489,9 @@ canvas {
 
 .object-palette {
   position: fixed;
-  bottom: -260px;
+  bottom: 0;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(100%);
   width: min(900px, calc(100vw - 32px));
   padding: 14px 16px 18px;
   border: 1px solid var(--line);
@@ -500,13 +500,14 @@ canvas {
   background: var(--panel);
   backdrop-filter: blur(28px);
   box-shadow: 0 -12px 48px var(--ui-shadow);
-  pointer-events: auto;
-  transition: bottom 320ms cubic-bezier(0.34, 1.30, 0.64, 1);
+  pointer-events: none;
+  transition: transform 320ms cubic-bezier(0.34, 1.30, 0.64, 1);
   z-index: 100;
 }
 
 .object-palette.is-visible {
-  bottom: 0;
+  transform: translateX(-50%) translateY(0%);
+  pointer-events: auto;
 }
 
 .palette-header {
@@ -556,8 +557,36 @@ canvas {
 }
 
 @media (max-width: 720px) {
+  .object-palette {
+    padding: 8px 10px 10px;
+  }
+
+  .palette-header {
+    margin-bottom: 7px;
+  }
+
+  .palette-title {
+    font-size: 0.72rem;
+  }
+
+  .palette-hint {
+    font-size: 0.64rem;
+  }
+
   .palette-grid {
-    grid-template-columns: repeat(4, minmax(72px, 1fr));
+    grid-template-columns: repeat(11, minmax(68px, 68px));
+    gap: 5px;
+  }
+
+  .palette-item {
+    padding: 6px 4px;
+    gap: 3px;
+    border-radius: 10px;
+    font-size: 0.65rem;
+  }
+
+  .palette-icon {
+    font-size: 1.3rem;
   }
 }
 
@@ -669,9 +698,16 @@ canvas {
 
   .menu-panel {
     top: 60px;
-    left: 16px;
+    left: auto;
     right: 16px;
     width: auto;
+    min-width: 180px;
+    max-width: calc(100vw - 32px);
+  }
+
+  .menu-action {
+    width: 100%;
+    white-space: nowrap;
   }
 
   /* Title card: left-anchored, compact */
@@ -736,16 +772,68 @@ canvas {
 
   .custom-panel {
     left: 16px;
-    right: 16px;
-    width: auto;
-    bottom: 240px;
-    max-height: min(40vh, 280px);
+    right: auto;
+    width: min(220px, calc(100vw - 32px));
+    bottom: 80px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    max-height: 55vh;
     overflow-y: auto;
   }
 
+  .custom-title {
+    font-size: 0.78rem;
+    margin-bottom: 6px;
+  }
+
+  .custom-label {
+    font-size: 0.68rem;
+    margin-bottom: 3px;
+  }
+
+  .custom-user-input {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+  }
+
+  .custom-actions {
+    gap: 5px;
+    margin-top: 6px;
+  }
+
+  .custom-actions button {
+    padding: 5px 7px;
+    font-size: 0.72rem;
+    border-radius: 8px;
+  }
+
+  .custom-scale-row {
+    margin-top: 4px;
+    gap: 6px;
+  }
+
+  .custom-scale-value,
+  .custom-height-value {
+    font-size: 0.72rem;
+    min-width: 36px;
+  }
+
+  .custom-hint {
+    font-size: 0.70rem;
+    margin-top: 6px;
+  }
+
+  .custom-status {
+    font-size: 0.72rem;
+    margin-top: 5px;
+  }
+
+  /* Push VR + Export Video to top-right on small screens so they
+     don't collide with the palette / customizer at the bottom */
   .vr-button {
     right: 16px !important;
-    bottom: 185px !important;
+    bottom: auto !important;
+    top: 64px !important;
   }
 
   .export-video-btn,
@@ -753,7 +841,8 @@ canvas {
   #export-video-btn {
     position: fixed !important;
     right: 16px !important;
-    bottom: 200px !important;
+    bottom: auto !important;
+    top: 112px !important;
     left: auto !important;
     z-index: 10 !important;
   }
