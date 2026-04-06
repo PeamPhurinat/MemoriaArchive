@@ -160,6 +160,8 @@ const MemoryHallPage = ({ project }) => {
     const cleanup = initMemoryHall(container, memoriesData, {
       projectId: project?.id || '',
       userId: user?.id || '',
+      displayName: project?.ownerName || '',
+      projectTitle: project?.title || '',
       profilePhoto: project?.hallProfilePhoto || null,
       onBack: () => navigate('/project-detail'),
     });

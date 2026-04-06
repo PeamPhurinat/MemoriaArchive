@@ -8,11 +8,11 @@ const BACK_Z = -120;
 const FRAME_CENTER_Y = 8.5;    // height from floor to frame centre
 const MAX_INNER_W    = 12;     // max photo width  (world units) ← adjust width
 const MAX_INNER_H    =  9;     // max photo height (world units) ← adjust height
-const BORDER         =  0.62;  // frame bar width on every side  ← adjust thickness
-const DEPTH          =  0.18;  // frame extrusion depth
-const LINER_W        =  0.10;  // inner dark liner strip width
-const SPINE_W        =  0.08;  // raised centre-spine width on each bar
-const OUTER_LIP_W   =  0.07;  // thin outer highlight strip width
+const BORDER         =  0.22;  // frame bar width on every side  ← adjust thickness
+const DEPTH          =  0.10;  // frame extrusion depth
+const LINER_W        =  0.04;  // inner dark liner strip width
+const SPINE_W        =  0.03;  // raised centre-spine width on each bar
+const OUTER_LIP_W   =  0.03;  // thin outer highlight strip width
 
 export function createBackWallFrame(profilePhotoUrl) {
 

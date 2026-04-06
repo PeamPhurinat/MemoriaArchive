@@ -17,6 +17,8 @@ export class LayoutManager {
     AUTO_SAVE_DELAY_MS,
     getCurrentUserId,
     getCurrentProjectId,
+    getDisplayName,
+    getProjectTitle,
     captureComponentState,
     applyComponentState,
     clearAllSpawnedObjects,
@@ -38,6 +40,8 @@ export class LayoutManager {
     this.AUTO_SAVE_DELAY_MS     = AUTO_SAVE_DELAY_MS;
     this.getCurrentUserId       = getCurrentUserId;
     this.getCurrentProjectId    = getCurrentProjectId;
+    this.getDisplayName         = getDisplayName || (() => "");
+    this.getProjectTitle        = getProjectTitle || (() => "");
     this.captureComponentState  = captureComponentState;
     this.applyComponentState    = applyComponentState;
     this._clearAllSpawnedObjects = clearAllSpawnedObjects;
@@ -141,6 +145,8 @@ export class LayoutManager {
       this.autoSaveState.timerId = null;
     }
     const projectId = this.getCurrentProjectId();
+    const displayName = this.getDisplayName() || userId;
+    const projectTitle = this.getProjectTitle() || projectId;
     const payload = {
       version: LAYOUT_SCHEMA_VERSION,
       savedAt: new Date().toISOString(),
@@ -159,9 +165,9 @@ export class LayoutManager {
       const reason = String(cloudResult.reason || "").trim();
       const detail = reason ? ` Reason: ${reason}` : "";
       if (silent) {
-        this.setCustomStatus(`Autosave stored layout locally for "${userId}" (${projectId}) because server failed.${detail}`);
+        this.setCustomStatus(`Autosave stored layout locally for "${displayName}" in project "${projectTitle}" because server failed.${detail}`);
       } else {
-        this.setCustomStatus(`Server save failed for "${userId}" (${projectId}). Saved locally only.${detail}`);
+        this.setCustomStatus(`Server save failed for "${displayName}" in project "${projectTitle}". Saved locally only.${detail}`);
       }
     }
 
@@ -170,14 +176,14 @@ export class LayoutManager {
       localStorage.setItem(getThemeStorageKey(userId, projectId), this.themeState.active);
       if (silent) {
         if (cloudSaved) {
-          this.setCustomStatus(`Autosaved layout + theme for "${userId}" in project "${projectId}" to Supabase.`);
+          this.setCustomStatus(`Autosaved layout + theme for "${displayName}" in project "${projectTitle}" to Supabase.`);
         }
         return;
       }
       if (cloudSaved) {
-        this.setCustomStatus(`Saved layout + theme for "${userId}" in project "${projectId}" to Supabase.`);
+        this.setCustomStatus(`Saved layout + theme for "${displayName}" in project "${projectTitle}" to Supabase.`);
       } else {
-        this.setCustomStatus(`Saved layout + theme for "${userId}" locally.`);
+        this.setCustomStatus(`Saved layout + theme for "${displayName}" locally.`);
       }
     } catch {
       if (!silent) {
@@ -189,6 +195,8 @@ export class LayoutManager {
   async loadLayoutForUser(userId, options = {}) {
     const projectId = this.getCurrentProjectId();
     const { silent = false } = options;
+    const displayName = this.getDisplayName() || userId;
+    const projectTitle = this.getProjectTitle() || projectId;
     const cloudResult = await loadLayoutFromCloud({ projectId });
     if (cloudResult.ok && cloudResult.payload) {
       const didApply = this.applyLayoutPayload(cloudResult.payload);
@@ -202,12 +210,12 @@ export class LayoutManager {
           // Ignore local backup failure and keep cloud-loaded scene.
         }
         if (!silent) {
-          this.setCustomStatus(`Loaded layout + theme for "${userId}" from server.`);
+          this.setCustomStatus(`Loaded layout + theme for "${displayName}" from server.`);
         }
         return true;
       }
       if (!silent) {
-        this.setCustomStatus(`Server layout for "${userId}" is invalid.`);
+        this.setCustomStatus(`Server layout for "${displayName}" is invalid.`);
       }
       return false;
     }
@@ -219,7 +227,7 @@ export class LayoutManager {
         this.applyTheme(localThemeKey, { silent: true, persist: false });
       }
       if (!silent) {
-        this.setCustomStatus(`No saved layout found for "${userId}" in project "${projectId}".`);
+        this.setCustomStatus(`No saved layout found for "${displayName}" in project "${projectTitle}".`);
       }
       return false;
     }
@@ -229,12 +237,12 @@ export class LayoutManager {
       const didApply = this.applyLayoutPayload(parsed);
       if (!didApply) throw new Error("Invalid payload");
       if (!silent) {
-        this.setCustomStatus(`Loaded layout for "${userId}" from local backup.`);
+        this.setCustomStatus(`Loaded layout for "${displayName}" from local backup.`);
       }
       return true;
     } catch {
       if (!silent) {
-        this.setCustomStatus(`Saved layout for "${userId}" is invalid.`);
+        this.setCustomStatus(`Saved layout for "${displayName}" is invalid.`);
       }
       return false;
     }

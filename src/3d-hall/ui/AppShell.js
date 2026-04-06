@@ -54,7 +54,7 @@ export class AppShell {
         </section>
         <section class="custom-panel" aria-live="polite">
           <p class="custom-title">Memory Layout Customizer</p>
-          <label class="custom-label" for="custom-user-id">User ID</label>
+          <label class="custom-label" for="custom-user-id">User</label>
           <input id="custom-user-id" class="custom-user-input" type="text" maxlength="32" placeholder="guest" />
           <div class="custom-actions">
             <button class="tool-move is-active" type="button">Move</button>

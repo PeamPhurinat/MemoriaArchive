@@ -78,6 +78,8 @@ const AUTHENTICATED_USER_ID = normalizeUserId(context.userId || "");
 const ACTIVE_PROJECT_ID     = normalizeProjectId(context.projectId || "");
 const READ_ONLY             = Boolean(context.readOnly);
 const PROFILE_PHOTO         = context.profilePhoto || null;
+const DISPLAY_NAME          = String(context.displayName || "").trim();
+const PROJECT_TITLE         = String(context.projectTitle || "").trim();
 
 // ================================================================
 // Shared state
@@ -192,7 +194,8 @@ function applyComponentState(component, state) {
 
 function getCurrentUserId() {
   if (AUTHENTICATED_USER_ID) {
-    userIdInput.value = AUTHENTICATED_USER_ID;
+    // Keep the display showing the name but always return the real UUID for storage keys
+    userIdInput.value = DISPLAY_NAME || AUTHENTICATED_USER_ID;
     return AUTHENTICATED_USER_ID;
   }
   const userId = normalizeUserId(userIdInput.value);
@@ -245,6 +248,8 @@ const layoutMgr = new LayoutManager({
   customizableComponents, defaultLayoutStates, spawnedComponentIds, spawnCounter,
   themeState, worldBuilder, autoSaveState, READ_ONLY, AUTO_SAVE_DELAY_MS,
   getCurrentUserId, getCurrentProjectId,
+  getDisplayName: () => DISPLAY_NAME,
+  getProjectTitle: () => PROJECT_TITLE,
   captureComponentState, applyComponentState,
   clearAllSpawnedObjects: () => layoutMgr.clearAllSpawnedObjects(),
   applyTheme: (k, o) => themeMgr.applyTheme(k, o),
@@ -476,9 +481,9 @@ function initializeCustomizer() {
   }
 
   const savedUserId = AUTHENTICATED_USER_ID || localStorage.getItem(ACTIVE_USER_STORAGE_KEY) || "guest";
-  userIdInput.value = normalizeUserId(savedUserId);
+  userIdInput.value = AUTHENTICATED_USER_ID ? (DISPLAY_NAME || normalizeUserId(savedUserId)) : normalizeUserId(savedUserId);
   userIdInput.disabled = Boolean(AUTHENTICATED_USER_ID);
-  userIdInput.title = AUTHENTICATED_USER_ID ? "Authenticated account is used automatically." : "";
+  userIdInput.title = AUTHENTICATED_USER_ID ? (DISPLAY_NAME ? `Signed in as ${DISPLAY_NAME}` : "Authenticated account is used automatically.") : "";
 
   const currentUserId = getCurrentUserId();
   const storedTheme =
@@ -542,10 +547,10 @@ function initializeCustomizer() {
     layoutMgr.restoreDefaultLayout();
     selectionMgr.clearSelection();
     layoutMgr.scheduleAutoSave();
-    setCustomStatus(`Layout reset for "${getCurrentUserId()}" in project "${getCurrentProjectId()}".`);
+    setCustomStatus(`Layout reset for "${DISPLAY_NAME || getCurrentUserId()}" in project "${PROJECT_TITLE || getCurrentProjectId()}".`);
   });
 
-  userIdInput.addEventListener("change", () => setCustomStatus(`Active user: "${getCurrentUserId()}".`));
+  userIdInput.addEventListener("change", () => setCustomStatus(`Active user: "${DISPLAY_NAME || getCurrentUserId()}".`));
 
   // ---- Object palette ----
   if (addObjectButton) {

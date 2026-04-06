@@ -60,6 +60,11 @@ const ProjectDetailPage = ({ project, setProject }) => {
     showSaved();
   };
 
+  const updateOwnerName = (val) => {
+    setProject((p) => ({ ...p, ownerName: val }));
+    showSaved();
+  };
+
   const updateMemory = (id, field, val) => {
     setProject((p) => ({
       ...p,
@@ -269,6 +274,22 @@ const ProjectDetailPage = ({ project, setProject }) => {
               </button>
             </div>
           )}
+        </div>
+
+        <div className="ma-divider" />
+
+        {/* Display Name */}
+        <div className="ma-memories-section" style={{ paddingBottom: '8px' }}>
+          <div className="ma-memories-header">
+            <span className="ma-memories-label">Your Name</span>
+          </div>
+          <input
+            className="ma-project-title-input"
+            style={{ fontSize: '14px', marginTop: '8px' }}
+            value={project.ownerName || ''}
+            onChange={(e) => updateOwnerName(e.target.value)}
+            placeholder="Enter your name (shown in 3D room)"
+          />
         </div>
 
         <div className="ma-divider" />
