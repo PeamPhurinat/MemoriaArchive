@@ -60,11 +60,17 @@ export class AppShell {
             <button class="tool-move is-active" type="button">Move</button>
             <button class="tool-resize" type="button">Resize</button>
             <button class="tool-delete" type="button">Delete Selected</button>
+            <button class="tool-add-object" type="button">+ Add Object</button>
           </div>
           <label class="custom-label" for="custom-scale">Scale</label>
           <div class="custom-scale-row">
             <input id="custom-scale" class="custom-scale" type="range" min="0.35" max="3" step="0.01" value="1" />
             <span class="custom-scale-value">100%</span>
+          </div>
+          <label class="custom-label" for="custom-height">Height</label>
+          <div class="custom-scale-row">
+            <input id="custom-height" class="custom-height" type="range" min="0" max="12" step="0.05" value="0" />
+            <span class="custom-height-value">0.0</span>
           </div>
           <div class="custom-actions">
             <button class="tool-save" type="button">Save Layout</button>
@@ -75,6 +81,60 @@ export class AppShell {
           <p class="custom-status">View mode enabled.</p>
         </section>
         <div class="reticle" aria-hidden="true"></div>
+
+        <section class="object-palette" aria-label="Object palette" aria-hidden="true">
+          <div class="palette-header">
+            <span class="palette-title">Object Palette</span>
+            <span class="palette-hint">Click to add · Drag onto scene to place</span>
+            <button class="palette-close" type="button" aria-label="Close palette">✕</button>
+          </div>
+          <div class="palette-grid">
+            <button class="palette-item" draggable="true" data-object-type="pillar" type="button">
+              <span class="palette-icon">🏛️</span>
+              <span class="palette-label">Pillar</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="orb" type="button">
+              <span class="palette-icon">🔮</span>
+              <span class="palette-label">Orb</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="pedestal" type="button">
+              <span class="palette-icon">🗿</span>
+              <span class="palette-label">Pedestal</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="bench" type="button">
+              <span class="palette-icon">🪑</span>
+              <span class="palette-label">Bench</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="arch" type="button">
+              <span class="palette-icon">🌉</span>
+              <span class="palette-label">Arch</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="shard" type="button">
+              <span class="palette-icon">💎</span>
+              <span class="palette-label">Shard</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="lantern" type="button">
+              <span class="palette-icon">🏮</span>
+              <span class="palette-label">Lantern</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="barrier" type="button">
+              <span class="palette-icon">🚧</span>
+              <span class="palette-label">Barrier</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="cat" type="button">
+              <span class="palette-icon">🐱</span>
+              <span class="palette-label">Cat Statue</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="dog" type="button">
+              <span class="palette-icon">🐶</span>
+              <span class="palette-label">Dog Statue</span>
+            </button>
+            <button class="palette-item" draggable="true" data-object-type="knight" type="button">
+              <span class="palette-icon">⚔️</span>
+              <span class="palette-label">Knight</span>
+            </button>
+          </div>
+        </section>
       </div>
     `;
   }
@@ -97,9 +157,15 @@ export class AppShell {
     this.deleteButton      = q(".tool-delete");
     this.scaleSlider       = q(".custom-scale");
     this.scaleValue        = q(".custom-scale-value");
+    this.heightSlider      = q(".custom-height");
+    this.heightValue       = q(".custom-height-value");
     this.saveButton        = q(".tool-save");
     this.loadButton        = q(".tool-load");
     this.resetButton       = q(".tool-reset");
     this.reticle           = q(".reticle");
+    this.addObjectButton   = q(".tool-add-object");
+    this.objectPalette     = q(".object-palette");
+    this.paletteCloseButton = q(".palette-close");
+    this.paletteItems      = this.mountNode.querySelectorAll(".palette-item");
   }
 }

@@ -1319,6 +1319,306 @@ export class WorldBuilder {
     });
   }
 
+  // ================================================================
+  // SPAWNABLE OBJECTS — called from the object palette UI.
+  // Returns a configured THREE.Group added to the scene.
+  // The caller is responsible for registering it as a customizable
+  // component and giving it a unique id.
+  // ================================================================
+  createSpawnableObject(type) {
+    const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd8d4cc, roughness: 0.88, metalness: 0.04 });
+    const marbMat  = new THREE.MeshStandardMaterial({ color: 0xf4f2ef, roughness: 0.66, metalness: 0.03 });
+
+    const group = new THREE.Group();
+
+    switch (type) {
+      case "pillar": {
+        // Classic Roman column (standing)
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.1, 0.5, 24), marbMat);
+        base.position.y = 0.25; base.castShadow = true; base.receiveShadow = true; group.add(base);
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 9.0, 24), marbMat);
+        shaft.position.y = 5.0; shaft.castShadow = true; shaft.receiveShadow = true; group.add(shaft);
+        const echinus = new THREE.Mesh(new THREE.CylinderGeometry(0.84, 0.66, 0.58, 24), marbMat);
+        echinus.position.y = 9.74; echinus.castShadow = true; group.add(echinus);
+        const abacus = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.26, 1.7), marbMat);
+        abacus.position.y = 10.16; abacus.castShadow = true; group.add(abacus);
+        group.userData.spawnLabel = "Pillar";
+        break;
+      }
+
+      case "orb": {
+        // Glowing crystal orb on a small stand
+        const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.52, 0.62, 16), stoneMat);
+        stand.position.y = 0.31; stand.castShadow = true; stand.receiveShadow = true; group.add(stand);
+        const sphere = new THREE.Mesh(
+          new THREE.SphereGeometry(0.72, 32, 32),
+          new THREE.MeshStandardMaterial({
+            color: 0xd4f0ff, emissive: 0x88ccff, emissiveIntensity: 0.7,
+            roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.82,
+          }),
+        );
+        sphere.position.y = 1.38; sphere.castShadow = true; group.add(sphere);
+        const glow = new THREE.PointLight(0xaaddff, 12, 10, 2);
+        glow.position.y = 1.38; group.add(glow);
+        this.pulseLights.push({ light: glow, base: 12, speed: 1.6, range: 4 });
+        this.animatedObjects.push({ object: sphere, baseY: 1.38, floatAmount: 0.12, floatSpeed: 1.1, spinSpeed: 0.28 });
+        group.userData.spawnLabel = "Orb";
+        break;
+      }
+
+      case "pedestal": {
+        // Tall display pedestal
+        const pedBase = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.18, 1.8), stoneMat);
+        pedBase.position.y = 0.09; pedBase.receiveShadow = true; group.add(pedBase);
+        const pedShaft = new THREE.Mesh(new THREE.BoxGeometry(0.82, 1.32, 0.82), stoneMat);
+        pedShaft.position.y = 0.84; pedShaft.castShadow = true; pedShaft.receiveShadow = true; group.add(pedShaft);
+        const pedTop = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.6), marbMat);
+        pedTop.position.y = 1.58; pedTop.castShadow = true; group.add(pedTop);
+        group.userData.spawnLabel = "Pedestal";
+        break;
+      }
+
+      case "bench": {
+        // Stone bench
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.18, 0.82), stoneMat);
+        seat.position.y = 0.56; seat.castShadow = true; seat.receiveShadow = true; group.add(seat);
+        [-1.1, 1.1].forEach((lx) => {
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.56, 0.72), stoneMat);
+          leg.position.set(lx, 0.28, 0); leg.castShadow = true; leg.receiveShadow = true; group.add(leg);
+        });
+        group.userData.spawnLabel = "Bench";
+        break;
+      }
+
+      case "arch": {
+        // Decorative stone arch frame
+        const archR = 1.8, archFW = 0.22;
+        const leftPost  = new THREE.Mesh(new THREE.BoxGeometry(archFW, 2.2, archFW), stoneMat);
+        leftPost.position.set(-archR, 1.1, 0); leftPost.castShadow = true; group.add(leftPost);
+        const rightPost = new THREE.Mesh(new THREE.BoxGeometry(archFW, 2.2, archFW), stoneMat);
+        rightPost.position.set(archR, 1.1, 0); rightPost.castShadow = true; group.add(rightPost);
+        const arc = new THREE.Mesh(new THREE.TorusGeometry(archR, archFW / 2, 8, 36, Math.PI), stoneMat);
+        arc.position.set(0, 2.2, 0); arc.castShadow = true; group.add(arc);
+        group.userData.spawnLabel = "Arch";
+        break;
+      }
+
+      case "shard": {
+        // Floating dream crystal shard
+        const shardMesh = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.9, 0),
+          new THREE.MeshStandardMaterial({
+            color: 0xffd8f8, emissive: 0xff88ee, emissiveIntensity: 0.55,
+            roughness: 0.12, metalness: 0.22, transparent: true, opacity: 0.78,
+          }),
+        );
+        shardMesh.position.y = 2.2; shardMesh.castShadow = true; group.add(shardMesh);
+        const shardGlow = new THREE.PointLight(0xff99ee, 8, 8, 2);
+        shardGlow.position.y = 2.2; group.add(shardGlow);
+        this.pulseLights.push({ light: shardGlow, base: 8, speed: 2.0, range: 3 });
+        this.animatedObjects.push({ object: shardMesh, baseY: 2.2, floatAmount: 0.2, floatSpeed: 0.9, spinSpeed: 0.45 });
+        group.userData.spawnLabel = "Dream Shard";
+        break;
+      }
+
+      case "lantern": {
+        // Hanging lantern post
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 2.8, 8), stoneMat);
+        post.position.y = 1.4; post.castShadow = true; post.receiveShadow = true; group.add(post);
+        const cage = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.56, 0.44),
+          new THREE.MeshStandardMaterial({ color: 0x888880, roughness: 0.42, metalness: 0.58, wireframe: false }),
+        );
+        cage.position.y = 2.94; cage.castShadow = true; group.add(cage);
+        const flame = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 12),
+          new THREE.MeshStandardMaterial({ color: 0xffee88, emissive: 0xffcc44, emissiveIntensity: 1.2, roughness: 0.2 }),
+        );
+        flame.position.y = 2.94; group.add(flame);
+        const lanternGlow = new THREE.PointLight(0xffdd88, 10, 8, 2);
+        lanternGlow.position.y = 2.94; group.add(lanternGlow);
+        this.pulseLights.push({ light: lanternGlow, base: 10, speed: 2.4, range: 2.5 });
+        group.userData.spawnLabel = "Lantern";
+        break;
+      }
+
+      case "barrier": {
+        // Rope barrier — two posts with a horizontal rope between them.
+        // Posts are tagged isBarrierPost so the scene can compensate their
+        // local scale each frame, keeping them at natural size while only
+        // the rope stretches when the group is scaled.
+        const postMat = new THREE.MeshStandardMaterial({ color: 0xc0a860, roughness: 0.40, metalness: 0.60 });
+        const ropeMat = new THREE.MeshStandardMaterial({ color: 0x8a7860, roughness: 0.88 });
+        [-0.9, 0.9].forEach((lx) => {
+          const postGroup = new THREE.Group();
+          postGroup.position.set(lx, 0, 0);
+          postGroup.userData.isBarrierPost = true;
+          const pst = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.1, 8), postMat);
+          pst.position.y = 0.55; pst.castShadow = true; pst.receiveShadow = true; postGroup.add(pst);
+          const ball = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 12), postMat);
+          ball.position.y = 1.14; postGroup.add(ball);
+          group.add(postGroup);
+        });
+        // Horizontal rope cylinder — scales freely with the group's X axis
+        const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 1.8, 8), ropeMat);
+        rope.rotation.z = Math.PI / 2;
+        rope.position.set(0, 0.90, 0); rope.castShadow = true; group.add(rope);
+        group.userData.spawnLabel = "Barrier";
+        break;
+      }
+
+      case "cat": {
+        const statMat = new THREE.MeshStandardMaterial({ color: 0xcfcbc2, roughness: 0.84, metalness: 0.05 });
+        // Base disc
+        const catBase = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.82, 0.12, 20), statMat);
+        catBase.position.y = 0.06; catBase.receiveShadow = true; group.add(catBase);
+        // Haunches (lower sitting body)
+        const haunches = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.36, 0.52, 12), statMat);
+        haunches.position.y = 0.38; haunches.castShadow = true; group.add(haunches);
+        // Upper body (slightly narrower, angled forward)
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.30, 0.52, 12), statMat);
+        torso.position.set(0, 0.82, 0.04); torso.rotation.x = -0.18; torso.castShadow = true; group.add(torso);
+        // Neck
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.22, 10), statMat);
+        neck.position.set(0, 1.14, 0.06); neck.castShadow = true; group.add(neck);
+        // Head
+        const catHead = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), statMat);
+        catHead.scale.set(1, 0.92, 1); catHead.position.set(0, 1.42, 0.05); catHead.castShadow = true; group.add(catHead);
+        // Ears (cones)
+        [[-0.11, 0.15], [0.11, -0.15]].forEach(([ex, rz]) => {
+          const ear = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.20, 5), statMat);
+          ear.position.set(ex, 1.62, 0.02); ear.rotation.z = rz; ear.castShadow = true; group.add(ear);
+        });
+        // Front paws
+        [-0.13, 0.13].forEach((px) => {
+          const paw = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), statMat);
+          paw.scale.set(1.1, 0.55, 1.3); paw.position.set(px, 0.14, 0.28); group.add(paw);
+        });
+        // Curled tail (torus arc sweeping up behind)
+        const catTail = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.038, 8, 18, Math.PI * 1.15), statMat);
+        catTail.position.set(0.18, 0.28, -0.22); catTail.rotation.set(-0.3, 0.5, Math.PI * 0.5); group.add(catTail);
+        group.userData.spawnLabel = "Cat Statue";
+        break;
+      }
+
+      case "dog": {
+        const statMat = new THREE.MeshStandardMaterial({ color: 0xcfcbc2, roughness: 0.84, metalness: 0.05 });
+        // Base disc
+        const dogBase = new THREE.Mesh(new THREE.CylinderGeometry(0.80, 0.90, 0.12, 20), statMat);
+        dogBase.position.y = 0.06; dogBase.receiveShadow = true; group.add(dogBase);
+        // Haunches
+        const dogHaunches = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 12), statMat);
+        dogHaunches.scale.set(1, 1.1, 1.15); dogHaunches.position.y = 0.46; dogHaunches.castShadow = true; group.add(dogHaunches);
+        // Body/chest (leaning slightly forward)
+        const dogBody = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.50, 0.58), statMat);
+        dogBody.position.set(0, 0.80, 0.10); dogBody.rotation.x = -0.20; dogBody.castShadow = true; group.add(dogBody);
+        // Neck
+        const dogNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.28, 10), statMat);
+        dogNeck.position.set(0, 1.14, 0.18); dogNeck.rotation.x = -0.30; dogNeck.castShadow = true; group.add(dogNeck);
+        // Head (blocky dog muzzle)
+        const dogHead = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.40, 0.46), statMat);
+        dogHead.position.set(0, 1.44, 0.26); dogHead.castShadow = true; group.add(dogHead);
+        // Snout
+        const snout = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.20, 0.26), statMat);
+        snout.position.set(0, 1.34, 0.50); group.add(snout);
+        // Floppy ears
+        [[-0.24, -0.10], [0.24, 0.10]].forEach(([ex, rz]) => {
+          const ear = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.30, 0.06), statMat);
+          ear.position.set(ex, 1.36, 0.20); ear.rotation.set(0.1, 0, rz); ear.castShadow = true; group.add(ear);
+        });
+        // Front paws
+        [-0.16, 0.16].forEach((px) => {
+          const paw = new THREE.Mesh(new THREE.SphereGeometry(0.10, 10, 8), statMat);
+          paw.scale.set(1, 0.55, 1.3); paw.position.set(px, 0.14, 0.36); group.add(paw);
+        });
+        // Tail (angled up and back)
+        const dogTail = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.44, 8), statMat);
+        dogTail.position.set(0, 0.78, -0.36); dogTail.rotation.x = -0.90; dogTail.castShadow = true; group.add(dogTail);
+        group.userData.spawnLabel = "Dog Statue";
+        break;
+      }
+
+      case "knight": {
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0xb8b8b4, roughness: 0.50, metalness: 0.62 });
+        const stonePlinthMat = new THREE.MeshStandardMaterial({ color: 0xcfcbc2, roughness: 0.88, metalness: 0.04 });
+        // Stone plinth
+        const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.28, 1.0), stonePlinthMat);
+        plinth.position.y = 0.14; plinth.receiveShadow = true; group.add(plinth);
+        const plinthStep = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.12, 0.80), stonePlinthMat);
+        plinthStep.position.y = 0.34; group.add(plinthStep);
+        // Feet
+        [-0.10, 0.10].forEach((fx) => {
+          const foot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.28), armorMat);
+          foot.position.set(fx, 0.54, 0.04); foot.castShadow = true; group.add(foot);
+        });
+        // Greaves (lower legs)
+        [-0.10, 0.10].forEach((lx) => {
+          const greave = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.11, 0.52, 10), armorMat);
+          greave.position.set(lx, 0.88, 0); greave.castShadow = true; group.add(greave);
+        });
+        // Tassets (hip plates)
+        [-0.14, 0.14].forEach((tx) => {
+          const tasset = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.14), armorMat);
+          tasset.position.set(tx, 1.20, 0); group.add(tasset);
+        });
+        // Torso / breastplate
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.52, 0.34), armorMat);
+        torso.position.y = 1.48; torso.castShadow = true; group.add(torso);
+        // Backplate
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.48, 0.12), armorMat);
+        back.position.set(0, 1.48, -0.22); group.add(back);
+        // Pauldrons (shoulder plates)
+        [-0.34, 0.34].forEach((px) => {
+          const paul = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), armorMat);
+          paul.scale.set(1, 0.75, 0.85); paul.position.set(px, 1.72, 0); paul.castShadow = true; group.add(paul);
+        });
+        // Left arm (holding shield forward)
+        const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.50, 8), armorMat);
+        armL.position.set(-0.36, 1.46, 0.12); armL.rotation.set(0.5, 0, -0.25); armL.castShadow = true; group.add(armL);
+        // Shield (on left arm)
+        const shield = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.52, 0.06), armorMat);
+        shield.position.set(-0.52, 1.42, 0.36); shield.rotation.y = 0.20; shield.castShadow = true; group.add(shield);
+        // Shield boss (central knob)
+        const boss = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), armorMat);
+        boss.position.set(-0.52, 1.42, 0.40); group.add(boss);
+        // Right arm (raised, holding sword)
+        const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.50, 8), armorMat);
+        armR.position.set(0.36, 1.58, 0); armR.rotation.set(0, 0, 0.30); armR.castShadow = true; group.add(armR);
+        // Sword blade (tall thin box held upright)
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.10, 0.025), armorMat);
+        blade.position.set(0.54, 2.22, 0); blade.castShadow = true; group.add(blade);
+        // Crossguard
+        const guard = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.06), armorMat);
+        guard.position.set(0.54, 1.64, 0); group.add(guard);
+        // Sword grip
+        const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.22, 6), armorMat);
+        grip.position.set(0.54, 1.74, 0); group.add(grip);
+        // Neck
+        const knightNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.18, 10), armorMat);
+        knightNeck.position.y = 1.83; knightNeck.castShadow = true; group.add(knightNeck);
+        // Helmet (rounded bascinet)
+        const helm = new THREE.Mesh(new THREE.SphereGeometry(0.21, 14, 12), armorMat);
+        helm.scale.set(1, 1.15, 1); helm.position.y = 2.08; helm.castShadow = true; group.add(helm);
+        // Visor/face plate
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.08), armorMat);
+        visor.position.set(0, 2.02, 0.20); group.add(visor);
+        // Visor slit
+        const slit = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.04, 0.04),
+          new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }));
+        slit.position.set(0, 2.04, 0.24); group.add(slit);
+        // Plume (crest on top of helmet)
+        const plume = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.32, 0.18), armorMat);
+        plume.position.set(0, 2.42, 0); group.add(plume);
+        group.userData.spawnLabel = "Knight";
+        break;
+      }
+
+      default:
+        break;
+    }
+
+    this.scene.add(group);
+    return group;
+  }
+
   dispose() {
     this.memoryStations.forEach((stationData) => {
       this.disposeStationTextures(stationData.textures);

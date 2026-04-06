@@ -29,10 +29,16 @@ const {
   deleteButton,
   scaleSlider,
   scaleValue,
+  heightSlider,
+  heightValue,
   saveButton,
   loadButton,
   resetButton,
   reticle,
+  addObjectButton,
+  objectPalette,
+  paletteCloseButton,
+  paletteItems,
 } = appShell;
 
 const scene = new THREE.Scene();
@@ -145,6 +151,21 @@ const customDrag = {
   plane: new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
 };
 
+// Tracks user-spawned object IDs so we can truly remove them (vs hide built-ins)
+const spawnedComponentIds = new Set();
+let spawnCounter = 0;
+
+// Palette drag state
+const paletteDrag = { type: null };
+
+// Ghost mesh shown during palette drag-over canvas
+const ghostMesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.7, 0.7, 0.08, 24),
+  new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, depthWrite: false }),
+);
+ghostMesh.visible = false;
+scene.add(ghostMesh);
+
 const selectionOutline = new THREE.BoxHelper(undefined, 0xff8fca);
 selectionOutline.visible = false;
 scene.add(selectionOutline);
@@ -184,6 +205,7 @@ transformControls.addEventListener("objectChange", () => {
     clampScale(selected);
   }
   updateScaleUi();
+  updateHeightUi();
   updateSelectionOutline();
   scheduleAutoSave();
 });
@@ -515,6 +537,16 @@ function initializeCustomizer() {
     scheduleAutoSave();
   });
 
+  heightSlider.addEventListener("input", () => {
+    const selected = getSelectedComponent();
+    if (!selected || selected.visible === false) return;
+
+    selected.position.y = THREE.MathUtils.clamp(Number(heightSlider.value), 0, 12);
+    updateHeightUi();
+    updateSelectionOutline();
+    scheduleAutoSave();
+  });
+
   saveButton.addEventListener("click", async () => {
     await saveLayoutForUser(getCurrentUserId());
   });
@@ -533,10 +565,93 @@ function initializeCustomizer() {
     setCustomStatus(`Active user: "${userId}".`);
   });
 
+  // ---- Object palette ----
+  if (addObjectButton) {
+    addObjectButton.addEventListener("click", () => {
+      const willOpen = !objectPalette.classList.contains("is-visible");
+      setObjectPaletteOpen(willOpen);
+    });
+  }
+
+  if (paletteCloseButton) {
+    paletteCloseButton.addEventListener("click", () => setObjectPaletteOpen(false));
+  }
+
+  paletteItems.forEach((item) => {
+    // Click → spawn in front of camera
+    item.addEventListener("click", () => {
+      if (customState.mode !== "custom") return;
+      spawnObject(item.dataset.objectType, null);
+    });
+
+    // Drag start → store object type
+    item.addEventListener("dragstart", (event) => {
+      if (customState.mode !== "custom") { event.preventDefault(); return; }
+      paletteDrag.type = item.dataset.objectType;
+      event.dataTransfer.effectAllowed = "copy";
+      event.dataTransfer.setData("text/plain", item.dataset.objectType);
+    });
+
+    item.addEventListener("dragend", () => {
+      paletteDrag.type = null;
+      ghostMesh.visible = false;
+      renderer.domElement.classList.remove("palette-drop-active");
+    });
+  });
+
+  // Canvas drag-over / drop — place object at 3D ground intersection
+  renderer.domElement.addEventListener("dragover", (event) => {
+    if (!paletteDrag.type || customState.mode !== "custom") return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    renderer.domElement.classList.add("palette-drop-active");
+
+    // Update ghost position
+    const rect = renderer.domElement.getBoundingClientRect();
+    const nx = ((event.clientX - rect.left) / rect.width)  * 2 - 1;
+    const ny = -((event.clientY - rect.top)  / rect.height) * 2 + 1;
+    raycaster.setFromCamera({ x: nx, y: ny }, camera);
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const hit = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(groundPlane, hit)) {
+      ghostMesh.position.copy(hit);
+      ghostMesh.visible = true;
+    }
+  });
+
+  renderer.domElement.addEventListener("dragleave", () => {
+    ghostMesh.visible = false;
+    renderer.domElement.classList.remove("palette-drop-active");
+  });
+
+  renderer.domElement.addEventListener("drop", (event) => {
+    event.preventDefault();
+    ghostMesh.visible = false;
+    renderer.domElement.classList.remove("palette-drop-active");
+
+    const type = paletteDrag.type || event.dataTransfer.getData("text/plain");
+    paletteDrag.type = null;
+    if (!type || customState.mode !== "custom") return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+    const nx = ((event.clientX - rect.left) / rect.width)  * 2 - 1;
+    const ny = -((event.clientY - rect.top)  / rect.height) * 2 + 1;
+    raycaster.setFromCamera({ x: nx, y: ny }, camera);
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const dropPos = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(groundPlane, dropPos)) {
+      dropPos.y = 0;
+      spawnObject(type, dropPos);
+    } else {
+      spawnObject(type, null);
+    }
+  });
+
   setTransformMode("translate");
   setMode("view");
   void loadLayoutForUser(getCurrentUserId(), { silent: true });
   updateScaleUi();
+  updateHeightUi();
 }
 
 function normalizeUserId(value) {
@@ -732,6 +847,21 @@ function updateScaleUi() {
   scaleValue.textContent = `${Math.round(uniformScale * 100)}%`;
 }
 
+function updateHeightUi() {
+  const selected = getSelectedComponent();
+  if (!selected || selected.visible === false) {
+    heightSlider.value = "0";
+    heightSlider.disabled = true;
+    heightValue.textContent = "--";
+    return;
+  }
+
+  const y = THREE.MathUtils.clamp(selected.position.y, 0, 12);
+  heightSlider.disabled = false;
+  heightSlider.value = y.toFixed(2);
+  heightValue.textContent = y.toFixed(1);
+}
+
 function restoreDefaultLayout() {
   defaultLayoutStates.forEach((state, componentId) => {
     const component = customizableComponents.get(componentId);
@@ -753,6 +883,16 @@ function collectLayoutSnapshot() {
   return components;
 }
 
+function clearAllSpawnedObjects() {
+  spawnedComponentIds.forEach((id) => {
+    const comp = customizableComponents.get(id);
+    if (comp) scene.remove(comp);
+    customizableComponents.delete(id);
+    defaultLayoutStates.delete(id);
+  });
+  spawnedComponentIds.clear();
+}
+
 function applyLayoutPayload(payload) {
   if (!payload || typeof payload !== "object") {
     return false;
@@ -769,13 +909,42 @@ function applyLayoutPayload(payload) {
   }
 
   const componentStates = payload.components ?? {};
+  clearAllSpawnedObjects();
   restoreDefaultLayout();
+
+  // Restore built-in components
   Object.entries(componentStates).forEach(([componentId, state]) => {
     const component = customizableComponents.get(componentId);
     if (component) {
       applyComponentState(component, state);
     }
   });
+
+  // Re-create user-spawned objects that were saved
+  Object.entries(componentStates).forEach(([componentId, state]) => {
+    const meta = state.metadata ?? {};
+    if (!meta.isUserSpawned || !meta.type) return;
+    if (customizableComponents.has(componentId)) return;
+
+    // Keep spawnCounter ahead of any restored IDs
+    const counterMatch = componentId.match(/-(\d+)$/);
+    if (counterMatch) {
+      spawnCounter = Math.max(spawnCounter, parseInt(counterMatch[1], 10));
+    }
+
+    const group = worldBuilder.createSpawnableObject(meta.type);
+    if (!group) return;
+    group.userData.componentId = componentId;
+    group.userData.componentLabel = meta.label ?? meta.type;
+    group.userData.isCustomizable = true;
+    group.userData.isUserSpawned = true;
+    registerCustomizableComponent(componentId, group, meta);
+    spawnedComponentIds.add(componentId);
+    applyComponentState(group, state);
+  });
+
+  captureThemeBaseline();
+  applyTheme(themeState.active, { silent: true, persist: false });
 
   clearSelection();
   updateScaleUi();
@@ -935,6 +1104,7 @@ function selectComponent(component) {
       : "move by dragging or with the gizmo";
   setCustomStatus(`Selected "${label}". You can now ${action}.`);
   updateScaleUi();
+  updateHeightUi();
 }
 
 function clearSelection() {
@@ -943,6 +1113,54 @@ function clearSelection() {
   syncTransformControls();
   selectionOutline.visible = false;
   updateScaleUi();
+  updateHeightUi();
+}
+
+function setObjectPaletteOpen(isOpen) {
+  if (!objectPalette) return;
+  objectPalette.classList.toggle("is-visible", isOpen);
+  objectPalette.setAttribute("aria-hidden", String(!isOpen));
+  if (addObjectButton) {
+    addObjectButton.classList.toggle("is-active", isOpen);
+  }
+}
+
+function spawnObject(type, worldPosition) {
+  const group = worldBuilder.createSpawnableObject(type);
+  if (!group) return;
+
+  spawnCounter += 1;
+  const componentId = `spawned-${type}-${spawnCounter}`;
+  const label = group.userData.spawnLabel ?? type;
+
+  group.userData.componentId = componentId;
+  group.userData.componentLabel = label;
+  group.userData.isCustomizable = true;
+  group.userData.isUserSpawned = true;
+
+  if (worldPosition) {
+    group.position.copy(worldPosition);
+  } else {
+    // Place 8 units in front of the camera on the ground plane
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    forward.y = 0;
+    if (forward.lengthSq() < 0.001) forward.set(0, 0, -1);
+    forward.normalize();
+    group.position.copy(camera.position).addScaledVector(forward, 8);
+    group.position.y = 0;
+  }
+
+  registerCustomizableComponent(componentId, group, { label, type, isUserSpawned: true });
+  spawnedComponentIds.add(componentId);
+
+  // Register new materials with the theme system so they tint correctly
+  captureThemeBaseline();
+  applyTheme(themeState.active, { silent: true, persist: false });
+
+  selectComponent(group);
+  scheduleAutoSave();
+  setCustomStatus(`Added "${label}" to the scene.`);
 }
 
 function deleteSelectedComponent() {
@@ -956,12 +1174,23 @@ function deleteSelectedComponent() {
     return;
   }
 
-  const label = selected.userData.componentLabel ?? selected.userData.componentId;
-  selected.visible = false;
+  const componentId = selected.userData.componentId;
+  const label = selected.userData.componentLabel ?? componentId;
+
+  if (spawnedComponentIds.has(componentId)) {
+    // Truly remove user-spawned objects from scene and registry
+    scene.remove(selected);
+    customizableComponents.delete(componentId);
+    spawnedComponentIds.delete(componentId);
+    defaultLayoutStates.delete(componentId);
+  } else {
+    // Hide built-in components (layout records visible=false)
+    selected.visible = false;
+  }
+
   clearSelection();
   setCustomStatus(`Deleted "${label}" from this layout. Changes auto-save shortly.`);
   scheduleAutoSave();
-  updateScaleUi();
 }
 
 function clampScale(component) {
@@ -1029,6 +1258,8 @@ function setMode(mode) {
     stopCustomDrag();
     clearSelection();
     syncTransformControls();
+    setObjectPaletteOpen(false);
+    ghostMesh.visible = false;
     setCustomStatus("View mode enabled.");
     if (previousMode === "custom") {
       scheduleAutoSave();
@@ -1184,6 +1415,21 @@ function scheduleAutoSave() {
   }, AUTO_SAVE_DELAY_MS);
 }
 
+function updateBarrierPostConstraints() {
+  spawnedComponentIds.forEach((id) => {
+    const comp = customizableComponents.get(id);
+    if (!comp) return;
+    if (comp.userData.componentMetadata?.type !== "barrier") return;
+    const sx = comp.scale.x, sy = comp.scale.y, sz = comp.scale.z;
+    comp.children.forEach((child) => {
+      if (child.userData.isBarrierPost) {
+        // Invert the parent's scale so posts stay at natural world size
+        child.scale.set(1 / sx, 1 / sy, 1 / sz);
+      }
+    });
+  });
+}
+
 function updateCustomModeMovement(delta) {
   if (
     customState.mode !== "custom" ||
@@ -1323,6 +1569,9 @@ function animate() {
 
   // Keep museum hall elements pinned to their constraints (ceiling, walls, etc.)
   worldBuilder.updateMuseumConstraints();
+
+  // Keep barrier posts at natural size regardless of group scale
+  updateBarrierPostConstraints();
 
   // Rotate each memory station on the Y axis to face the user.
   // We only update the horizontal angle so displays never tilt up/down.
