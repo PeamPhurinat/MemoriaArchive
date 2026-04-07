@@ -36,6 +36,13 @@ export const toggleShare = async (projectId, isShared) => {
   return payload;
 };
 
+export const deleteProject = async (projectId) => {
+  if (!projectId) throw new Error("Missing project id.");
+  await apiFetch(`${PROJECT_ENDPOINT}/${encodeURIComponent(projectId)}`, {
+    method: "DELETE",
+  });
+};
+
 export const saveProject = async (project) => {
   if (!project?.id) {
     throw new Error("Missing project id.");

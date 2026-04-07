@@ -13,14 +13,16 @@ export class WalkthroughUI {
     this._titleEl = null;
     this._progressFill = null;
     this._stopButton = null;
+    this._cancelButton = null;
   }
 
   /**
    * Mount UI elements into the given container.
    * @param {HTMLElement} container
    * @param {() => void} onExportClick
+   * @param {() => void} onCancelClick
    */
-  mount(container, onExportClick) {
+  mount(container, onExportClick, onCancelClick) {
     // ── Export button ─────────────────────────────────────────────
     this._button = document.createElement('button');
     this._button.className = 'wt-export-btn';
@@ -49,9 +51,16 @@ export class WalkthroughUI {
     this._progressFill.className = 'wt-progress-fill';
     track.appendChild(this._progressFill);
 
+    // Cancel button (always visible during recording)
+    this._cancelButton = document.createElement('button');
+    this._cancelButton.className = 'wt-cancel-btn';
+    this._cancelButton.textContent = '✕ Cancel';
+    this._cancelButton.addEventListener('click', onCancelClick);
+
     this._overlay.appendChild(this._recBadge);
     this._overlay.appendChild(this._titleEl);
     this._overlay.appendChild(track);
+    this._overlay.appendChild(this._cancelButton);
     container.appendChild(this._overlay);
   }
 
@@ -104,5 +113,6 @@ export class WalkthroughUI {
     this._button?.remove();
     this._overlay?.remove();
     this._stopButton?.remove();
+    this._cancelButton?.remove();
   }
 }

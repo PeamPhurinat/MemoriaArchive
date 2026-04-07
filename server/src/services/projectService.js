@@ -4,8 +4,10 @@ const {
   appendAudioSlot,
   appendProjectPhoto,
   sanitizeProjectId,
+  readProject,
   setMemoryPhoto,
-  setMemoryVideo
+  setMemoryVideo,
+  writeProject
 } = require("../repositories/projectRepository");
 
 const saveAudioAndTranscript = async ({ userId, projectId, file, transcript }) => {
@@ -50,7 +52,12 @@ const saveMemoryPhoto = async ({ userId, projectId, memoryId, file }) => {
     file,
   });
 
-  if (memoryId) {
+  if (memoryId === 'hall-profile') {
+    const project = await readProject(userId, cleanProjectId);
+    project.hallProfilePhoto = photoUrl;
+    project.updatedAt = new Date().toISOString();
+    await writeProject(userId, cleanProjectId, project);
+  } else if (memoryId) {
     await setMemoryPhoto(userId, cleanProjectId, memoryId, photoUrl);
   } else {
     await appendProjectPhoto(userId, cleanProjectId, {

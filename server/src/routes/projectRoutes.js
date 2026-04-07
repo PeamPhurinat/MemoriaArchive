@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   createProject,
+  deleteUserProject,
   getProject,
   listUserProjects,
   upsertProject
@@ -12,5 +13,6 @@ router.get("/", listUserProjects);
 router.post("/", createProject);
 router.get("/:projectId", getProject);
 router.put("/:projectId", upsertProject);
+router.delete("/:projectId", deleteUserProject);
 
 module.exports = router;

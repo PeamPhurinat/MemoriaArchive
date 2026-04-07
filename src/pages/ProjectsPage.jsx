@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const formatDate = (iso) => {
@@ -16,8 +16,20 @@ const formatDate = (iso) => {
 const memoryCount = (p) =>
   p.memories?.length || p.textSlots?.length || 0;
 
-const ProjectsPage = ({ projects, onCreateNew, onSelectProject, loading, syncError }) => {
+const ProjectsPage = ({ projects, onCreateNew, onSelectProject, onDeleteProject, loading, syncError }) => {
   const navigate = useNavigate();
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+  const handleDeleteClick = (id, e) => {
+    e.stopPropagation();
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = (e) => {
+    e.stopPropagation();
+    onDeleteProject(confirmDeleteId);
+    setConfirmDeleteId(null);
+  };
 
   const openProject = (id) => {
     onSelectProject(id);
@@ -112,6 +124,39 @@ const ProjectsPage = ({ projects, onCreateNew, onSelectProject, loading, syncErr
                 >
                   {p.reviewApprovedAt ? 'Open 3D Room' : 'Review + 3D'}
                 </button>
+              </div>
+
+              {/* Delete — shown as confirm step to prevent accidents */}
+              <div
+                style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {confirmDeleteId === p.id ? (
+                  <>
+                    <span style={{ fontSize: '12px', color: '#c07070' }}>Delete this project?</span>
+                    <button
+                      className="ma-btn ma-btn-sm"
+                      style={{ background: 'rgba(160,40,40,0.75)', color: '#fff', border: 'none' }}
+                      onClick={confirmDelete}
+                    >
+                      Yes, delete
+                    </button>
+                    <button
+                      className="ma-btn ma-btn-ghost ma-btn-sm"
+                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="ma-btn ma-btn-ghost ma-btn-sm"
+                    style={{ color: '#8a5555', fontSize: '12px' }}
+                    onClick={(e) => handleDeleteClick(p.id, e)}
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           ))}

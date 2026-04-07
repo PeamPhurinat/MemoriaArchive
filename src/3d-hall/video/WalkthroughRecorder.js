@@ -87,4 +87,18 @@ export class WalkthroughRecorder {
       this._recorder.stop();
     });
   }
+
+  /**
+   * Stop recording and discard all captured data (no download).
+   */
+  cancel() {
+    if (!this.isRecording || !this._recorder) return;
+
+    this._recorder.onstop = () => {
+      this.isRecording = false;
+      this._recorder = null;
+      this._chunks = [];
+    };
+    this._recorder.stop();
+  }
 }

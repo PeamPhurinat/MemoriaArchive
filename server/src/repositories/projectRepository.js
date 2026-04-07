@@ -392,10 +392,28 @@ const appendProjectPhoto = async (userId, projectId, photoData) => {
   return photos[photos.length - 1];
 };
 
+const deleteProject = async (userId, projectId) => {
+  assertSupabaseConfigured();
+  const cleanProjectId = sanitizeProjectId(projectId);
+
+  const { error } = await supabaseAdmin
+    .from("projects")
+    .delete()
+    .eq("id", cleanProjectId)
+    .eq("user_id", userId);
+
+  if (error) {
+    const wrapped = new Error(`Failed to delete project: ${error.message}`);
+    wrapped.status = 500;
+    throw wrapped;
+  }
+};
+
 module.exports = {
   appendAudioSlot,
   appendProjectPhoto,
   createDefaultProjectData,
+  deleteProject,
   getPublicProject,
   listProjects,
   readProject,
