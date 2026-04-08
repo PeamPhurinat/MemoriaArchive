@@ -3,7 +3,6 @@ import {
   createPhotoTexture,
   createMemoryTexture,
   createDescriptionTexture,
-  createVoiceCloudTexture,
   createReadablePanel,
 } from "../textureFactory.js";
 import { createVideoTexture } from "../VideoTextureBuilder.js";
@@ -78,54 +77,85 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
     station.userData.componentLabel = `${themedEntry.year} - ${themedEntry.title}`;
     station.userData.isCustomizable = true;
     station.position.set(themedEntry.x, 0, themedEntry.z);
-    station.rotation.y = themedEntry.side === 1
-      ? THREE.MathUtils.degToRad(45)
-      : THREE.MathUtils.degToRad(-45);
+    station.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === 1 ? 8 : -8);
     this.scene.add(station);
 
-    const orientation = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 12 : -12);
+    // ─── Glow backdrop ลอยหลังรูป ─────────────────────────
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(themedEntry.color),
+      transparent: true,
+      opacity: 0.18,
+      side: THREE.DoubleSide,
+    });
+    const glowPlane = new THREE.Mesh(new THREE.PlaneGeometry(8.8, 6.4), glowMat);
+    glowPlane.position.set(0, 4.4, -0.35);
+    station.add(glowPlane);
 
+    // ─── Photo (hero ตรงกลาง ใหญ่เด่น) ────────────────────
     const photoFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(4.4, 3.4, 0.24),
+      new THREE.BoxGeometry(7.4, 5.2, 0.18),
       new THREE.MeshStandardMaterial({
-        color: 0xededed,
-        emissive: 0x9f9f9f,
-        emissiveIntensity: 0.12,
-        roughness: 0.34,
-        metalness: 0.1,
+        color: 0xffffff,
+        emissive: 0xd4d4d4,
+        emissiveIntensity: 0.25,
+        roughness: 0.18,
+        metalness: 0.06,
       }),
     );
-    photoFrame.position.set(0, 5.2, 0);
-    photoFrame.rotation.y = orientation;
+    photoFrame.position.set(0, 4.4, 0);
     photoFrame.castShadow = true;
     photoFrame.receiveShadow = true;
-
-    const photoPanel = createReadablePanel(3.88, 2.88, new THREE.Texture(), { offset: 0.13 });
+    const photoPanel = createReadablePanel(6.9, 4.7, new THREE.Texture(), { offset: 0.10 });
     photoFrame.add(photoPanel);
     station.add(photoFrame);
 
+    // ─── Description card (gallery plaque ข้างล่างรูป) ─────
+    const descriptionPanel = createReadablePanel(5.0, 2.4, new THREE.Texture(), { offset: 0.03 });
+    descriptionPanel.position.set(0, 1.2, 1.2);
+    station.add(descriptionPanel);
+
+    // ─── Video (companion piece ข้างรูป เอียงเข้าหา) ──────
     const videoFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(3.32, 1.93, 0.2),
+      new THREE.BoxGeometry(4.4, 3.3, 0.16),
       new THREE.MeshStandardMaterial({
-        color: 0xe8e8e8,
-        emissive: 0x8f8f8f,
-        emissiveIntensity: 0.1,
-        roughness: 0.36,
-        metalness: 0.12,
+        color: 0xf2f2f2,
+        emissive: 0xa0a0a0,
+        emissiveIntensity: 0.14,
+        roughness: 0.30,
+        metalness: 0.08,
       }),
     );
-    videoFrame.position.set(themedEntry.side * -4.2, 5.6, -2.8);
-    videoFrame.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? -26 : 26);
+    const vSide = themedEntry.side;
+    videoFrame.position.set(vSide * -6.7, 4.0, -1.8);
+    videoFrame.rotation.y = THREE.MathUtils.degToRad(vSide === -1 ? -22 : 22);
     videoFrame.castShadow = true;
     videoFrame.receiveShadow = true;
-
-    const videoPanel = createReadablePanel(3.18, 1.79, new THREE.Texture(), { offset: 0.13 });
+    const videoPanel = createReadablePanel(4.1, 3.0, new THREE.Texture(), { offset: 0.09 });
     videoFrame.add(videoPanel);
     station.add(videoFrame);
 
-    const photoAspectState = { requestId: 0, currentAspect: 3.88 / 2.88 };
-    const videoAspectState = { requestId: 0, currentAspect: 16 / 9 };
+    // ─── Archive card (accent card ฝั่งตรงข้าม) ───────────
+    const archiveCard = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 3.4, 0.16),
+      new THREE.MeshStandardMaterial({
+        color: 0xfafafa,
+        emissive: 0xa8a8a8,
+        emissiveIntensity: 0.14,
+        roughness: 0.26,
+        metalness: 0.10,
+      }),
+    );
+    archiveCard.position.set(vSide * 5.4, 3.4, -0.8);
+    archiveCard.rotation.y = THREE.MathUtils.degToRad(vSide === -1 ? 16 : -16);
+    archiveCard.castShadow = true;
+    archiveCard.receiveShadow = true;
+    const archivePanel = createReadablePanel(1.82, 2.96, new THREE.Texture(), { offset: 0.09 });
+    archiveCard.add(archivePanel);
+    station.add(archiveCard);
 
+    // ─── Textures ──────────────────────────────────────────
+    const photoAspectState = { requestId: 0, currentAspect: 6.9 / 4.7 };
+    const videoAspectState = { requestId: 0, currentAspect: 16 / 9 };
     photoAspectState.requestId += 1;
     const initialPhotoRequestId = photoAspectState.requestId;
     videoAspectState.requestId += 1;
@@ -136,7 +166,7 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
       (aspect) => {
         if (initialPhotoRequestId !== photoAspectState.requestId) return;
         photoAspectState.currentAspect = aspect;
-        this.applyPhotoFrameAspect(photoFrame, photoPanel, aspect);
+        // Photo frame stays at fixed default size; image is cover-fit on the canvas.
       },
       (aspect) => {
         if (initialVideoRequestId !== videoAspectState.requestId) return;
@@ -150,10 +180,8 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
     );
 
     this.updatePanelTexture(photoPanel, stationTextures.photoTexture);
-    const initialPhotoAspect =
-      stationTextures.photoTexture.userData?.photoAspect ?? photoAspectState.currentAspect;
-    photoAspectState.currentAspect = initialPhotoAspect;
-    this.applyPhotoFrameAspect(photoFrame, photoPanel, initialPhotoAspect);
+
+    this.updatePanelTexture(descriptionPanel, stationTextures.descriptionTexture);
 
     this.updatePanelTexture(
       videoPanel,
@@ -164,72 +192,45 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
     videoAspectState.currentAspect = initialVideoAspect;
     this.applyVideoFrameAspect(videoFrame, videoPanel, initialVideoAspect);
 
-    const archiveCard = new THREE.Mesh(
-      new THREE.BoxGeometry(2.4, 3.6, 0.2),
-      new THREE.MeshStandardMaterial({
-        color: 0xe4e4e4,
-        emissive: 0x8c8c8c,
-        emissiveIntensity: 0.12,
-        roughness: 0.3,
-        metalness: 0.12,
-      }),
+    this.updatePanelTexture(archivePanel, stationTextures.photoFrameTexture);
+
+    // ─── Lighting (warm spotlight บนรูป) ───────────────────
+    const spotlight = new THREE.PointLight(0xfff0e6, 22, 18, 2);
+    spotlight.position.set(0, 7.5, 3.0);
+    station.add(spotlight);
+    this.pulseLights.push({ light: spotlight, base: 22, speed: 0.8 + index * 0.15, range: 4 });
+
+    const accentLight = new THREE.PointLight(
+      new THREE.Color(themedEntry.color), 8, 12, 2
     );
-    archiveCard.position.set(themedEntry.side * 4.8, 3.2, 1.4);
-    archiveCard.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 24 : -24);
-    archiveCard.castShadow = true;
-    archiveCard.receiveShadow = true;
-    const archivePanel = createReadablePanel(1.92, 3.08, stationTextures.photoFrameTexture, { offset: 0.11 });
-    archiveCard.add(archivePanel);
-    station.add(archiveCard);
+    accentLight.position.set(0, 2.0, 2.5);
+    station.add(accentLight);
+    this.pulseLights.push({ light: accentLight, base: 8, speed: 1.2 + index * 0.1, range: 3 });
 
-    const descriptionPanel = createReadablePanel(3.9, 2.45, stationTextures.descriptionTexture, {
-      offset: 0.03,
-    });
-    descriptionPanel.position.set(themedEntry.side * 3.2, 2.1, -4.2);
-    descriptionPanel.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 12 : -12);
-    station.add(descriptionPanel);
-
-    const voiceCloud = createReadablePanel(4.2, 2.3, stationTextures.voiceTexture, {
-      offset: 0.03,
-      depthWrite: false,
-    });
-    voiceCloud.position.set(themedEntry.side * 3.8, 8.2, 1.2);
-    voiceCloud.rotation.y = THREE.MathUtils.degToRad(themedEntry.side === -1 ? 15 : -15);
-    station.add(voiceCloud);
-
-    const beacon = new THREE.PointLight(index % 2 === 0 ? 0xf0f0f0 : 0xbcbcbc, 16, 16, 2);
-    beacon.position.set(0, 4.4, 1.8);
-    station.add(beacon);
-    this.pulseLights.push({
-      light: beacon,
-      base: 16,
-      speed: 1 + index * 0.18,
-      range: 3,
-    });
-
-    const cloudPedestal = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.5, 2.4, 0.45, 32),
+    // ─── Pedestal ──────────────────────────────────────────
+    const pedestal = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.2, 3.0, 0.3, 48),
       new THREE.MeshStandardMaterial({
-        color: 0xf8f8f8,
-        emissive: 0x8e8e8e,
-        emissiveIntensity: 0.18,
+        color: 0xffffff,
+        emissive: 0xc0c0c0,
+        emissiveIntensity: 0.22,
         transparent: true,
-        opacity: 0.62,
-        roughness: 0.92,
+        opacity: 0.50,
+        roughness: 0.85,
         metalness: 0.02,
       }),
     );
-    cloudPedestal.position.set(0, 0.26, 0);
-    cloudPedestal.scale.set(1.4, 1, 1.1);
-    cloudPedestal.receiveShadow = true;
-    station.add(cloudPedestal);
+    pedestal.position.set(0, 0.16, 0.4);
+    pedestal.scale.set(1.5, 1, 1.0);
+    pedestal.receiveShadow = true;
+    station.add(pedestal);
 
-    this.animatedObjects.push({ object: photoFrame,       baseY: 5.2, floatAmount: 0.16, floatSpeed: 0.55 + index * 0.08, spinSpeed: 0 });
-    this.animatedObjects.push({ object: archiveCard,      baseY: 3.2, floatAmount: 0.14, floatSpeed: 0.72 + index * 0.06, spinSpeed: 0 });
-    this.animatedObjects.push({ object: videoFrame,       baseY: 5.6, floatAmount: 0.11, floatSpeed: 0.78 + index * 0.07, spinSpeed: 0 });
-    this.animatedObjects.push({ object: descriptionPanel, baseY: 2.1, floatAmount: 0.12, floatSpeed: 0.9  + index * 0.08, spinSpeed: 0 });
-    this.animatedObjects.push({ object: voiceCloud,       baseY: 8.2, floatAmount: 0.2,  floatSpeed: 0.8  + index * 0.12, spinSpeed: 0 });
-
+    // ─── Animation ─────────────────────────────────────────
+    this.animatedObjects.push({ object: photoFrame,       baseY: 4.4,  floatAmount: 0.12, floatSpeed: 0.45 + index * 0.06, spinSpeed: 0 });
+    this.animatedObjects.push({ object: descriptionPanel, baseY: 1.2,  floatAmount: 0.06, floatSpeed: 0.50 + index * 0.05, spinSpeed: 0 });
+    this.animatedObjects.push({ object: videoFrame,       baseY: 4.0,  floatAmount: 0.10, floatSpeed: 0.60 + index * 0.07, spinSpeed: 0 });
+    this.animatedObjects.push({ object: archiveCard,      baseY: 3.4,  floatAmount: 0.10, floatSpeed: 0.55 + index * 0.06, spinSpeed: 0 });
+    this.animatedObjects.push({ object: glowPlane,        baseY: 4.4,  floatAmount: 0.12, floatSpeed: 0.45 + index * 0.06, spinSpeed: 0 });
     this.memoryStations.push({
       index,
       station,
@@ -238,7 +239,6 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
         title: themedEntry.title,
         note: themedEntry.note,
         description: themedEntry.description,
-        voice: themedEntry.voice,
         side: themedEntry.side,
         photo: themedEntry.photo || null,
         video: themedEntry.video || null,
@@ -249,7 +249,6 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
       videoFrame,
       archivePanel,
       descriptionPanel,
-      voiceCloud,
       textures: stationTextures,
       photoAspectState,
       videoAspectState,
@@ -283,9 +282,6 @@ export function createMemoryStationTextures(
   const descriptionTexture = createDescriptionTexture(entry, this.activeThemeKey);
   descriptionTexture.colorSpace = THREE.SRGBColorSpace;
 
-  const voiceTexture = createVoiceCloudTexture(entry.voice, entry.color, this.activeThemeKey);
-  voiceTexture.colorSpace = THREE.SRGBColorSpace;
-
   const { videoTexture, videoFallbackTexture } = createVideoTexture(
     entry,
     onVideoAspectChange,
@@ -296,7 +292,6 @@ export function createMemoryStationTextures(
     photoTexture,
     photoFrameTexture,
     descriptionTexture,
-    voiceTexture,
     videoTexture,
     videoFallbackTexture,
   };
@@ -329,6 +324,7 @@ export function applyMediaFrameAspect(frame, panel, aspect, options = {}) {
   const minAspect = options.minAspect ?? 0.9;
   const maxAspect = options.maxAspect ?? 2.2;
   const maxLandscapeScale = options.maxLandscapeScale ?? 1.3;
+  const frameDepth = options.frameDepth ?? 0.16;
 
   const baseInnerAspect = baseInnerWidth / baseInnerHeight;
   const boundedAspect = THREE.MathUtils.clamp(aspect, minAspect, maxAspect);
@@ -346,7 +342,7 @@ export function applyMediaFrameAspect(frame, panel, aspect, options = {}) {
   const outerHeight = innerHeight + frameBorder * 2;
 
   frame.geometry.dispose?.();
-  frame.geometry = new THREE.BoxGeometry(outerWidth, outerHeight, 0.24);
+  frame.geometry = new THREE.BoxGeometry(outerWidth, outerHeight, frameDepth);
 
   this.resizeReadablePanel(panel, innerWidth, innerHeight);
   frame.scale.set(1, 1, 1);
@@ -354,9 +350,9 @@ export function applyMediaFrameAspect(frame, panel, aspect, options = {}) {
 
 export function applyPhotoFrameAspect(photoFrame, photoPanel, aspect) {
   this.applyMediaFrameAspect(photoFrame, photoPanel, aspect, {
-    baseInnerWidth: 3.88,
-    baseInnerHeight: 2.88,
-    frameBorder: 0.06,
+    baseInnerWidth: 6.9,
+    baseInnerHeight: 4.7,
+    frameBorder: 0.25,
     minAspect: 0.9,
     maxAspect: 2.2,
     maxLandscapeScale: 1.3,
@@ -365,12 +361,13 @@ export function applyPhotoFrameAspect(photoFrame, photoPanel, aspect) {
 
 export function applyVideoFrameAspect(videoFrame, videoPanel, aspect) {
   this.applyMediaFrameAspect(videoFrame, videoPanel, aspect, {
-    baseInnerWidth: 3.68,
-    baseInnerHeight: 2.79,
-    frameBorder: 0.06,
+    baseInnerWidth: 4.1,
+    baseInnerHeight: 3.0,
+    frameBorder: 0.15,
     minAspect: 0.56,
     maxAspect: 2.4,
     maxLandscapeScale: 1.2,
+    frameDepth: 0.16,
   });
 }
 

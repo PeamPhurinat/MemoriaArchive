@@ -5,7 +5,7 @@ import * as THREE from "three";
 
 export function createMuseumHall() {
   // --- Default dimensions ---
-  const HW       = 20;
+  const HW       = 24;
   const HH       = 17;
   const FRONT_Z  = 26;
   const BACK_Z   = -120;
