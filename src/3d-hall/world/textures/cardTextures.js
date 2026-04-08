@@ -2,111 +2,173 @@ import * as THREE from "three";
 import { getTextureThemePalette, roundedRect, wrapText } from "./themePalette.js";
 
 export function createMemoryTexture(title, subtitle, accentColor, themeKey = "dream") {
+  void themeKey;
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 768;
   const context = canvas.getContext("2d");
 
-  const palette = getTextureThemePalette(themeKey);
-  const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, palette.cardStops[0]);
-  gradient.addColorStop(0.52, palette.cardStops[1]);
-  gradient.addColorStop(1, palette.cardStops[2]);
-  context.fillStyle = gradient;
+  // White/cream background matching the photo frame aesthetic
+  context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
 
+  // Subtle warm gradient overlay
+  const bgGrad = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+  bgGrad.addColorStop(0, "rgba(255,245,252,1)");
+  bgGrad.addColorStop(1, "rgba(248,232,244,1)");
+  context.fillStyle = bgGrad;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Accent color bar on the left edge
   context.fillStyle = accentColor;
-  context.globalAlpha = 0.22;
+  context.globalAlpha = 0.85;
+  context.fillRect(0, 0, 18, canvas.height);
+  context.globalAlpha = 1;
+
+  // Thin outer border matching the frame color
+  context.strokeStyle = "rgba(200,170,190,0.5)";
+  context.lineWidth = 6;
+  roundedRect(context, 3, 3, canvas.width - 6, canvas.height - 6, 8);
+  context.stroke();
+
+  // "MEMORY" label
+  context.fillStyle = accentColor;
+  context.font = "700 20px Segoe UI";
+  context.globalAlpha = 0.85;
+  context.fillText("MEMORY", 46, 80);
+  context.globalAlpha = 1;
+
+  // Title — large and bold
+  context.fillStyle = "#2a1a28";
+  context.font = "700 62px Segoe UI";
+  wrapText(context, title, 46, 168, 420, 68);
+
+  // Divider line
+  context.strokeStyle = accentColor;
+  context.globalAlpha = 0.5;
+  context.lineWidth = 3;
   context.beginPath();
-  context.arc(388, 152, 110, 0, Math.PI * 2);
+  context.moveTo(46, 300);
+  context.lineTo(canvas.width - 46, 300);
+  context.stroke();
+  context.globalAlpha = 1;
+
+  // Subtitle
+  context.fillStyle = "#6b4060";
+  context.font = "500 28px Segoe UI";
+  wrapText(context, subtitle, 46, 360, 420, 40);
+
+  // Decorative wave lines — softer, matching frame palette
+  context.strokeStyle = accentColor;
+  context.globalAlpha = 0.18;
+  context.lineWidth = 3;
+  [480, 540, 600, 660].forEach((y, i) => {
+    context.beginPath();
+    context.moveTo(46, y);
+    context.bezierCurveTo(
+      160, y - 34 + i * 4,
+      310, y + 34 - i * 3,
+      canvas.width - 46, y - 14 + i * 5,
+    );
+    context.stroke();
+  });
+  context.globalAlpha = 1;
+
+  // Bottom avatar circle placeholder
+  context.fillStyle = accentColor;
+  context.globalAlpha = 0.2;
+  context.beginPath();
+  context.arc(100, 710, 36, 0, Math.PI * 2);
   context.fill();
   context.globalAlpha = 1;
 
-  context.strokeStyle = "rgba(255,255,255,0.2)";
-  context.lineWidth = 4;
-  roundedRect(context, 34, 34, 444, 700, 34);
-  context.stroke();
-
-  context.fillStyle = palette.titleInk;
-  context.font = "700 22px Segoe UI";
-  context.fillText("DREAM MEMORY", 60, 92);
-
-  context.fillStyle = "#ffffff";
-  context.font = "700 56px Segoe UI";
-  wrapText(context, title, 60, 182, 394, 60);
-
-  context.fillStyle = "#ffffff";
-  context.font = "400 28px Segoe UI";
-  wrapText(context, subtitle, 60, 326, 380, 42);
-
-  context.strokeStyle = palette.waveInk;
-  context.lineWidth = 2;
-  context.beginPath();
-  context.moveTo(60, 430);
-  context.bezierCurveTo(156, 380, 278, 510, 426, 444);
-  context.stroke();
-  context.beginPath();
-  context.moveTo(60, 488);
-  context.bezierCurveTo(182, 442, 278, 566, 426, 512);
-  context.stroke();
-  context.beginPath();
-  context.moveTo(60, 548);
-  context.bezierCurveTo(136, 496, 282, 628, 426, 572);
-  context.stroke();
-
-  context.fillStyle = "rgba(255,255,255,0.88)";
-  context.beginPath();
-  context.arc(116, 646, 38, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = "#ffffff";
-  context.fillRect(176, 622, 210, 10);
-  context.fillRect(176, 648, 166, 10);
-  context.fillRect(176, 674, 236, 10);
+  context.fillStyle = accentColor;
+  context.globalAlpha = 0.5;
+  context.fillRect(156, 692, 200, 9);
+  context.fillRect(156, 716, 150, 9);
+  context.globalAlpha = 1;
 
   return new THREE.CanvasTexture(canvas);
 }
 
 export function createDescriptionTexture(entry, themeKey = "dream") {
+  const palette = getTextureThemePalette(themeKey);
   const canvas = document.createElement("canvas");
   canvas.width = 720;
   canvas.height = 420;
-  const context = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d");
 
-  const palette = getTextureThemePalette(themeKey);
-  const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, palette.descriptionStops[0]);
-  gradient.addColorStop(1, palette.descriptionStops[1]);
-  context.fillStyle = gradient;
-  roundedRect(context, 16, 16, 688, 388, 34);
-  context.fill();
+  // White background matching photo/video frames
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  context.strokeStyle = entry.color;
-  context.lineWidth = 4;
-  roundedRect(context, 16, 16, 688, 388, 34);
-  context.stroke();
+  const bgGrad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  bgGrad.addColorStop(0, "rgba(255,247,253,1)");
+  bgGrad.addColorStop(1, "rgba(248,234,244,1)");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  context.fillStyle = palette.descriptionYear;
-  context.font = "700 24px Segoe UI";
-  context.fillText(entry.year, 46, 72);
+  // Accent left bar
+  ctx.fillStyle = entry.color;
+  ctx.globalAlpha = 0.85;
+  ctx.fillRect(0, 0, 16, canvas.height);
+  ctx.globalAlpha = 1;
 
-  context.fillStyle = palette.descriptionBody;
-  context.font = "700 38px Segoe UI";
-  wrapText(context, entry.title, 46, 126, 480, 44);
+  // Thin border
+  ctx.strokeStyle = "rgba(200,170,190,0.45)";
+  ctx.lineWidth = 5;
+  roundedRect(ctx, 3, 3, canvas.width - 6, canvas.height - 6, 10);
+  ctx.stroke();
 
-  context.fillStyle = palette.descriptionYear;
-  context.font = "600 22px Segoe UI";
-  context.fillText(entry.note, 46, 192);
+  // Memory number badge — pill shape, very visible
+  const badgeX = 40;
+  const badgeY = 28;
+  const badgeH = 46;
+  const badgeLabel = `#${entry.year}`;
+  ctx.font = "700 26px Segoe UI";
+  const badgeW = Math.max(80, ctx.measureText(badgeLabel).width + 36);
+  ctx.fillStyle = entry.color;
+  ctx.globalAlpha = 0.92;
+  roundedRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(badgeLabel, badgeX + 18, badgeY + 33);
 
-  context.fillStyle = palette.descriptionBody;
-  context.font = "400 24px Segoe UI";
-  wrapText(context, entry.description, 46, 246, 610, 34);
+  // Title
+  ctx.fillStyle = "#2a1a28";
+  ctx.font = "700 48px Segoe UI";
+  wrapText(ctx, entry.title, 40, 130, 640, 54);
 
-  context.fillStyle = palette.descriptionLines[0];
-  context.fillRect(46, 338, 170, 12);
-  context.fillStyle = palette.descriptionLines[1];
-  context.fillRect(46, 364, 290, 12);
-  context.fillRect(356, 364, 122, 12);
+  // Divider
+  ctx.strokeStyle = entry.color;
+  ctx.globalAlpha = 0.4;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(40, 198);
+  ctx.lineTo(canvas.width - 40, 198);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Note / category label
+  ctx.fillStyle = entry.color;
+  ctx.font = "600 22px Segoe UI";
+  ctx.globalAlpha = 0.9;
+  ctx.fillText(entry.note, 40, 236);
+  ctx.globalAlpha = 1;
+
+  // Description body
+  ctx.fillStyle = "#5a3a54";
+  ctx.font = "400 26px Segoe UI";
+  wrapText(ctx, entry.description, 40, 282, 640, 36);
+
+  // Bottom accent line
+  ctx.fillStyle = entry.color;
+  ctx.globalAlpha = 0.35;
+  ctx.fillRect(40, 382, 120, 7);
+  ctx.fillStyle = palette.descriptionLines[1];
+  ctx.fillRect(172, 382, 80, 7);
+  ctx.globalAlpha = 1;
 
   return new THREE.CanvasTexture(canvas);
 }
@@ -128,7 +190,7 @@ export function createVoiceCloudTexture(text, accentColor, themeKey = "dream") {
   const bh  = 310;
   const rad = 32;
 
-  ctx.strokeStyle = palette.voiceGlowRing;
+  ctx.strokeStyle = accentColor;
   ctx.lineWidth   = 2.5;
   roundedRect(ctx, bx - 6, by - 6, bw + 12, bh + 12, rad + 4);
   ctx.stroke();
@@ -218,7 +280,7 @@ export function createVoiceCloudTexture(text, accentColor, themeKey = "dream") {
   ctx.closePath();
   ctx.fill();
 
-  ctx.strokeStyle = palette.voiceGlowRing;
+  ctx.strokeStyle = accentColor;
   ctx.lineWidth   = 2;
   ctx.lineJoin    = "round";
   ctx.beginPath();

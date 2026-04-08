@@ -633,13 +633,12 @@ function initializeCustomizer() {
 // ================================================================
 function updateCustomModeMovement(delta) {
   if (customState.mode !== "custom" || customDrag.isPointerDown || transformControls.dragging) return;
-  if (!movement.forward && !movement.backward && !movement.left && !movement.right) return;
+  if (!movement.forward && !movement.backward && !movement.left && !movement.right && !movement.up && !movement.down) return;
 
   const step = delta * 7 * (movement.sprint ? 1.25 : 1);
   const forward = new THREE.Vector3();
   camera.getWorldDirection(forward);
   forward.y = 0;
-  if (forward.lengthSq() === 0) return;
   forward.normalize();
   const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
@@ -648,11 +647,13 @@ function updateCustomModeMovement(delta) {
   if (movement.backward) movementOffset.addScaledVector(forward, -step);
   if (movement.left)     movementOffset.addScaledVector(right, -step);
   if (movement.right)    movementOffset.addScaledVector(right, step);
+  if (movement.up)       movementOffset.y += step;
+  if (movement.down)     movementOffset.y -= step;
 
   controlObject.position.add(movementOffset);
   controlObject.position.x = THREE.MathUtils.clamp(controlObject.position.x, -world.size + 8, world.size - 8);
   controlObject.position.z = THREE.MathUtils.clamp(controlObject.position.z, -world.size + 8, world.size - 8);
-  controlObject.position.y = world.minY;
+  controlObject.position.y = THREE.MathUtils.clamp(controlObject.position.y, world.minY, world.maxY);
 
   orbitControls.target.add(movementOffset);
   orbitControls.target.x = THREE.MathUtils.clamp(orbitControls.target.x, -world.size + 8, world.size - 8);

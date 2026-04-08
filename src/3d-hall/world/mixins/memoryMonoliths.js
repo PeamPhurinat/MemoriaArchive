@@ -116,7 +116,7 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
 
     // ─── Video (companion piece ข้างรูป เอียงเข้าหา) ──────
     const videoFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(3.6, 2.1, 0.16),
+      new THREE.BoxGeometry(4.4, 3.3, 0.16),
       new THREE.MeshStandardMaterial({
         color: 0xf2f2f2,
         emissive: 0xa0a0a0,
@@ -126,11 +126,11 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
       }),
     );
     const vSide = themedEntry.side;
-    videoFrame.position.set(vSide * -5.2, 4.0, -1.8);
+    videoFrame.position.set(vSide * -6.7, 4.0, -1.8);
     videoFrame.rotation.y = THREE.MathUtils.degToRad(vSide === -1 ? -22 : 22);
     videoFrame.castShadow = true;
     videoFrame.receiveShadow = true;
-    const videoPanel = createReadablePanel(3.3, 1.9, new THREE.Texture(), { offset: 0.09 });
+    const videoPanel = createReadablePanel(4.1, 3.0, new THREE.Texture(), { offset: 0.09 });
     videoFrame.add(videoPanel);
     station.add(videoFrame);
 
@@ -166,7 +166,7 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
       (aspect) => {
         if (initialPhotoRequestId !== photoAspectState.requestId) return;
         photoAspectState.currentAspect = aspect;
-        this.applyPhotoFrameAspect(photoFrame, photoPanel, aspect);
+        // Photo frame stays at fixed default size; image is cover-fit on the canvas.
       },
       (aspect) => {
         if (initialVideoRequestId !== videoAspectState.requestId) return;
@@ -180,10 +180,6 @@ export function createMemoryMonoliths(memoriesData = this.memoriesData) {
     );
 
     this.updatePanelTexture(photoPanel, stationTextures.photoTexture);
-    const initialPhotoAspect =
-      stationTextures.photoTexture.userData?.photoAspect ?? photoAspectState.currentAspect;
-    photoAspectState.currentAspect = initialPhotoAspect;
-    this.applyPhotoFrameAspect(photoFrame, photoPanel, initialPhotoAspect);
 
     this.updatePanelTexture(descriptionPanel, stationTextures.descriptionTexture);
 
@@ -328,6 +324,7 @@ export function applyMediaFrameAspect(frame, panel, aspect, options = {}) {
   const minAspect = options.minAspect ?? 0.9;
   const maxAspect = options.maxAspect ?? 2.2;
   const maxLandscapeScale = options.maxLandscapeScale ?? 1.3;
+  const frameDepth = options.frameDepth ?? 0.16;
 
   const baseInnerAspect = baseInnerWidth / baseInnerHeight;
   const boundedAspect = THREE.MathUtils.clamp(aspect, minAspect, maxAspect);
@@ -345,7 +342,7 @@ export function applyMediaFrameAspect(frame, panel, aspect, options = {}) {
   const outerHeight = innerHeight + frameBorder * 2;
 
   frame.geometry.dispose?.();
-  frame.geometry = new THREE.BoxGeometry(outerWidth, outerHeight, 0.24);
+  frame.geometry = new THREE.BoxGeometry(outerWidth, outerHeight, frameDepth);
 
   this.resizeReadablePanel(panel, innerWidth, innerHeight);
   frame.scale.set(1, 1, 1);
@@ -364,12 +361,13 @@ export function applyPhotoFrameAspect(photoFrame, photoPanel, aspect) {
 
 export function applyVideoFrameAspect(videoFrame, videoPanel, aspect) {
   this.applyMediaFrameAspect(videoFrame, videoPanel, aspect, {
-    baseInnerWidth: 3.3,
-    baseInnerHeight: 1.9,
+    baseInnerWidth: 4.1,
+    baseInnerHeight: 3.0,
     frameBorder: 0.15,
     minAspect: 0.56,
     maxAspect: 2.4,
     maxLandscapeScale: 1.2,
+    frameDepth: 0.16,
   });
 }
 

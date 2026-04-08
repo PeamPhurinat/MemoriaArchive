@@ -26,14 +26,8 @@ export class AppShell {
         <button class="launch" type="button">Enter the realm</button>
         <button class="menu-toggle" type="button" aria-expanded="false">Menu</button>
         <section class="menu-panel" aria-label="World menu">
-          <button class="mode-toggle menu-action" type="button" aria-pressed="false">
-            <span class="menu-icon" aria-hidden="true"></span>
-            <span>Custom Mode</span>
-          </button>
-          <button class="theme-toggle menu-action" type="button" aria-expanded="false">
-            <span class="menu-icon" aria-hidden="true"></span>
-            <span>Select Theme</span>
-          </button>
+          <button class="mode-toggle menu-action" type="button" aria-pressed="false">Custom Mode</button>
+          <button class="theme-toggle menu-action" type="button" aria-expanded="false">Select Theme</button>
           <div class="theme-picker" aria-label="Theme options">
             <button class="theme-option is-active" type="button" data-theme="dream">
               <span class="theme-preview theme-preview-dream" aria-hidden="true"></span>

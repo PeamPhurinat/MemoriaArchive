@@ -1,10 +1,18 @@
 import * as THREE from 'three';
 
-const CAM_HEIGHT = 1.7;
+const CAM_HEIGHT = 2.6;
 const FRAME_HEIGHT = 4.4;
-const STAND_BACK = 8;    // units behind each station the camera stands
+const STAND_BACK = 9.5;  // units behind each station the camera stands
 const TRAVEL_TIME = 3.5; // seconds flying between stations
-const HOLD_TIME = 3;   // seconds pausing at each station
+const HOLD_TIME = 3;     // seconds pausing at each station
+
+// Back wall profile picture (must match backWallFrame.js / museumHall.js)
+const BACK_WALL_Z      = -120;
+const BACK_FRAME_Y     =  8.5;
+const OUTRO_CAM_Z      = BACK_WALL_Z + 22;  // stand 22 units in front of the back wall
+const OUTRO_CAM_Y      =  5.5;
+const OUTRO_TRAVEL     =  4.5;  // seconds to glide to the back wall
+const OUTRO_HOLD       =  4.0;  // seconds to linger on the profile picture
 
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -75,6 +83,30 @@ export class CameraPath {
 
       prevPos = toPos.clone();
       prevLook = toLook.clone();
+    });
+
+    // Outro: glide to the back wall and hold on the profile picture
+    const outroPos  = new THREE.Vector3(0, OUTRO_CAM_Y, OUTRO_CAM_Z);
+    const outroLook = new THREE.Vector3(0, BACK_FRAME_Y, BACK_WALL_Z);
+
+    this._segments.push({
+      fromPos:  prevPos.clone(),
+      fromLook: prevLook.clone(),
+      toPos:    outroPos.clone(),
+      toLook:   outroLook.clone(),
+      duration: OUTRO_TRAVEL,
+      type:     'travel',
+      title:    '',
+    });
+
+    this._segments.push({
+      fromPos:  outroPos.clone(),
+      fromLook: outroLook.clone(),
+      toPos:    outroPos.clone(),
+      toLook:   outroLook.clone(),
+      duration: OUTRO_HOLD,
+      type:     'outro',
+      title:    'End of Archive',
     });
 
     this.totalDuration = this._segments.reduce((sum, s) => sum + s.duration, 0);
