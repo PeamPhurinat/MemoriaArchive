@@ -18,22 +18,23 @@ TC-01-01: Auth Page Displays Sign In Form By Default
     Wait Until Element Is Visible    css:button.ma-auth-submit
 
 TC-01-02: Switch To Sign Up Mode
-    [Documentation]    Verify clicking Sign Up tab changes form title and button label.
+    [Documentation]    Verify clicking the footer sign-up link changes form title and button label.
     ...                Maps to: FR-1.1
     [Tags]    auth    smoke    priority-high
-    Click Element    xpath=//button[contains(@class,'ma-auth-mode') and normalize-space()='Sign Up']
+    Click Element    xpath=//button[contains(@class,'ma-auth-footer-link') and normalize-space()='Create one']
     ${title}=    Get Text    css:.ma-auth-title
     Should Be Equal    ${title}    Create account
     ${submit}=    Get Text    css:button.ma-auth-submit
-    Should Be Equal    ${submit}    Create Account
+    Should Be Equal    ${submit}    Create account
 
 TC-01-03: Sign Up With Invalid Email Format Shows Browser Validation
     [Documentation]    Verify HTML5 email validation prevents submission with bad email.
     ...                Maps to: FR-1.1
     [Tags]    auth    validation    priority-high
-    Click Element    xpath=//button[contains(@class,'ma-auth-mode') and normalize-space()='Sign Up']
+    Click Element    xpath=//button[contains(@class,'ma-auth-footer-link') and normalize-space()='Create one']
     Input Text      id:auth-email       not-an-email
     Input Password  id:auth-password    TestPass123!
+    Input Password  id:auth-confirm-password    TestPass123!
     Click Element   css:button.ma-auth-submit
     Location Should Be    ${BASE_URL}/auth
 
@@ -41,9 +42,10 @@ TC-01-04: Sign Up With Password Too Short Shows Browser Validation
     [Documentation]    Verify minLength=6 on password input prevents weak password submit.
     ...                Maps to: FR-1.1
     [Tags]    auth    validation    priority-medium
-    Click Element    xpath=//button[contains(@class,'ma-auth-mode') and normalize-space()='Sign Up']
+    Click Element    xpath=//button[contains(@class,'ma-auth-footer-link') and normalize-space()='Create one']
     Input Text      id:auth-email       valid@example.com
     Input Password  id:auth-password    abc
+    Input Password  id:auth-confirm-password    abc
     Click Element   css:button.ma-auth-submit
     Location Should Be    ${BASE_URL}/auth
 

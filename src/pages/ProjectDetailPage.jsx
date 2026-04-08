@@ -5,7 +5,7 @@ import { toggleShare } from '../services/projectApi';
 
 const formatDate = (iso) => {
   try {
-    return new Date(iso).toLocaleDateString('th-TH', {
+    return new Date(iso).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -244,20 +244,20 @@ const ProjectDetailPage = ({ project, setProject }) => {
               className="ma-btn ma-btn-primary"
               onClick={() => navigate('/interview')}
             >
-              🎤 AI Interview
+              AI Interview
             </button>
             <button
               className="ma-btn ma-btn-accent"
               onClick={() => navigate(project.reviewApprovedAt ? '/memory-hall' : '/review')}
             >
-              {project.reviewApprovedAt ? '🧊 Open 3D Room' : '🧊 Review & Generate 3D'}
+              {project.reviewApprovedAt ? 'Open 3D Room' : 'Review & Generate 3D'}
             </button>
             <button
               className={`ma-btn ${isShared ? 'ma-btn-accent' : 'ma-btn-ghost'}`}
               onClick={handleToggleShare}
               disabled={shareLoading}
             >
-              {shareLoading ? '...' : isShared ? '🔗 Shared (click to stop)' : '🔗 Share'}
+              {shareLoading ? '...' : isShared ? 'Shared (click to stop)' : 'Share'}
             </button>
           </div>
 
@@ -371,9 +371,9 @@ const ProjectDetailPage = ({ project, setProject }) => {
           {memories.length === 0 ? (
             <div className="ma-empty">
               <div className="ma-empty-icon">🌙</div>
-              <p className="ma-empty-title">ยังไม่มี memories</p>
+              <p className="ma-empty-title">No memories yet</p>
               <p className="ma-empty-sub">
-                เริ่มด้วยการกด AI Interview หรือเพิ่มเองได้เลย
+                Start with AI Interview or add memories manually.
               </p>
             </div>
           ) : (
@@ -381,7 +381,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
               {memories.map((mem, i) => (
                 <div key={mem.id} className="ma-memory-item">
                   {/* Photo slot */}
-                  <label className="ma-memory-photo" title="คลิกเพื่อใส่รูป">
+                  <label className="ma-memory-photo" title="Click to upload photo">
                     {uploadingPhotoById[mem.id] ? (
                       <span className="ma-memory-photo-icon">⏳</span>
                     ) : mem.photo ? (
@@ -398,7 +398,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
                   </label>
 
                   {/* Video slot */}
-                  <label className="ma-memory-photo" title="คลิกเพื่อใส่วิดิโอ" style={{ background: '#1a1428' }}>
+                  <label className="ma-memory-photo" title="Click to upload video" style={{ background: '#1a1428' }}>
                     {mem.video ? (
                       <video
                         src={mem.video}
@@ -436,7 +436,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
                       onChange={(e) =>
                         updateMemory(mem.id, 'description', e.target.value)
                       }
-                      placeholder="เพิ่มคำอธิบาย..."
+                      placeholder="Add a description..."
                       rows={2}
                     />
                     {mem.emotion && (
@@ -470,7 +470,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
                   <button
                     className="ma-memory-delete"
                     onClick={() => deleteMemory(mem.id)}
-                    title="ลบ"
+                    title="Delete"
                   >
                     ✕
                   </button>
@@ -487,10 +487,9 @@ const ProjectDetailPage = ({ project, setProject }) => {
         </div>
       ) : null}
       {/* Save toast */}
-      <div className={`ma-save-toast ${saved ? 'visible' : ''}`}>✓ บันทึกแล้ว</div>
+      <div className={`ma-save-toast ${saved ? 'visible' : ''}`}>Saved</div>
     </div>
   );
 };
 
 export default ProjectDetailPage;
-

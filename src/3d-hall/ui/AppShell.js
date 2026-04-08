@@ -24,14 +24,12 @@ export class AppShell {
         </section>
         <button class="back-to-project" type="button">Back to Project</button>
         <button class="launch" type="button">Enter the realm</button>
-        <button class="menu-toggle" type="button" aria-expanded="false">☰ Menu</button>
+        <button class="menu-toggle" type="button" aria-expanded="false">Menu</button>
         <section class="menu-panel" aria-label="World menu">
           <button class="mode-toggle menu-action" type="button" aria-pressed="false">
-            <span class="menu-icon" aria-hidden="true">⚙</span>
             <span>Custom Mode</span>
           </button>
           <button class="theme-toggle menu-action" type="button" aria-expanded="false">
-            <span class="menu-icon" aria-hidden="true">🖌️</span>
             <span>Select Theme</span>
           </button>
           <div class="theme-picker" aria-label="Theme options">

@@ -67,11 +67,11 @@ TC-04-04: Review Page Shows Videos Section
     [Tags]    review    smoke    priority-medium
     Wait Until Element Is Visible    xpath=//h2[normalize-space()='Videos']
 
-TC-04-05: Review Page Shows Audio Transcripts Section
-    [Documentation]    Verify the Audio Transcripts section is rendered.
+TC-04-05: Review Page Does Not Show Audio Transcripts Section
+    [Documentation]    Verify the Audio Transcripts section is not rendered.
     ...                Maps to: FR-5.1
     [Tags]    review    smoke    priority-medium
-    Wait Until Element Is Visible    xpath=//h2[normalize-space()='Audio Transcripts']
+    Page Should Not Contain Element    xpath=//h2[normalize-space()='Audio Transcripts']
 
 TC-04-06: Generate 3D Room Button Is Enabled When Content Exists
     [Documentation]    Verify the Generate 3D Room button is clickable when there is content.

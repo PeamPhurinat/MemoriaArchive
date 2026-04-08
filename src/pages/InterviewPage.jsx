@@ -216,7 +216,7 @@ const InterviewPage = ({ project, setProject }) => {
 
   const handleStart = async () => {
     if (!userName.trim()) {
-      setErrorMessage('กรุณาใส่ชื่อก่อนเริ่ม');
+      setErrorMessage('Please enter your name before starting.');
       return;
     }
     try {
@@ -265,7 +265,7 @@ const InterviewPage = ({ project, setProject }) => {
 
   const startListening = async () => {
     if (!hasActiveSession || isProcessing || voiceState === 'listening') return;
-    stopSpeaking(); // หยุด AI พูดก่อนที่ user จะเริ่มพูด
+    stopSpeaking();
     setErrorMessage('');
 
     try {
@@ -310,7 +310,7 @@ const InterviewPage = ({ project, setProject }) => {
             projectId: project.id,
             audioBlob: blob,
             filename: 'voice.webm',
-            language: 'th',
+            language: 'en',
           });
           const transcript = (sttResult.transcript || '').trim();
           if (transcript) {
@@ -319,7 +319,7 @@ const InterviewPage = ({ project, setProject }) => {
             setVoiceState('idle');
           }
         } catch (err) {
-          setErrorMessage('ถอดเสียงไม่สำเร็จ: ' + (err.message || 'ลองใหม่อีกครั้ง'));
+          setErrorMessage('Transcription failed: ' + (err.message || 'Please try again.'));
           setVoiceState('idle');
         }
       };
@@ -363,7 +363,7 @@ const InterviewPage = ({ project, setProject }) => {
       vadFrameRef.current = requestAnimationFrame(tick);
 
     } catch {
-      setErrorMessage('ไม่สามารถเข้าถึงไมโครโฟนได้ กรุณาอนุญาตสิทธิ์ก่อน');
+      setErrorMessage('Unable to access microphone. Please grant permission first.');
       setVoiceState('idle');
     }
   };
@@ -416,21 +416,21 @@ const InterviewPage = ({ project, setProject }) => {
     : {};
 
   const stateLabel = {
-    idle: result ? 'สัมภาษณ์เสร็จสิ้น' : 'แตะไมค์เพื่อเริ่มพูด',
-    listening: 'กำลังฟัง...',
-    transcribing: 'กำลังถอดเสียง...',
-    thinking: 'กำลังคิด...',
+    idle: result ? 'Interview complete' : 'Tap the mic to start speaking',
+    listening: 'Listening...',
+    transcribing: 'Transcribing...',
+    thinking: 'Thinking...',
   }[voiceState] || '';
 
   // ── Setup screen ──────────────────────────────────────
   if (showSetup) {
     return (
       <div className="voice-setup">
-        <h1>เริ่มบทสนทนา</h1>
-        <p>พูดคุยกับ AI เพื่อเก็บความทรงจำไว้ใน 3D Room</p>
+        <h1>Start the conversation</h1>
+        <p>Talk with AI to capture memories for your 3D room</p>
         <input
           type="text"
-          placeholder="ชื่อของคุณ..."
+          placeholder="Your name..."
           value={userName}
           onChange={(e) => setUserName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleStart()}
@@ -438,10 +438,10 @@ const InterviewPage = ({ project, setProject }) => {
         />
         {errorMessage && <p style={{ color: '#f87171', fontSize: 13, margin: 0 }}>{errorMessage}</p>}
         <button className="voice-setup-start" onClick={handleStart} disabled={isStarting}>
-          {isStarting ? 'กำลังเริ่ม...' : 'เริ่มเลย'}
+          {isStarting ? 'Starting...' : 'Start now'}
         </button>
         <button className="voice-setup-back" onClick={() => navigate('/project-detail')}>
-          ← กลับ
+          ← Back
         </button>
       </div>
     );
@@ -477,7 +477,7 @@ const InterviewPage = ({ project, setProject }) => {
           onClick={handleFinish}
           disabled={isFinishing || !!result}
         >
-          {isFinishing ? 'กำลังสรุป...' : 'Finish Interview'}
+          {isFinishing ? 'Finalizing...' : 'Finish Interview'}
         </button>
       </div>
 
@@ -526,7 +526,7 @@ const InterviewPage = ({ project, setProject }) => {
       {result && (
         <div className="voice-result">
           <p className="voice-result-title">
-            ความทรงจำที่เก็บได้ {result.roomPayload?.textSlots?.length || 0} เรื่อง
+            Captured {result.roomPayload?.textSlots?.length || 0} memories
           </p>
           {(result.roomPayload?.textSlots || []).map((slot, i) => (
             <div key={slot.id} className="voice-card">
@@ -535,7 +535,7 @@ const InterviewPage = ({ project, setProject }) => {
             </div>
           ))}
           <button className="voice-apply-btn" onClick={applyResultToProject}>
-            ไปหน้า Review ก่อนเข้า 3D →
+            Go to Review before entering 3D →
           </button>
         </div>
       )}
