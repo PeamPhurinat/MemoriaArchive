@@ -54,7 +54,7 @@ export class WalkthroughUI {
     // Cancel button (always visible during recording)
     this._cancelButton = document.createElement('button');
     this._cancelButton.className = 'wt-cancel-btn';
-    this._cancelButton.textContent = '✕ Cancel';
+    this._cancelButton.textContent = 'Cancel';
     this._cancelButton.addEventListener('click', onCancelClick);
 
     this._overlay.appendChild(this._recBadge);
@@ -99,7 +99,7 @@ export class WalkthroughUI {
     if (this._stopButton) return; // already shown
     this._stopButton = document.createElement('button');
     this._stopButton.className = 'wt-stop-btn';
-    this._stopButton.textContent = '⏹ Stop & Save Video';
+    this._stopButton.textContent = 'Stop & Save Video';
     this._stopButton.addEventListener('click', () => {
       this._stopButton?.remove();
       this._stopButton = null;

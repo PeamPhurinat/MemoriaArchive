@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadMemoryVideo, uploadPhoto } from '../services/mediaApi';
 import { toggleShare } from '../services/projectApi';
 
 const formatDate = (iso) => {
   try {
-    return new Date(iso).toLocaleDateString('th-TH', {
+    return new Date(iso).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -18,8 +18,6 @@ const formatDate = (iso) => {
 const ProjectDetailPage = ({ project, setProject }) => {
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
-  const [dragOverIndex, setDragOverIndex] = useState(null);
-  const dragIndex = useRef(null);
   const [uploadingVideoById, setUploadingVideoById] = useState({});
   const [uploadingPhotoById, setUploadingPhotoById] = useState({});
   const [uploadingHallPhoto, setUploadingHallPhoto] = useState(false);
@@ -126,16 +124,27 @@ const ProjectDetailPage = ({ project, setProject }) => {
     showSaved();
   };
 
-  const reorderMemory = useCallback((fromIndex, toIndex) => {
-    if (fromIndex === toIndex) return;
+  const moveMemory = (index, direction) => {
     setProject((p) => {
-      const next = [...(p.memories || [])];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return { ...p, memories: next };
+      const current = [...(p.memories || [])];
+      const targetIndex = index + direction;
+      if (
+        index < 0 ||
+        targetIndex < 0 ||
+        index >= current.length ||
+        targetIndex >= current.length
+      ) {
+        return p;
+      }
+
+      const temp = current[index];
+      current[index] = current[targetIndex];
+      current[targetIndex] = temp;
+
+      return { ...p, memories: current };
     });
     showSaved();
-  }, [setProject]);
+  };
 
   const shareUrl = `${window.location.origin}/view/${project.id}`;
 
@@ -199,7 +208,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
       {/* Header */}
       <header className="ma-header">
         <button className="ma-header-brand" onClick={() => navigate('/')}>
-          <div className="ma-header-logo">M</div>
+          <div className="ma-header-logo">✦</div>
           Memoria
         </button>
         <nav className="ma-header-nav">
@@ -361,41 +370,24 @@ const ProjectDetailPage = ({ project, setProject }) => {
 
           {memories.length === 0 ? (
             <div className="ma-empty">
-              <div className="ma-empty-icon">—</div>
+              <div className="ma-empty-icon">🌙</div>
               <p className="ma-empty-title">No memories yet</p>
               <p className="ma-empty-sub">
-                Start with AI Interview or add one manually
+                Start with AI Interview or add memories manually.
               </p>
             </div>
           ) : (
             <div className="ma-memory-list">
               {memories.map((mem, i) => (
-                <div
-                  key={mem.id}
-                  className="ma-memory-item"
-                  draggable
-                  onDragStart={() => { dragIndex.current = i; }}
-                  onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
-                  onDragLeave={() => setDragOverIndex(null)}
-                  onDrop={() => {
-                    reorderMemory(dragIndex.current, i);
-                    dragIndex.current = null;
-                    setDragOverIndex(null);
-                  }}
-                  onDragEnd={() => { dragIndex.current = null; setDragOverIndex(null); }}
-                  style={{
-                    outline: dragOverIndex === i ? '2px solid rgba(124,58,237,0.6)' : 'none',
-                    cursor: 'grab',
-                  }}
-                >
+                <div key={mem.id} className="ma-memory-item">
                   {/* Photo slot */}
-                  <label className="ma-memory-photo" title="Click to add photo">
+                  <label className="ma-memory-photo" title="Click to upload photo">
                     {uploadingPhotoById[mem.id] ? (
-                      <span className="ma-memory-photo-icon">...</span>
+                      <span className="ma-memory-photo-icon">⏳</span>
                     ) : mem.photo ? (
                       <img src={mem.photo} alt="" />
                     ) : (
-                      <span className="ma-memory-photo-icon">Photo</span>
+                      <span className="ma-memory-photo-icon">📸</span>
                     )}
                     <input
                       type="file"
@@ -406,7 +398,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
                   </label>
 
                   {/* Video slot */}
-                  <label className="ma-memory-photo" title="Click to add video" style={{ background: '#1a1428' }}>
+                  <label className="ma-memory-photo" title="Click to upload video" style={{ background: '#1a1428' }}>
                     {mem.video ? (
                       <video
                         src={mem.video}
@@ -415,7 +407,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
                         style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }}
                       />
                     ) : (
-                      <span className="ma-memory-photo-icon">Video</span>
+                      <span className="ma-memory-photo-icon">🎬</span>
                     )}
                     <input
                       type="file"
@@ -450,8 +442,27 @@ const ProjectDetailPage = ({ project, setProject }) => {
                     {mem.emotion && (
                       <span className="ma-memory-emotion">{mem.emotion}</span>
                     )}
-                    <div style={{ marginTop: '8px', fontSize: '11px', color: '#3a394f' }}>
-                      drag to reorder
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <button
+                        type="button"
+                        className="ma-btn ma-btn-ghost ma-btn-sm"
+                        onClick={() => moveMemory(i, -1)}
+                        disabled={i === 0}
+                        aria-label="Move memory up"
+                        title="Move up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="ma-btn ma-btn-ghost ma-btn-sm"
+                        onClick={() => moveMemory(i, 1)}
+                        disabled={i === memories.length - 1}
+                        aria-label="Move memory down"
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
                     </div>
                   </div>
 
@@ -461,7 +472,7 @@ const ProjectDetailPage = ({ project, setProject }) => {
                     onClick={() => deleteMemory(mem.id)}
                     title="Delete"
                   >
-                    x
+                    ✕
                   </button>
                 </div>
               ))}
@@ -482,4 +493,3 @@ const ProjectDetailPage = ({ project, setProject }) => {
 };
 
 export default ProjectDetailPage;
-

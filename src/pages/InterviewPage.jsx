@@ -265,7 +265,7 @@ const InterviewPage = ({ project, setProject }) => {
 
   const startListening = async () => {
     if (!hasActiveSession || isProcessing || voiceState === 'listening') return;
-    stopSpeaking(); // stop AI speech before user starts speaking
+    stopSpeaking();
     setErrorMessage('');
 
     try {
@@ -310,7 +310,7 @@ const InterviewPage = ({ project, setProject }) => {
             projectId: project.id,
             audioBlob: blob,
             filename: 'voice.webm',
-            language: 'th',
+            language: 'en',
           });
           const transcript = (sttResult.transcript || '').trim();
           if (transcript) {
@@ -363,7 +363,7 @@ const InterviewPage = ({ project, setProject }) => {
       vadFrameRef.current = requestAnimationFrame(tick);
 
     } catch {
-      setErrorMessage('Microphone access denied. Please allow microphone permission.');
+      setErrorMessage('Unable to access microphone. Please grant permission first.');
       setVoiceState('idle');
     }
   };
@@ -416,7 +416,7 @@ const InterviewPage = ({ project, setProject }) => {
     : {};
 
   const stateLabel = {
-    idle: result ? 'Interview complete' : 'Tap the mic to speak',
+    idle: result ? 'Interview complete' : 'Tap the mic to start speaking',
     listening: 'Listening...',
     transcribing: 'Transcribing...',
     thinking: 'Thinking...',
@@ -426,8 +426,8 @@ const InterviewPage = ({ project, setProject }) => {
   if (showSetup) {
     return (
       <div className="voice-setup">
-        <h1>Start Interview</h1>
-        <p>Talk with AI to preserve your memories in the 3D Room</p>
+        <h1>Start the conversation</h1>
+        <p>Talk with AI to capture memories for your 3D room</p>
         <input
           type="text"
           placeholder="Your name..."
@@ -438,10 +438,10 @@ const InterviewPage = ({ project, setProject }) => {
         />
         {errorMessage && <p style={{ color: '#f87171', fontSize: 13, margin: 0 }}>{errorMessage}</p>}
         <button className="voice-setup-start" onClick={handleStart} disabled={isStarting}>
-          {isStarting ? 'Starting...' : 'Start'}
+          {isStarting ? 'Starting...' : 'Start now'}
         </button>
         <button className="voice-setup-back" onClick={() => navigate('/project-detail')}>
-          &larr; Back
+          ← Back
         </button>
       </div>
     );
@@ -470,14 +470,14 @@ const InterviewPage = ({ project, setProject }) => {
           }
           disabled={!isTtsSupported}
         >
-          {ttsEnabled ? 'Voice On' : 'Voice Off'}
+          {ttsEnabled ? '🔊' : '🔇'}
         </button>
         <button
           className="voice-finish-btn"
           onClick={handleFinish}
           disabled={isFinishing || !!result}
         >
-          {isFinishing ? 'Finishing...' : 'Finish Interview'}
+          {isFinishing ? 'Finalizing...' : 'Finish Interview'}
         </button>
       </div>
 
@@ -507,12 +507,12 @@ const InterviewPage = ({ project, setProject }) => {
       <div className="voice-controls">
         {voiceState === 'idle' && !result && (
           <button className="voice-mic-btn" onClick={startListening} disabled={!hasActiveSession}>
-            Mic
+            🎙
           </button>
         )}
         {voiceState === 'listening' && (
           <button className="voice-cancel-btn" onClick={cancelListening}>
-            Cancel
+            ✕
           </button>
         )}
         {isProcessing && (
@@ -526,7 +526,7 @@ const InterviewPage = ({ project, setProject }) => {
       {result && (
         <div className="voice-result">
           <p className="voice-result-title">
-            {result.roomPayload?.textSlots?.length || 0} memories captured
+            Captured {result.roomPayload?.textSlots?.length || 0} memories
           </p>
           {(result.roomPayload?.textSlots || []).map((slot, i) => (
             <div key={slot.id} className="voice-card">
@@ -535,7 +535,7 @@ const InterviewPage = ({ project, setProject }) => {
             </div>
           ))}
           <button className="voice-apply-btn" onClick={applyResultToProject}>
-            Go to Review &rarr; 3D
+            Go to Review before entering 3D →
           </button>
         </div>
       )}

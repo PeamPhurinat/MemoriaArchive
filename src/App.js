@@ -101,7 +101,7 @@ const RequireAuth = ({ children }) => {
 const AppRoutes = () => {
   const { loading, isAuthenticated, signOut } = useAuth();
   const [projects, setProjects] = useState([]);
-  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectSyncError, setProjectSyncError] = useState("");
   const saveTimersRef = useRef(new Map());
   const [activeProjectId, setActiveProjectId] = useState(() => {
