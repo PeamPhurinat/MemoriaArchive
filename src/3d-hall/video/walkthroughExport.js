@@ -47,7 +47,6 @@ export function initWalkthroughExport({
   let lastTime = 0;
   let savedPos = null;
   let savedQuat = null;
-  let savedFov = null;
 
   ui.mount(container, startWalkthrough, cancelWalkthrough);
 
@@ -109,11 +108,6 @@ export function initWalkthroughExport({
     // Save camera state so we can restore it afterward
     savedPos = camera.position.clone();
     savedQuat = camera.quaternion.clone();
-    savedFov = camera.fov;
-
-    // Wider FOV for the cinematic walkthrough
-    camera.fov = 80;
-    camera.updateProjectionMatrix();
 
     // Disable all user controls
     try { controls?.unlock?.(); } catch (_) { /* ignore */ }
@@ -187,8 +181,6 @@ export function initWalkthroughExport({
     // Restore camera
     if (savedPos) camera.position.copy(savedPos);
     if (savedQuat) camera.quaternion.copy(savedQuat);
-    camera.fov = savedFov;
-    camera.updateProjectionMatrix();
 
     // Restore controls
     if (orbitControls) orbitControls.enabled = false;
@@ -215,8 +207,6 @@ export function initWalkthroughExport({
     // Restore camera
     if (savedPos) camera.position.copy(savedPos);
     if (savedQuat) camera.quaternion.copy(savedQuat);
-    camera.fov = savedFov;
-    camera.updateProjectionMatrix();
 
     // Restore controls
     if (orbitControls) orbitControls.enabled = false;

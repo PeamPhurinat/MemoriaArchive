@@ -126,7 +126,7 @@ export function createPhotoTexture(entry, themeKey = "dream", onPhotoAspectChang
     context.fillRect(0, 0, frameWidth, frameHeight);
     context.restore();
 
-    // drawTitleBadge({ text: entry.title, boxX: 30, boxY: 30, textX: 54, textY: 86, boxHeight: 80, maxBoxWidth: 560 });
+    drawTitleBadge({ text: entry.title, boxX: 30, boxY: 30, textX: 54, textY: 86, boxHeight: 80, maxBoxWidth: 560 });
   };
 
   const drawPhotoUnavailable = (message = "Image unavailable") => {

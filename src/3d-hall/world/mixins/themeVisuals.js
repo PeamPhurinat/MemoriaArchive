@@ -79,7 +79,7 @@ export function applyThemeVisuals(themeKey) {
       (aspect) => {
         if (photoRequestId !== photoAspectState.requestId) return;
         photoAspectState.currentAspect = aspect;
-        // Photo frame stays at fixed default size; image is cover-fit on the canvas.
+        this.applyPhotoFrameAspect(stationData.photoFrame, stationData.photoPanel, aspect);
       },
       (aspect) => {
         if (videoRequestId !== videoAspectState.requestId) return;
@@ -94,7 +94,7 @@ export function applyThemeVisuals(themeKey) {
 
     const nextPhotoAspect = nextTextures.photoTexture.userData?.photoAspect ?? photoAspectState.currentAspect;
     photoAspectState.currentAspect = nextPhotoAspect;
-    // Photo frame stays at fixed default size; no resize on theme change.
+    this.applyPhotoFrameAspect(stationData.photoFrame, stationData.photoPanel, nextPhotoAspect);
 
     const nextVideoAspect = nextTextures.videoTexture.userData?.mediaAspect ?? videoAspectState.currentAspect;
     videoAspectState.currentAspect = nextVideoAspect;

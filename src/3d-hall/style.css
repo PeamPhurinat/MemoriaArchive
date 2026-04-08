@@ -282,7 +282,6 @@ canvas {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   gap: 8px;
   margin: 0;
   padding: 10px 12px;
@@ -293,7 +292,6 @@ canvas {
   font: inherit;
   font-size: 0.86rem;
   font-weight: 700;
-  text-align: left;
   cursor: pointer;
 }
 
