@@ -104,13 +104,11 @@ export function applyThemeVisuals(themeKey) {
     this.updatePanelTexture(stationData.videoPanel,        nextTextures.videoFallbackTexture ?? nextTextures.videoTexture);
     this.updatePanelTexture(stationData.archivePanel,      nextTextures.photoFrameTexture);
     this.updatePanelTexture(stationData.descriptionPanel,  nextTextures.descriptionTexture);
-    this.updatePanelTexture(stationData.voiceCloud,        nextTextures.voiceTexture);
 
     this.updatePanelTint(stationData.photoPanel,        panelTint);
     this.updatePanelTint(stationData.videoPanel,        panelTint);
     this.updatePanelTint(stationData.archivePanel,      panelTint);
     this.updatePanelTint(stationData.descriptionPanel,  panelTint);
-    this.updatePanelTint(stationData.voiceCloud,        panelTint);
 
     this.disposeStationTextures(stationData.textures);
     stationData.textures = nextTextures;
